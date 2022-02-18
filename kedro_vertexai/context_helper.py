@@ -6,7 +6,7 @@ from typing import Dict, Iterable
 from kedro import __version__ as kedro_version
 from kedro.config import TemplatedConfigLoader
 from semver import VersionInfo
-
+from kedro_vertexai.client import VertexAIPipelinesClient
 from .config import PluginConfig
 
 
@@ -67,21 +67,10 @@ class ContextHelper(object):
 
     @property
     @lru_cache()
-    def kfp_client(self):
-        if self.config.is_vertex_ai_pipelines:
-            from .vertex_ai.client import VertexAIPipelinesClient
-
-            return VertexAIPipelinesClient(
-                self.config, self.project_name, self.context
-            )
-        else:
-            from .kfpclient import KubeflowClient
-
-            return KubeflowClient(
-                self.config,
-                self.project_name,
-                self.context,
-            )
+    def vertexai_client(self):
+        return VertexAIPipelinesClient(
+            self.config, self.project_name, self.context
+        )
 
     @staticmethod
     def init(metadata, env):

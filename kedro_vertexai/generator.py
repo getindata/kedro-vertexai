@@ -18,8 +18,8 @@ from kfp.components.structures import (
 )
 from kfp.v2 import dsl
 
-from kedro_kubeflow.utils import clean_name, is_mlflow_enabled
-from kedro_kubeflow.vertex_ai.io import (
+from kedro_vertexai.utils import clean_name, is_mlflow_enabled
+from kedro_vertexai.vertex_ai.io import (
     generate_inputs,
     generate_mlflow_inputs,
     generate_outputs,

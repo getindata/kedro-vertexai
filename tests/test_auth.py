@@ -5,7 +5,7 @@ from unittest.mock import patch
 import responses
 from google.auth.exceptions import DefaultCredentialsError
 
-from kedro_kubeflow.auth import AuthHandler
+from kedro_vertexai.auth import AuthHandler
 
 
 class TestAuthHandler(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestAuthHandler(unittest.TestCase):
         os.environ["IAP_CLIENT_ID"] = "unittest-client-id"
         fetch_id_token_mock.side_effect = Exception()
 
-        with self.assertLogs("kedro_kubeflow.auth", level="ERROR") as cm:
+        with self.assertLogs("kedro_vertexai.auth", level="ERROR") as cm:
             # when
 
             token = AuthHandler().obtain_id_token()
@@ -34,7 +34,7 @@ class TestAuthHandler(unittest.TestCase):
         os.environ["IAP_CLIENT_ID"] = "unittest-client-id"
         fetch_id_token_mock.side_effect = DefaultCredentialsError()
 
-        with self.assertLogs("kedro_kubeflow.auth", level="WARNING") as cm:
+        with self.assertLogs("kedro_vertexai.auth", level="WARNING") as cm:
             # when
             token = AuthHandler().obtain_id_token()
 

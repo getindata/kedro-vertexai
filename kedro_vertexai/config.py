@@ -298,10 +298,6 @@ class PluginConfig(Config):
     def region(self):
         return self._get_or_fail("region")
 
-    @property
-    def is_vertex_ai_pipelines(self):
-        return self.host == "vertex-ai-pipelines"
-
     @staticmethod
     def initialize_github_actions(project_name, where, templates_dir):
         os.makedirs(where / ".github/workflows", exist_ok=True)

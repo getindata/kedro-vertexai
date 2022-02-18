@@ -15,7 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import re
 
-from kedro_kubeflow import version as release
+from kedro_vertexai import version as release
 
 # -- Project information -----------------------------------------------------
 

@@ -8,11 +8,11 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from kedro_kubeflow.cli import (
+from kedro_vertexai.cli import (
     compile,
     delete_pipeline_volume,
     init,
-    kubeflow_group,
+    vertexai_group,
     list_pipelines,
     mlflow_start,
     run_once,
@@ -20,8 +20,8 @@ from kedro_kubeflow.cli import (
     ui,
     upload_pipeline,
 )
-from kedro_kubeflow.config import PluginConfig
-from kedro_kubeflow.context_helper import ContextHelper
+from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.context_helper import ContextHelper
 
 test_config = PluginConfig(
     {
@@ -44,17 +44,17 @@ test_config = PluginConfig(
 
 class TestPluginCLI(unittest.TestCase):
     def test_list_pipelines(self):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
         result = runner.invoke(list_pipelines, [], obj=config)
 
         assert result.exit_code == 0
-        context_helper.kfp_client.list_pipelines.assert_called_with()
+        context_helper.vertexai_client.list_pipelines.assert_called_with()
 
     def test_run_once(self):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         config = dict(context_helper=context_helper)
         runner = CliRunner()
@@ -75,7 +75,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.kfp_client.run_once.assert_called_with(
+        context_helper.vertexai_client.run_once.assert_called_with(
             experiment_name="Test Experiment",
             image="new_img",
             image_pull_policy="Always",
@@ -99,7 +99,7 @@ class TestPluginCLI(unittest.TestCase):
         open_new_tab.assert_called_with("https://example.com")
 
     def test_compile(self):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         config = dict(context_helper=context_helper)
         runner = CliRunner()
@@ -109,7 +109,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.kfp_client.compile.assert_called_with(
+        context_helper.vertexai_client.compile.assert_called_with(
             image="img",
             image_pull_policy="Always",
             output="output",
@@ -117,7 +117,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
     def test_upload_pipeline(self):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         config = dict(context_helper=context_helper)
         runner = CliRunner()
@@ -127,12 +127,12 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.kfp_client.upload.assert_called_with(
+        context_helper.vertexai_client.upload.assert_called_with(
             image="img", image_pull_policy="Always", pipeline_name="pipe"
         )
 
     def test_schedule(self):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         config = dict(context_helper=context_helper)
         runner = CliRunner()
@@ -153,7 +153,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.kfp_client.schedule.assert_called_with(
+        context_helper.vertexai_client.schedule.assert_called_with(
             "my-pipeline",
             "test_experiment",
             None,
@@ -164,7 +164,7 @@ class TestPluginCLI(unittest.TestCase):
 
     @patch.object(Path, "cwd")
     def test_init(self, cwd):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
@@ -184,7 +184,7 @@ class TestPluginCLI(unittest.TestCase):
 
     @patch.object(Path, "cwd")
     def test_init_with_github_actions(self, cwd):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
@@ -219,7 +219,7 @@ class TestPluginCLI(unittest.TestCase):
     def test_mlflow_start(
         self, set_tag_mock, start_run_mock, get_mlflow_config_mock
     ):
-        context_helper = MagicMock(ContextHelper)
+        context_helper: ContextHelper = MagicMock(ContextHelper)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
         start_run_mock.return_value = namedtuple("InfoObject", "info")(
@@ -248,10 +248,7 @@ class TestPluginCLI(unittest.TestCase):
             "builtins.open", um.mock_open(read_data="unittest-namespace")
         ):
             runner = CliRunner()
-            result = runner.invoke(
-                delete_pipeline_volume,
-                ["workflow-name"],
-            )
+            result = runner.invoke(delete_pipeline_volume, ["workflow-name"],)
             assert result.exit_code == 0
             core_api = k8s_client_mock.CoreV1Api()
             core_api.delete_namespaced_persistent_volume_claim.assert_called_with(
@@ -282,6 +279,6 @@ class TestPluginCLI(unittest.TestCase):
                 env = dict(KEDRO_ENV=env_var) if env_var else dict()
 
                 runner.invoke(
-                    kubeflow_group, cli + ["compile", "--help"], env=env
+                    vertexai_group, cli + ["compile", "--help"], env=env
                 )
                 context_helper_init.assert_called_with(None, expected)

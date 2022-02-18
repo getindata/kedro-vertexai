@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 from kedro.framework.session import KedroSession
 
-from kedro_kubeflow.config import PluginConfig
-from kedro_kubeflow.context_helper import (
+from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.context_helper import (
     ContextHelper,
     ContextHelper16,
     EnvTemplatedConfigLoader,
@@ -17,7 +17,7 @@ from .utils import environment
 class TestContextHelper(unittest.TestCase):
     def test_init_different_kedro_versions(self):
 
-        with patch("kedro_kubeflow.context_helper.kedro_version", "0.16.0"):
+        with patch("kedro_vertexai.context_helper.kedro_version", "0.16.0"):
             ch = ContextHelper.init(None, None)
             assert isinstance(ch, ContextHelper16)
 
@@ -46,7 +46,7 @@ class TestContextHelper(unittest.TestCase):
         context = MagicMock()
         context.config_loader.return_value.get.return_value = ["one", "two"]
         with patch.object(KedroSession, "create", context), patch(
-            "kedro_kubeflow.context_helper.EnvTemplatedConfigLoader"
+            "kedro_vertexai.context_helper.EnvTemplatedConfigLoader"
         ) as config_loader:
             config_loader.return_value.get.return_value = {}
             helper = ContextHelper.init(metadata, "test")

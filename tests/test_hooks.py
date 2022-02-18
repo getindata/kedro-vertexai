@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import mlflow
 
-from kedro_kubeflow.auth import AuthHandler
-from kedro_kubeflow.hooks import MlflowIapAuthHook, MlflowTagsHook  # NOQA
+from kedro_vertexai.auth import AuthHandler
+from kedro_vertexai.hooks import MlflowIapAuthHook, MlflowTagsHook  # NOQA
 
 from .utils import environment
 

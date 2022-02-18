@@ -1,1 +1,1 @@
-"""kedro_kubeflow tests suite."""
+"""kedro_vertexai tests suite."""

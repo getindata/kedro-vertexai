@@ -12,7 +12,7 @@ jobs:
       matrix:
         python-version: [3.7]
     env:
-      PYTHON_PACKAGE: kedro_kubeflow
+      PYTHON_PACKAGE: kedro_vertexai
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v2

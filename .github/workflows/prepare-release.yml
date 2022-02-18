@@ -15,7 +15,7 @@ jobs:
       matrix:
         python-version: [3.7]
     env:
-      PYTHON_PACKAGE: kedro_kubeflow
+      PYTHON_PACKAGE: kedro_vertexai
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}

@@ -1,4 +1,4 @@
-"""kedro_kubeflow module."""
+"""kedro_vertexai module."""
 from setuptools import find_packages, setup
 
 with open("README.md") as f:
@@ -12,6 +12,7 @@ INSTALL_REQUIRES = [
     "tabulate>=0.8.7",
     "semver~=2.10",
     "google-auth<2.0dev",
+    "google-cloud-scheduler>=2.3.2",
 ]
 
 # Dev Requirements
@@ -30,15 +31,12 @@ EXTRA_REQUIRE = {
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==0.6.0",
     ],
-    "vertexai": [
-        "google-cloud-scheduler>=2.3.2",
-    ],
 }
 
 setup(
-    name="kedro-kubeflow",
+    name="kedro-vertexai",
     version="0.6.0",
-    description="Kedro plugin with Kubeflow support",
+    description="Kedro plugin with Vertex AI support",
     long_description=README,
     long_description_content_type="text/markdown",
     license="Apache Software License (Apache 2.0)",
@@ -48,8 +46,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    keywords="kedro kubeflow plugin",
-    author="Mateusz Pytel, Mariusz Strzelecki",
+    keywords="kedro Vertex AI plugin",
+    author="Mateusz Pytel, Mariusz Strzelecki, Marcin Zabłocki",
     author_email="mateusz@getindata.com",
     url="https://github.com/getindata/kedro-kubeflow/",
     packages=find_packages(exclude=["ez_setup", "examples", "tests", "docs"]),
@@ -58,9 +56,9 @@ setup(
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRA_REQUIRE,
     entry_points={
-        "kedro.project_commands": ["kubeflow = kedro_kubeflow.cli:commands"],
+        "kedro.project_commands": ["kubeflow = kedro_vertexai.cli:commands"],
         "kedro.hooks": [
-            "kubeflow_mlflow_tags_hook = kedro_kubeflow.hooks:mlflow_tags_hook",
+            "kubeflow_mlflow_tags_hook = kedro_vertexai.hooks:mlflow_tags_hook",
         ],
     },
 )

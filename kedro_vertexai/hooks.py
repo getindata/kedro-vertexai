@@ -3,7 +3,7 @@ import os
 from kedro.framework.hooks import hook_impl
 from kedro.io import DataCatalog
 
-from kedro_kubeflow.utils import is_mlflow_enabled
+from kedro_vertexai.utils import is_mlflow_enabled
 
 
 class MlflowIapAuthHook:

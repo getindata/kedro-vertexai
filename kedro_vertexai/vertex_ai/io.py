@@ -8,7 +8,7 @@ import kfp
 from kedro.pipeline.node import Node
 from kfp.components import structures
 
-from kedro_kubeflow.utils import clean_name, is_mlflow_enabled
+from ..utils import clean_name, is_mlflow_enabled
 
 
 def _find_input_node(input_name, nodes):

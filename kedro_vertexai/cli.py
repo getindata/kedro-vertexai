@@ -16,14 +16,14 @@ def format_params(params: list):
     return dict((p[: p.find(":")], p[p.find(":") + 1 :]) for p in params)
 
 
-@click.group("Kubeflow")
+@click.group("VertexAI")
 def commands():
     """Kedro plugin adding support for Kubeflow Pipelines"""
     pass
 
 
 @commands.group(
-    name="kubeflow", context_settings=dict(help_option_names=["-h", "--help"])
+    name="vertexai", context_settings=dict(help_option_names=["-h", "--help"])
 )
 @click.option(
     "-e",
@@ -35,24 +35,21 @@ def commands():
 )
 @click.pass_obj
 @click.pass_context
-def kubeflow_group(ctx, metadata, env):
+def vertexai_group(ctx, metadata, env):
     """Interact with Kubeflow Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(
-        metadata,
-        env,
-    )
+    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.pass_context
 def list_pipelines(ctx):
     """List deployed pipeline definitions"""
     context_helper = ctx.obj["context_helper"]
-    click.echo(context_helper.kfp_client.list_pipelines())
+    click.echo(context_helper.vertexai_client.list_pipelines())
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.option(
     "-i",
     "--image",
@@ -92,7 +89,7 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
 
-    context_helper.kfp_client.run_once(
+    context_helper.vertexai_client.run_once(
         pipeline=pipeline,
         image=image if image else config.image,
         experiment_name=config.experiment_name,
@@ -104,7 +101,7 @@ def run_once(
     )
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.pass_context
 def ui(ctx) -> None:
     """Open Kubeflow Pipelines UI in new browser tab"""
@@ -112,7 +109,7 @@ def ui(ctx) -> None:
     webbrowser.open_new_tab(host)
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.option(
     "-i",
     "--image",
@@ -140,7 +137,7 @@ def compile(ctx, image, pipeline, output) -> None:
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
 
-    context_helper.kfp_client.compile(
+    context_helper.vertexai_client.compile(
         pipeline=pipeline,
         image_pull_policy=config.image_pull_policy,
         image=image if image else config.image,
@@ -148,7 +145,7 @@ def compile(ctx, image, pipeline, output) -> None:
     )
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.option(
     "-i",
     "--image",
@@ -169,14 +166,14 @@ def upload_pipeline(ctx, image, pipeline) -> None:
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
 
-    context_helper.kfp_client.upload(
+    context_helper.vertexai_client.upload(
         pipeline_name=pipeline,
         image=image if image else config.image,
         image_pull_policy=config.image_pull_policy,
     )
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.option(
     "-p",
     "--pipeline",
@@ -229,7 +226,7 @@ def schedule(
     config = context_helper.config.run_config
     experiment = experiment_name if experiment_name else config.experiment_name
 
-    context_helper.kfp_client.schedule(
+    context_helper.vertexai_client.schedule(
         pipeline,
         experiment,
         experiment_namespace,
@@ -239,7 +236,7 @@ def schedule(
     )
 
 
-@kubeflow_group.command()
+@vertexai_group.command()
 @click.argument("kfp_url", type=str)
 @click.option("--with-github-actions", is_flag=True, default=False)
 @click.pass_context
@@ -271,12 +268,10 @@ def init(ctx, kfp_url: str, with_github_actions: bool):
         )
 
 
-@kubeflow_group.command(hidden=True)
+@vertexai_group.command(hidden=True)
 @click.argument("kubeflow_run_id", type=str)
 @click.option(
-    "--output",
-    type=str,
-    default="/tmp/mlflow_run_id",
+    "--output", type=str, default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, kubeflow_run_id: str, output: str):
@@ -307,7 +302,7 @@ def mlflow_start(ctx, kubeflow_run_id: str, output: str):
     click.echo(f"Started run: {run.info.run_id}")
 
 
-@kubeflow_group.command(hidden=True)
+@vertexai_group.command(hidden=True)
 @click.argument("pvc_name", type=str)
 def delete_pipeline_volume(pvc_name: str):
     import kubernetes.client
@@ -319,7 +314,6 @@ def delete_pipeline_volume(pvc_name: str):
     ).read()
 
     kubernetes.client.CoreV1Api().delete_namespaced_persistent_volume_claim(
-        pvc_name,
-        current_namespace,
+        pvc_name, current_namespace,
     )
     click.echo(f"Volume removed: {pvc_name}")

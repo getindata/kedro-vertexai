@@ -3,7 +3,7 @@ import unittest
 import yaml
 from kedro.config.config import MissingConfigException
 
-from kedro_kubeflow.config import PluginConfig
+from kedro_vertexai.config import PluginConfig
 
 CONFIG_YAML = """
 host: https://example.com
