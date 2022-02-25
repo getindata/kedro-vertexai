@@ -190,7 +190,7 @@ class RunConfig(Config):
 
 class PluginConfig(Config):
     @property
-    def run_config(self):
+    def run_config(self) -> RunConfig:
         cfg = self._get_or_fail("run_config")
         return RunConfig(cfg)
 

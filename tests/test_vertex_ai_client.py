@@ -22,6 +22,7 @@ class TestKubeflowClient(unittest.TestCase):
                     "image": "IMAGE",
                     "root": "BUCKET/PREFIX",
                     "vertex_ai_networking": {"vpc": "my-vpc"},
+                    "experiment_name": "experiment-name",
                 },
             }
         )
@@ -35,7 +36,7 @@ class TestKubeflowClient(unittest.TestCase):
 
             client_under_test = self.create_client()
             client_under_test.compile(
-                MagicMock("pipeline"), "image", "some_path"
+                MagicMock("pipeline"), "image", "some_path", "run-name"
             )
 
             compiler.compile.assert_called_once()

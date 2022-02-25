@@ -19,6 +19,7 @@ from kfp.components.structures import (
 from kfp.v2 import dsl
 
 from kedro_vertexai.auth import AuthHandler
+from kedro_vertexai.config import RunConfig
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import (
     generate_inputs,
@@ -35,10 +36,12 @@ class PipelineGenerator:
 
     log = logging.getLogger(__name__)
 
-    def __init__(self, config, project_name, context):
+    def __init__(self, config, project_name, context, run_name: str):
+        assert run_name, "run_name cannot be empty / None"
+        self.run_name = run_name
         self.project_name = project_name
         self.context = context
-        self.run_config = config.run_config
+        self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
 
     def get_pipeline_name(self):
@@ -94,13 +97,13 @@ class PipelineGenerator:
         mlflow_command = " ".join(
             [
                 self._generate_hosts_file(),
-                "mkdir --parents "
+                "mkdir --parents",
                 "`dirname {{$.outputs.parameters['output'].output_file}}`",
                 "&&",
-                "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}} "
-                f"kedro vertexai -e {self.context.env} mlflow-start "
-                "--output {{$.outputs.parameters['output'].output_file}} "
-                + self.run_config.run_name,
+                "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}}",
+                f"kedro vertexai -e {self.context.env} mlflow-start",
+                "--output {{$.outputs.parameters['output'].output_file}}",
+                self.run_name,
             ]
         )
 
@@ -146,9 +149,6 @@ class PipelineGenerator:
 
         mlflow_enabled = is_mlflow_enabled()
         if mlflow_enabled:
-            tracking_token = (
-                AuthHandler().obtain_id_token()
-            )  # TODO: for @mwiewior
             kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
                 image, tracking_token
             )
@@ -184,10 +184,10 @@ class PipelineGenerator:
             node_command = " ".join(
                 [
                     self._generate_hosts_file(),
-                    "rm -rf /home/kedro/data "
-                    "&&"
-                    f"ln -s /gcs/{self._get_data_path()} /home/kedro/data "
-                    "&& ",
+                    "rm -rf /home/kedro/data",
+                    "&&",
+                    f"ln -s /gcs/{self._get_data_path()} /home/kedro/data",
+                    "&&",
                     mlflow_tokens + kedro_command,
                 ]
             )
@@ -199,7 +199,9 @@ class PipelineGenerator:
                     container=ContainerSpec(
                         image=image,
                         command=["/bin/bash", "-c"],
-                        args=[node_command + " "] + output_placeholders,
+                        args=[
+                            node_command
+                        ],  # TODO: re-enable? + output_placeholders,
                     )
                 ),
             )
@@ -240,10 +242,7 @@ class PipelineGenerator:
             operator.set_gpu_limit(resources["nvidia.com/gpu"])
 
     def _get_data_path(self):
-        return (
-            f"{self.run_config.root}/"
-            f"{self.run_config.experiment_name}/{self.run_config.run_name}/data"
-        )
+        return "/".join((self.run_config.root, self.run_name, "data"))
 
     def _setup_volume_op(self, image):
         command = " ".join(

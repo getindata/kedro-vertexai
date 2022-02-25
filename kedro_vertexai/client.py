@@ -14,6 +14,7 @@ from kfp.v2 import compiler
 from kfp.v2.google.client import AIPlatformClient
 from tabulate import tabulate
 
+from .config import PluginConfig
 from .generator import PipelineGenerator
 
 
@@ -24,8 +25,8 @@ class VertexAIPipelinesClient:
 
     log = logging.getLogger(__name__)
 
-    def __init__(self, config, project_name, context):
-        self.generator = PipelineGenerator(config, project_name, context)
+    def __init__(self, config: PluginConfig, project_name, context):
+
         self.api_client = AIPlatformClient(
             project_id=config.project_id, region=config.region
         )
@@ -34,6 +35,10 @@ class VertexAIPipelinesClient:
             f"projects/{config.project_id}/locations/{config.region}"
         )
         self.run_config = config.run_config
+        self.run_name = self._generate_run_name(config)
+        self.generator = PipelineGenerator(
+            config, project_name, context, self.run_name
+        )
 
     def list_pipelines(self):
         """
@@ -60,10 +65,8 @@ class VertexAIPipelinesClient:
         self,
         pipeline,
         image,
-        experiment_name: str,
         wait=False,
         image_pull_policy="IfNotPresent",
-        experiment_namespace=None,
         parameters={},
     ):
         """
@@ -88,7 +91,7 @@ class VertexAIPipelinesClient:
             run = self.api_client.create_run_from_job_spec(
                 service_account=os.getenv("SERVICE_ACCOUNT"),
                 job_spec_path=spec_output.name,
-                job_id=self._get_run_name(experiment_name),
+                job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values={},
                 enable_caching=False,
@@ -97,8 +100,8 @@ class VertexAIPipelinesClient:
             self.log.info("Run created %s", str(run))
             return run
 
-    def _get_run_name(self, experiment_name):  # noqa
-        return experiment_name.rstrip("-") + "-{}".format(
+    def _generate_run_name(self, config: PluginConfig):  # noqa
+        return config.run_config.experiment_name.rstrip("-") + "-{}".format(
             dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         )
 

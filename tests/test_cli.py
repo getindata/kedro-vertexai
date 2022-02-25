@@ -62,28 +62,16 @@ class TestPluginCLI(unittest.TestCase):
 
         result = runner.invoke(
             run_once,
-            [
-                "-i",
-                "new_img",
-                "-p",
-                "new_pipe",
-                "--experiment-namespace",
-                "my-ns",
-                "--param",
-                "key1:some value",
-            ],
+            ["-i", "new_img", "-p", "new_pipe", "--param", "key1:some value",],
             obj=config,
         )
 
         assert result.exit_code == 0
         context_helper.vertexai_client.run_once.assert_called_with(
-            experiment_name="Test Experiment",
             image="new_img",
             image_pull_policy="Always",
             pipeline="new_pipe",
-            run_name="test run",
             wait=True,
-            experiment_namespace="my-ns",
             parameters={"key1": "some value"},
         )
 

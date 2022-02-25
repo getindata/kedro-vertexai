@@ -65,15 +65,6 @@ def list_pipelines(ctx):
     default="__default__",
 )
 @click.option(
-    "-en",
-    "--experiment-namespace",
-    "experiment_namespace",
-    type=str,
-    default=None,
-    help="Namespace where pipeline experiment run should be deployed to. Not needed "
-    "if provided experiment name already exists.",
-)
-@click.option(
     "--param",
     "params",
     type=str,
@@ -81,9 +72,7 @@ def list_pipelines(ctx):
     help="Parameters override in form of `key=value`",
 )
 @click.pass_context
-def run_once(
-    ctx, image: str, pipeline: str, experiment_namespace: str, params: list
-):
+def run_once(ctx, image: str, pipeline: str, params: list):
     """Deploy pipeline as a single run within given experiment.
     Config can be specified in kubeflow.yml as well."""
     context_helper = ctx.obj["context_helper"]
@@ -92,8 +81,6 @@ def run_once(
     context_helper.vertexai_client.run_once(
         pipeline=pipeline,
         image=image if image else config.image,
-        experiment_name=config.experiment_name,
-        experiment_namespace=experiment_namespace,
         wait=config.wait_for_completion,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
