@@ -171,7 +171,7 @@ class TestGenerator(unittest.TestCase):
 
         # then
         assert (
-            "kedro kubeflow -e unittests mlflow-start"
+            "kedro vertexai -e unittests mlflow-start"
             in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
         )
         assert (

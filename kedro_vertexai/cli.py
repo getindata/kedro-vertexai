@@ -94,7 +94,6 @@ def run_once(
         image=image if image else config.image,
         experiment_name=config.experiment_name,
         experiment_namespace=experiment_namespace,
-        run_name=config.run_name,
         wait=config.wait_for_completion,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
@@ -105,8 +104,10 @@ def run_once(
 @click.pass_context
 def ui(ctx) -> None:
     """Open Kubeflow Pipelines UI in new browser tab"""
-    host = ctx.obj["context_helper"].config.host
-    webbrowser.open_new_tab(host)
+    vertex_ai_url = "https://console.cloud.google.com/vertex-ai/pipelines?project={}".format(
+        ctx.obj["context_helper"].config.project_id
+    )
+    webbrowser.open_new_tab(vertex_ai_url)
 
 
 @vertexai_group.command()
@@ -237,10 +238,11 @@ def schedule(
 
 
 @vertexai_group.command()
-@click.argument("kfp_url", type=str)
+@click.argument("project_id")
+@click.argument("region")
 @click.option("--with-github-actions", is_flag=True, default=False)
 @click.pass_context
-def init(ctx, kfp_url: str, with_github_actions: bool):
+def init(ctx, project_id, region, with_github_actions: bool):
     """Initializes configuration for the plugin"""
     context_helper = ctx.obj["context_helper"]
     project_name = context_helper.context.project_path.name
@@ -252,9 +254,13 @@ def init(ctx, kfp_url: str, with_github_actions: bool):
         run_name = project_name
 
     sample_config = PluginConfig.sample_config(
-        url=kfp_url, image=image, project=project_name, run_name=run_name
+        project_id=project_id,
+        image=image,
+        project=project_name,
+        run_name=run_name,
+        region=region,
     )
-    config_path = Path.cwd().joinpath("conf/base/kubeflow.yaml")
+    config_path = Path.cwd().joinpath("conf/base/vertexai.yaml")
     with open(config_path, "w") as f:
         f.write(sample_config)
 

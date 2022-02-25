@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
+import yaml
 from click.testing import CliRunner
 
 from kedro_vertexai.cli import (
@@ -25,7 +26,7 @@ from kedro_vertexai.context_helper import ContextHelper
 
 test_config = PluginConfig(
     {
-        "host": "https://example.com",
+        "project_id": "test-project-id",
         "run_config": {
             "image": "gcr.io/project-image/test",
             "image_pull_policy": "Always",
@@ -96,7 +97,9 @@ class TestPluginCLI(unittest.TestCase):
         result = runner.invoke(ui, [], obj=config)
 
         assert result.exit_code == 0
-        open_new_tab.assert_called_with("https://example.com")
+        open_new_tab.assert_called_with(
+            f"https://console.cloud.google.com/vertex-ai/pipelines?project={context_helper.config.project_id}"
+        )
 
     def test_compile(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
@@ -175,12 +178,15 @@ class TestPluginCLI(unittest.TestCase):
             path = Path(temp_dir)
             cwd.return_value = path
             os.makedirs(path.joinpath("conf/base"))
-            result = runner.invoke(init, ["http://kubeflow"], obj=config)
+            result = runner.invoke(
+                init, ["test-project-id", "region"], obj=config
+            )
 
-            assert result.exit_code == 0
+            assert result.exit_code == 0, result.output
             assert result.output.startswith("Configuration generated in ")
-            with open(path.joinpath("conf/base/kubeflow.yaml"), "r") as f:
-                assert "host: http://kubeflow" in f.read()
+            with open(path.joinpath("conf/base/vertexai.yaml"), "r") as f:
+                cfg = yaml.safe_load(f)
+                assert isinstance(cfg, dict), "Could not parse config as yaml"
 
     @patch.object(Path, "cwd")
     def test_init_with_github_actions(self, cwd):
@@ -196,7 +202,9 @@ class TestPluginCLI(unittest.TestCase):
             cwd.return_value = path
             os.makedirs(path.joinpath("conf/base"))
             result = runner.invoke(
-                init, ["--with-github-actions", "http://kubeflow"], obj=config
+                init,
+                ["test-project-id", "region", "--with-github-actions"],
+                obj=config,
             )
 
             assert result.exit_code == 0

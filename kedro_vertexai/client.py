@@ -6,7 +6,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-
+import datetime as dt
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
@@ -40,34 +40,43 @@ class VertexAIPipelinesClient:
         List all the jobs (current and historical) on Vertex AI Pipelines
         :return:
         """
-        pipelines = self.api_client.list_jobs()["pipelineJobs"]
-        return tabulate(
-            map(lambda x: [x.get("displayName"), x["name"]], pipelines),
-            headers=["Name", "ID"],
+        list_jobs_response = self.api_client.list_jobs()
+        self.log.debug(list_jobs_response)
+
+        jobs_key = "pipelineJobs"
+        headers = ["Name", "ID"]
+        data = (
+            map(
+                lambda x: [x.get("displayName"), x["name"]],
+                list_jobs_response[jobs_key],
+            )
+            if jobs_key in list_jobs_response
+            else []
         )
+
+        return tabulate(data, headers=headers)
 
     def run_once(
         self,
         pipeline,
         image,
-        experiment_name,
-        run_name,
+        experiment_name: str,
         wait=False,
         image_pull_policy="IfNotPresent",
         experiment_namespace=None,
+        parameters={},
     ):
         """
         Runs the pipeline in Vertex AI Pipelines
         :param pipeline:
         :param image:
         :param experiment_name:
-        :param run_name:
         :param wait:
         :param image_pull_policy:
         :return:
         """
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-kubeflow", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".json"
         ) as spec_output:
             self.compile(
                 pipeline,
@@ -79,7 +88,7 @@ class VertexAIPipelinesClient:
             run = self.api_client.create_run_from_job_spec(
                 service_account=os.getenv("SERVICE_ACCOUNT"),
                 job_spec_path=spec_output.name,
-                job_id=run_name,
+                job_id=self._get_run_name(experiment_name),
                 pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values={},
                 enable_caching=False,
@@ -87,6 +96,11 @@ class VertexAIPipelinesClient:
             )
             self.log.info("Run created %s", str(run))
             return run
+
+    def _get_run_name(self, experiment_name):  # noqa
+        return experiment_name.rstrip("-") + "-{}".format(
+            dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        )
 
     def compile(
         self, pipeline, image, output, image_pull_policy="IfNotPresent",
@@ -157,7 +171,7 @@ class VertexAIPipelinesClient:
         """
         self._cleanup_old_schedule(self.generator.get_pipeline_name())
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-kubeflow", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".json"
         ) as spec_output:
             self.compile(
                 pipeline,

@@ -3,21 +3,19 @@ import os
 from kedro.config import MissingConfigException
 
 DEFAULT_CONFIG_TEMPLATE = """
-# Base url of the Kubeflow Pipelines, should include the schema (http/https)
-host: {url}
-
 # Configuration used to run the pipeline
+project_id: {project_id}
+region: {region}
 run_config:
-
   # Name of the image to run as the pipeline steps
   image: {image}
 
-  # Pull pilicy to be used for the steps. Use Always if you push the images
+  # Pull policy to be used for the steps. Use Always if you push the images
   # on the same tag, or Never if you use only local images
   image_pull_policy: IfNotPresent
 
-  # Location of Vertex AI GCS root, required only for vertex ai pipelines configuration
-  #root: bucket_name/gcs_suffix
+  # Location of Vertex AI GCS root
+  root: bucket_name/gcs_suffix
 
   # Name of the kubeflow experiment to be created
   experiment_name: {project}
@@ -41,58 +39,6 @@ run_config:
   # What Kedro pipeline should be run as the last step regardless of the
   # pipeline status. Used to send notifications or raise the alerts
   # on_exit_pipeline: notify_via_slack
-
-  # This sets the caching option for pipeline using
-  # execution_options.caching_strategy.max_cache_staleness
-  # See https://en.wikipedia.org/wiki/ISO_8601 in section 'Duration'
-  #max_cache_staleness: P0D
-
-  # Set to false to disable kfp artifacts exposal
-  # This setting can be useful if you don't want to store
-  # intermediate results in the MLMD
-  #store_kedro_outputs_as_kfp_artifacts: True
-
-  # Strategy used to generate Kubeflow pipeline nodes from Kedro nodes
-  # Available strategies:
-  #  * none (default) - nodes in Kedro pipeline are mapped to separate nodes
-  #                     in Kubeflow pipelines. This strategy allows to inspect
-  #                     a whole processing graph in Kubeflow UI and override
-  #                     resources for each node (because they are run in separate pods)
-  #                     Although, performance may not be optimal due to potential
-  #                     sharing of intermediate datasets through disk.
-  #  * full - nodes in Kedro pipeline are mapped to one node in Kubeflow pipelines.
-  #           This strategy mitigate potential performance issues with `none` strategy
-  #           but at the cost of degraded user experience within Kubeflow UI: a graph
-  #           is collapsed to one node.
-  #node_merge_strategy: none
-
-  # Optional volume specification (only for non vertex-ai)
-  volume:
-
-    # Storage class - use null (or no value) to use the default storage
-    # class deployed on the Kubernetes cluster
-    storageclass: # default
-
-    # The size of the volume that is created. Applicable for some storage
-    # classes
-    size: 1Gi
-
-    # Access mode of the volume used to exchange data. ReadWriteMany is
-    # preferred, but it is not supported on some environements (like GKE)
-    # Default value: ReadWriteOnce
-    #access_modes: [ReadWriteMany]
-
-    # Flag indicating if the data-volume-init step (copying raw data to the
-    # fresh volume) should be skipped
-    skip_init: False
-
-    # Allows to specify user executing pipelines within containers
-    # Default: root user (to avoid issues with volumes in GKE)
-    owner: 0
-
-    # Flak indicating if volume for inter-node data exchange should be
-    # kept after the pipeline is deleted
-    keep: False
 
   # Optional section allowing adjustment of the resources
   # reservations and limits for the nodes
@@ -138,7 +84,10 @@ class Config(object):
         return ""
 
     def __eq__(self, other):
-        return self._raw == other._raw
+        if isinstance(other, Config):
+            return self._raw == other._raw
+        else:
+            return False
 
 
 class VertexAiNetworkingConfig(Config):
@@ -150,35 +99,6 @@ class VertexAiNetworkingConfig(Config):
     def host_aliases(self):
         aliases = self._get_or_default("host_aliases", [])
         return {alias["ip"]: alias["hostnames"] for alias in aliases}
-
-
-class VolumeConfig(Config):
-    @property
-    def storageclass(self):
-        return self._get_or_default("storageclass", None)
-
-    @property
-    def size(self):
-        return self._get_or_default("size", "1Gi")
-
-    @property
-    def access_modes(self):
-        return self._get_or_default("access_modes", ["ReadWriteOnce"])
-
-    @property
-    def skip_init(self):
-        return self._get_or_default("skip_init", False)
-
-    @property
-    def keep(self):
-        return self._get_or_default("keep", False)
-
-    @property
-    def owner(self):
-        return self._get_or_default("owner", 0)
-
-    def _get_prefix(self):
-        return "run_config.volume."
 
 
 class NodeResources(Config):
@@ -227,14 +147,6 @@ class RunConfig(Config):
         return NodeResources(self._get_or_default("resources", {}))
 
     @property
-    def volume(self):
-        if "volume" in self._raw.keys():
-            cfg = self._get_or_fail("volume")
-            return VolumeConfig(cfg)
-        else:
-            return None
-
-    @property
     def wait_for_completion(self):
         return bool(self._get_or_default("wait_for_completion", False))
 
@@ -277,10 +189,6 @@ class RunConfig(Config):
 
 
 class PluginConfig(Config):
-    @property
-    def host(self):
-        return self._get_or_fail("host")
-
     @property
     def run_config(self):
         cfg = self._get_or_fail("run_config")

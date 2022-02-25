@@ -18,6 +18,7 @@ from kfp.components.structures import (
 )
 from kfp.v2 import dsl
 
+from kedro_vertexai.auth import AuthHandler
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import (
     generate_inputs,
@@ -77,9 +78,6 @@ class PipelineGenerator:
             for node, dependencies in node_dependencies.items():
                 set_dependencies(node, dependencies, kfp_ops)
 
-            if self.run_config.volume and not self.run_config.volume.skip_init:
-                self._create_data_volume_init_op(kfp_ops, image)
-
             for operator in kfp_ops.values():
                 operator.container.set_image_pull_policy(image_pull_policy)
 
@@ -92,15 +90,6 @@ class PipelineGenerator:
             for ip, hostnames in host_aliases.items()
         )
 
-    def _create_data_volume_init_op(
-        self, kfp_ops: Dict[str, dsl.ContainerOp], image: str
-    ):
-        data_volume_init = self._setup_volume_op(image)
-        for name, ops in kfp_ops.items():
-            if name != "mlflow-start-run":
-                ops.after(data_volume_init)
-        kfp_ops["data-volume-init"] = data_volume_init
-
     def _create_mlflow_op(self, image, tracking_token) -> dsl.ContainerOp:
         mlflow_command = " ".join(
             [
@@ -109,7 +98,7 @@ class PipelineGenerator:
                 "`dirname {{$.outputs.parameters['output'].output_file}}`",
                 "&&",
                 "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}} "
-                f"kedro kubeflow -e {self.context.env} mlflow-start "
+                f"kedro vertexai -e {self.context.env} mlflow-start "
                 "--output {{$.outputs.parameters['output'].output_file}} "
                 + self.run_config.run_name,
             ]
@@ -131,7 +120,7 @@ class PipelineGenerator:
             ),
         )
         with NamedTemporaryFile(
-            mode="w", prefix="kedro-kubeflow-spec", suffix=".yaml"
+            mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
         ) as spec_file:
             spec.save(spec_file.name)
             component = kfp.components.load_component_from_file(spec_file.name)
@@ -155,7 +144,11 @@ class PipelineGenerator:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_ops = {}
 
-        if is_mlflow_enabled():
+        mlflow_enabled = is_mlflow_enabled()
+        if mlflow_enabled:
+            tracking_token = (
+                AuthHandler().obtain_id_token()
+            )  # TODO: for @mwiewior
             kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
                 image, tracking_token
             )
@@ -176,7 +169,7 @@ class PipelineGenerator:
             mlflow_inputs, mlflow_tokens = generate_mlflow_inputs()
             component_params = (
                 [tracking_token, kfp_ops["mlflow-start-run"].output]
-                if is_mlflow_enabled()
+                if mlflow_enabled
                 else []
             )
 
@@ -191,10 +184,10 @@ class PipelineGenerator:
             node_command = " ".join(
                 [
                     self._generate_hosts_file(),
-                    "rm -r /home/kedro/data"
+                    "rm -rf /home/kedro/data "
                     "&&"
-                    f"ln -s /gcs/{self._get_data_path()} /home/kedro/data"
-                    "&&",
+                    f"ln -s /gcs/{self._get_data_path()} /home/kedro/data "
+                    "&& ",
                     mlflow_tokens + kedro_command,
                 ]
             )
@@ -206,8 +199,7 @@ class PipelineGenerator:
                     container=ContainerSpec(
                         image=image,
                         command=["/bin/bash", "-c"],
-                        args=[node_command + " " + output_copy_commands]
-                        + output_placeholders,
+                        args=[node_command + " "] + output_placeholders,
                     )
                 ),
             )
@@ -221,7 +213,7 @@ class PipelineGenerator:
         self, name: str, spec: ComponentSpec, op_function_parameters
     ):
         with NamedTemporaryFile(
-            mode="w", prefix="kedro-kubeflow-node-spec", suffix=".yaml"
+            mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
         ) as spec_file:
             spec.save(spec_file.name)
             component = kfp.components.load_component_from_file(spec_file.name)
@@ -271,7 +263,7 @@ class PipelineGenerator:
         )
 
         with NamedTemporaryFile(
-            mode="w", prefix="kedro-kubeflow-data-volume-init", suffix=".yaml"
+            mode="w", prefix="kedro-vertexai-data-volume-init", suffix=".yaml"
         ) as spec_file:
             spec.save(spec_file.name)
             component = kfp.components.load_component_from_file(spec_file.name)

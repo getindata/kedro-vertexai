@@ -49,14 +49,14 @@ setup(
     keywords="kedro Vertex AI plugin",
     author="Mateusz Pytel, Mariusz Strzelecki, Marcin Zabłocki",
     author_email="mateusz@getindata.com",
-    url="https://github.com/getindata/kedro-kubeflow/",
+    url="https://github.com/getindata/kedro-vertexai/",
     packages=find_packages(exclude=["ez_setup", "examples", "tests", "docs"]),
     include_package_data=True,
     zip_safe=False,
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRA_REQUIRE,
     entry_points={
-        "kedro.project_commands": ["kubeflow = kedro_vertexai.cli:commands"],
+        "kedro.project_commands": ["vertexai = kedro_vertexai.cli:commands"],
         "kedro.hooks": [
             "kubeflow_mlflow_tags_hook = kedro_vertexai.hooks:mlflow_tags_hook",
         ],

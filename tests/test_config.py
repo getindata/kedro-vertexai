@@ -6,8 +6,7 @@ from kedro.config.config import MissingConfigException
 from kedro_vertexai.config import PluginConfig
 
 CONFIG_YAML = """
-host: https://example.com
-
+project_id: test-project-id
 run_config:
   image: "gcr.io/project-image/test"
   image_pull_policy: "Always"
@@ -40,17 +39,12 @@ run_config:
 class TestPluginConfig(unittest.TestCase):
     def test_plugin_config(self):
         cfg = PluginConfig(yaml.safe_load(CONFIG_YAML))
-        assert cfg.host == "https://example.com"
         assert cfg.run_config.image == "gcr.io/project-image/test"
         assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
         assert cfg.run_config.run_name == "test run"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
         assert cfg.run_config.wait_for_completion
-        assert cfg.run_config.volume.storageclass == "default"
-        assert cfg.run_config.volume.size == "3Gi"
-        assert cfg.run_config.volume.keep is True
-        assert cfg.run_config.volume.access_modes == ["ReadWriteOnce"]
         assert cfg.run_config.resources.is_set_for("node1") is False
         assert cfg.run_config.description == "My awesome pipeline"
         assert cfg.run_config.ttl == 300
@@ -61,12 +55,14 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.description is None
         SECONDS_IN_ONE_WEEK = 3600 * 24 * 7
         assert cfg.run_config.ttl == SECONDS_IN_ONE_WEEK
-        assert cfg.run_config.volume is None
 
     def test_missing_required_config(self):
         cfg = PluginConfig({})
         with self.assertRaises(MissingConfigException):
-            print(cfg.host)
+            print(cfg.project_id)
+
+        with self.assertRaises(MissingConfigException):
+            print(cfg.region)
 
     def test_resources_default_only(self):
         cfg = PluginConfig(
@@ -106,10 +102,6 @@ class TestPluginConfig(unittest.TestCase):
             "cpu": "200m",
             "memory": "64Mi",
         }
-
-    def test_do_not_keep_volume_by_default(self):
-        cfg = PluginConfig({"run_config": {"volume": {}}})
-        assert cfg.run_config.volume.keep is False
 
     def test_parse_vertex_ai_networking_config(self):
         cfg = PluginConfig(yaml.safe_load(VERTEX_YAML))
