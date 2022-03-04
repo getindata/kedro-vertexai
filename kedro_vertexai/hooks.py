@@ -1,8 +1,14 @@
+import warnings
 import os
+from typing import Iterable
+from distutils.util import strtobool
 
+from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
 from kedro.io import DataCatalog
 
+from kedro_vertexai.context_helper import EnvTemplatedConfigLoader
+from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import is_mlflow_enabled
 
 
@@ -26,11 +32,30 @@ class MlflowTagsHook:
         if is_mlflow_enabled():
             import mlflow
 
-            if os.getenv("KUBEFLOW_RUN_ID"):
-                mlflow.set_tag(
-                    "kubeflow_run_id", os.environ["KUBEFLOW_RUN_ID"]
-                )
+            if run_id := os.getenv("KEDRO_CONFIG_RUN_ID", None):
+                mlflow.set_tag("vertexai_run_id", run_id)
 
+
+if not CONFIG_HOOK_DISABLED:
+
+    class KedoVertexAIConfigLoaderHook:
+        @hook_impl
+        def register_config_loader(
+            self, conf_paths: Iterable[str]
+        ) -> ConfigLoader:
+            return EnvTemplatedConfigLoader(conf_paths)
+
+
+else:
+
+    class KedoVertexAIConfigLoaderHook:
+        pass
+
+    warnings.warn(
+        f"KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set and EnvTemplatedConfigLoader will not be used"
+        " which means formatted config values like ${run_id} will not be substituted at runtime"
+    )
 
 mlflow_iap_hook = MlflowIapAuthHook()
 mlflow_tags_hook = MlflowTagsHook()
+env_templated_config_loader_hook = KedoVertexAIConfigLoaderHook()

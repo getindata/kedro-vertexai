@@ -18,6 +18,8 @@ from kfp.components.structures import (
 )
 from kfp.v2 import dsl
 from kedro_vertexai.config import RunConfig
+from kedro_vertexai.constants import KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK
+from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 
@@ -161,12 +163,15 @@ class PipelineGenerator:
 
             kedro_command = " ".join(
                 [
+                    f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
+                    f"KEDRO_CONFIG_RUN_ID={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
                     f"{params_parameter}",
                     f'--node "{node.name}"',
                 ]
             )
+
             node_command = " ".join(
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
@@ -202,7 +207,6 @@ class PipelineGenerator:
             component = kfp.components.load_component_from_file(spec_file.name)
 
         operator = component(*op_function_parameters)
-
         self._configure_resources(name, operator)
         return operator
 
@@ -221,32 +225,3 @@ class PipelineGenerator:
             )
         if "nvidia.com/gpu" in resources:
             operator.set_gpu_limit(resources["nvidia.com/gpu"])
-
-    def _get_data_path(self):
-        return "/".join((self.run_config.root, self.run_name, "data"))
-
-    def _setup_volume_op(self, image):
-        command = " ".join(
-            [
-                f"mkdir --parents /gcs/{self._get_data_path()} &&",
-                f"cp -r /home/kedro/data/* /gcs/{self._get_data_path()}",
-            ]
-        )
-        spec = ComponentSpec(
-            name="data-volume-init",
-            inputs=[],
-            implementation=ContainerImplementation(
-                container=ContainerSpec(
-                    image=image, command=["/bin/bash", "-c"], args=[command]
-                )
-            ),
-        )
-
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-data-volume-init", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-            volume_init = component()
-
-        return volume_init

@@ -16,20 +16,18 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
 
     VAR_PREFIX = "KEDRO_CONFIG_"
     # defaults provided so default variables ${commit_id|dirty} work for some entries
-    ENV_DEFAULTS = {"commit_id": None, "branch_name": None}
+    ENV_DEFAULTS = {"commit_id": None, "branch_name": None, "run_id": ""}
 
     def __init__(self, conf_paths: Iterable[str]):
         super().__init__(conf_paths, globals_dict=self.read_env())
 
     def read_env(self) -> Dict:
         config = EnvTemplatedConfigLoader.ENV_DEFAULTS.copy()
-        overrides = dict(
-            [
-                (k.replace(EnvTemplatedConfigLoader.VAR_PREFIX, "").lower(), v)
-                for k, v in os.environ.copy().items()
-                if k.startswith(EnvTemplatedConfigLoader.VAR_PREFIX)
-            ]
-        )
+        overrides = {
+            k.replace(EnvTemplatedConfigLoader.VAR_PREFIX, "").lower(): v
+            for k, v in os.environ.copy().items()
+            if k.startswith(EnvTemplatedConfigLoader.VAR_PREFIX)
+        }
         config.update(**overrides)
         return config
 

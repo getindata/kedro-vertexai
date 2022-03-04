@@ -58,7 +58,8 @@ setup(
     entry_points={
         "kedro.project_commands": ["vertexai = kedro_vertexai.cli:commands"],
         "kedro.hooks": [
-            "kubeflow_mlflow_tags_hook = kedro_vertexai.hooks:mlflow_tags_hook",
+            "vertexai_mlflow_tags_hook = kedro_vertexai.hooks:mlflow_tags_hook",
+            "vertexai_cfg_hook = kedro_vertexai.hooks:env_templated_config_loader_hook",
         ],
     },
 )
