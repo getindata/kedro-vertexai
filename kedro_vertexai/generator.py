@@ -17,15 +17,9 @@ from kfp.components.structures import (
     OutputSpec,
 )
 from kfp.v2 import dsl
-
-from kedro_vertexai.auth import AuthHandler
 from kedro_vertexai.config import RunConfig
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
-from kedro_vertexai.vertex_ai.io import (
-    generate_inputs,
-    generate_mlflow_inputs,
-    generate_outputs,
-)
+from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 
 
 class PipelineGenerator:
@@ -105,7 +99,7 @@ class PipelineGenerator:
                 "--output {{$.outputs.parameters['output'].output_file}}",
                 self.run_name,
             ]
-        )
+        ).strip()
 
         spec = ComponentSpec(
             name="mlflow-start-run",
@@ -158,14 +152,6 @@ class PipelineGenerator:
         for node in node_dependencies:
             name = clean_name(node.name)
 
-            (
-                output_specs,
-                output_copy_commands,
-                output_placeholders,
-            ) = generate_outputs(node, self.catalog)
-            input_params, input_specs = generate_inputs(
-                node, node_dependencies, self.catalog
-            )
             mlflow_inputs, mlflow_tokens = generate_mlflow_inputs()
             component_params = (
                 [tracking_token, kfp_ops["mlflow-start-run"].output]
@@ -183,18 +169,15 @@ class PipelineGenerator:
             )
             node_command = " ".join(
                 [
-                    self._generate_hosts_file(),
-                    "rm -rf /home/kedro/data",
-                    "&&",
-                    f"ln -s /gcs/{self._get_data_path()} /home/kedro/data",
-                    "&&",
+                    h + " " if (h := self._generate_hosts_file()) else "",
                     mlflow_tokens + kedro_command,
                 ]
-            )
+            ).strip()
+
             spec = ComponentSpec(
                 name=name,
-                inputs=mlflow_inputs + input_specs,
-                outputs=output_specs,
+                inputs=mlflow_inputs,
+                outputs=[],
                 implementation=ContainerImplementation(
                     container=ContainerSpec(
                         image=image,
@@ -205,9 +188,7 @@ class PipelineGenerator:
                     )
                 ),
             )
-            kfp_ops[name] = self._create_kedro_op(
-                name, spec, component_params + input_params
-            )
+            kfp_ops[name] = self._create_kedro_op(name, spec, component_params)
 
         return kfp_ops
 

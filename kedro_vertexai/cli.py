@@ -116,8 +116,8 @@ def ui(ctx) -> None:
     "-o",
     "--output",
     type=str,
-    default="pipeline.yml",
-    help="Pipeline YAML definition file.",
+    default="pipeline.json",
+    help="Pipeline JSON definition file.",
 )
 @click.pass_context
 def compile(ctx, image, pipeline, output) -> None:

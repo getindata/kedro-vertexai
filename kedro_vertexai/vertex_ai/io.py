@@ -15,45 +15,6 @@ def _find_input_node(input_name, nodes):
     return [node for node in nodes if input_name in node.outputs]
 
 
-def generate_inputs(
-    node: Node, node_dependencies: Dict[Node, Set[Node]], catalog
-):
-    """
-    Generates inputs for a particular kedro node
-    """
-
-    def is_file_path_input(input_data):
-        return (
-            input_data in catalog
-            and "filepath" in catalog[input_data]
-            and ":/" not in catalog[input_data]["filepath"]
-        )
-
-    input_mapping = {
-        i: catalog[i]["filepath"] for i in node.inputs if is_file_path_input(i)
-    }
-
-    input_params_mapping = {}
-    for input_name in input_mapping:
-        input_node = _find_input_node(input_name, node_dependencies)
-        if input_node:
-            input_params_mapping[input_name] = input_node[0]
-
-    input_params = [
-        kfp.dsl.PipelineParam(
-            name=i,
-            op_name=clean_name(input_params_mapping[i].name),
-            param_type="Dataset",
-        )
-        for i in input_params_mapping
-    ]
-    input_specs = [
-        structures.InputSpec(param.name, "Dataset") for param in input_params
-    ]
-
-    return input_params, input_specs
-
-
 def get_output_type(output, catalog):
     """
     Returns Vertex output type based on the layer in Kedro catalog
