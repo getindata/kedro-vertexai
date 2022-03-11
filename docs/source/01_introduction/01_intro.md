@@ -1,21 +1,27 @@
 # Introduction
 
-## What is Kubeflow Pipelines?
+## What is GCP VertexAI Pipelines?
 
-[Kubeflow Pipelines](https://www.kubeflow.org/docs/pipelines/) is a platform for
-building and deploying portable, scalable machine learning (ML) workflows based 
-on Docker containers. It works by defining pipelines with nodes (Kubernetes objects, 
-like pod or volume) and edges (dependencies between the nodes, like passing output 
-data as input). The pipelines are stored in the versioned database, allowing user 
-to run the pipeline once or schedule the recurring run.
+[Vertex AI Pipelines](https://cloud.google.com/vertex-ai/docs/pipelines/introduction) is a Google Cloud Platform service
+that aims to deliver [Kubeflow Pipelines](https://www.kubeflow.org/docs/components/pipelines/introduction/) functionality
+in a fully managed fashion. Vertex AI Pipelines helps you to automate, monitor, and govern your ML systems by orchestrating
+your ML workflow in a serverless manner.
 
-## Why to integrate Kedro project with Pipelines?
+## Why to integrate Kedro project with Vertex AI Pipelines?
 
-Kubeflow Pipelines' main attitude is the portability. Once you define a pipeline,
-it can be started on any Kubernetes cluster. The code to execute is stored inside 
-docker images that cover not only the source itself, but all the libraries and 
-entire execution environment. Portability is also one of key Kedro aspects, as 
-the pieplines must be versionable and packagebale. Kedro, with 
-[Kedro-docker](https://github.com/quantumblacklabs/kedro-docker) plugin do a fantastic 
-job to achieve this and Kubeflow looks like a nice addon to run the pipelines 
-on powerful remote Kubernetes clusters.
+Throughout couple years of exploring ML Ops ecosystem as software developers we've been looking for
+a framework that enforces the best standards and practices regarding ML model development and Kedro 
+Framework seems like a good fit for this position, but what happens next, once you've got the code ready? 
+
+It seems like the ecosystem grown up enough so you no longer need to release models you've trained with 
+Jupyter notebook on your local machine on Sunday evening. In fact there are many tools now you can use 
+to have an elegant model delivery pipeline that is automated, reliable and in some cases can give you 
+a resource boost that's often crucial when handling complex models or a load of training data. With the 
+help of some plugins **You can develop your ML training code with Kedro and execute it using multiple 
+robust services** without changing the business logic. 
+
+We currently support:
+* Kubeflow [kedro-kubeflow](https://github.com/getindata/kedro-kubeflow)
+* Airflow on Kubernetes [kedro-airflow-k8s](https://github.com/getindata/kedro-airflow-k8s)
+
+And with this **kedro-vertexai** plugin, you can run your code on GCP Vertex AI Pipelines in a fully managed fashion 

@@ -2,22 +2,20 @@
 
 ## Kedro setup
 
-First, you need to install base Kedro package in ``<17.0`` version
-
-> Kedro 17.0 is supported by kedro-kubeflow, but [not by kedro-mlflow](https://github.com/Galileo-Galilei/kedro-mlflow/issues/144) yet, so the latest version from 0.16 family is recommended.
+First, you need to install base Kedro package
 
 ```console
-$ pip install 'kedro<0.17'
+$ pip install 'kedro'
 ```
 
 ## Plugin installation
 
 ### Install from PyPI
 
-You can install ``kedro-kubeflow`` plugin from ``PyPi`` with `pip`:
+You can install ``kedro-vertexai`` plugin from ``PyPi`` with `pip`:
 
 ```console
-pip install --upgrade kedro-kubeflow
+pip install --upgrade kedro-vertexai
 ```
 
 ### Install from sources
@@ -25,7 +23,7 @@ pip install --upgrade kedro-kubeflow
 You may want to install the develop branch which has unreleased features:
 
 ```console
-pip install git+https://github.com/getindata/kedro-kubeflow.git@develop
+pip install git+https://github.com/getindata/kedro-vertexai.git@develop
 ```
 
 ## Available commands
@@ -33,10 +31,10 @@ pip install git+https://github.com/getindata/kedro-kubeflow.git@develop
 You can check available commands by going into project directory and runnning:
 
 ```console
-$ kedro kubeflow
-Usage: kedro kubeflow [OPTIONS] COMMAND [ARGS]...
+$ kedro vertexai
+Usage: kedro vertexai [OPTIONS] COMMAND [ARGS]...
 
-  Interact with Kubeflow Pipelines
+  Interact with GCP Vertex AI Pipelines
 
 Options:
   -e, --env TEXT  Environment to use.
@@ -54,11 +52,13 @@ Commands:
 
 ### `init`
 
-`init` command takes one argument (that is the kubeflow pipelines root url) and generates sample configuration file in `conf/base/kubeflow.yaml`. The YAML file content is described in the [Configuration section](../02_installation/02_configuration.md).
+`init` command takes one argument (that is the kubeflow pipelines root url) and generates sample
+configuration file in `conf/base/vertexai.yaml`. The YAML file content is described in the 
+[Configuration section](../02_installation/02_configuration.md).
 
 ### `ui`
 
-`ui` command opens a web browser pointing to the currently configured Kubeflow Pipelines UI. It's super useful for debugging, especially while working on multiple Kubeflow installations.
+`ui` command opens a web browser pointing to the currently configured VertexAI Pipelines UI on GCP web console.
 
 ### `list-pipelines`
 
@@ -66,16 +66,9 @@ Commands:
 
 ### `compile`
 
-`compile` transforms Kedro pipeline into Argo workflow (Argo is the engine that powers Kubeflow Pipelines). The resulting `yaml` file can be uploaded to Kubeflow Pipelines via web UI.
-
-### `upload-pipeline`
-
-`upload-pipeline` compiles the pipeline and uploads it as a new pipeline version. The pipeline name is equal to the project name for simplicity.
-
-### `schedule`
-
-`schedule` creates recurring run of the previously uploaded pipeline. The cron expression (required parameter) is used to define at what schedule the pipeline should run.
+`compile` transforms Kedro pipeline into Vertex AI workflow. The
+resulting `yaml` file can be uploaded to Vertex AI Pipelines via web UI.
 
 ### `run-once`
 
-`run-once` is all-in-one command to compile the pipeline and run it in the Kubeflow environment.
+`run-once` is all-in-one command to compile the pipeline and run it in the GCP Vertex AI Pipelines environment.

@@ -13,13 +13,13 @@
 ## Release workflow
 
 1. Create the release candidate:
-    - Go to the [Prepare release](https://github.com/getindata/kedro-kubeflow/actions?query=workflow%3A%22Prepare+release%22) action.
+    - Go to the [Prepare release](https://github.com/getindata/kedro-vertexai/actions?query=workflow%3A%22Prepare+release%22) action.
     - Click "Run workflow"
     - Enter the part of the version to bump (one of `<major>.<minor>.<patch>`). Minor (x.**x**.x) is a default. 
 2. If the workflow has run sucessfully:
     - Go to the newly openened PR named `Release candidate `<version>`
     - Check that changelog and version have been properly updated. If not pull the branch and apply manual changes if necessary.
     - Merge the PR to master
-3. Checkout the [Publish](https://github.com/getindata/kedro-kubeflow/actions?query=workflow%3APublish) workflow to see if:
+3. Checkout the [Publish](https://github.com/getindata/kedro-vertexai/actions?query=workflow%3APublish) workflow to see if:
     - The package has been uploaded on PyPI successfully
     - The changes have been merged back to develop
