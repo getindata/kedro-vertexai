@@ -38,7 +38,10 @@ def commands():
 def vertexai_group(ctx, metadata, env):
     """Interact with Kubeflow Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
+    ctx.obj["context_helper"] = ContextHelper.init(
+        metadata,
+        env,
+    )
 
 
 @vertexai_group.command()
@@ -157,12 +160,15 @@ def compile(ctx, image, pipeline, output) -> None:
 )
 @click.pass_context
 def schedule(
-    ctx, pipeline: str, cron_expression: str, params: list,
+    ctx,
+    pipeline: str,
+    cron_expression: str,
+    params: list,
 ):
     """Schedules recurring execution of latest version of the pipeline"""
     logger.warning(
-        f"Scheduler functionality was temporarily disabled, "
-        f"follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
+        "Scheduler functionality was temporarily disabled, "
+        "follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
     )
 
 
@@ -206,7 +212,9 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @vertexai_group.command(hidden=True)
 @click.argument("kubeflow_run_id", type=str)
 @click.option(
-    "--output", type=str, default="/tmp/mlflow_run_id",
+    "--output",
+    type=str,
+    default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, kubeflow_run_id: str, output: str):
@@ -249,6 +257,7 @@ def delete_pipeline_volume(pvc_name: str):
     ).read()
 
     kubernetes.client.CoreV1Api().delete_namespaced_persistent_volume_claim(
-        pvc_name, current_namespace,
+        pvc_name,
+        current_namespace,
     )
     click.echo(f"Volume removed: {pvc_name}")

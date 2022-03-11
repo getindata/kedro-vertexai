@@ -104,7 +104,11 @@ class VertexAIPipelinesClient:
         )
 
     def compile(
-        self, pipeline, image, output, image_pull_policy="IfNotPresent",
+        self,
+        pipeline,
+        image,
+        output,
+        image_pull_policy="IfNotPresent",
     ):
         """
         Creates json file in given local output path
@@ -119,7 +123,8 @@ class VertexAIPipelinesClient:
             pipeline, image, image_pull_policy, token
         )
         compiler.Compiler().compile(
-            pipeline_func=pipeline_func, package_path=output,
+            pipeline_func=pipeline_func,
+            package_path=output,
         )
         self.log.info(
             "Generated pipeline definition was saved to %s", str(output)
