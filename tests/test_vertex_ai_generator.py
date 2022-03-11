@@ -110,39 +110,6 @@ class TestGenerator(unittest.TestCase):
         # then
         assert pipeline._component_description == "DESC"
 
-    def test_artifact_registration(self):
-        # given
-        self.create_generator(
-            catalog={
-                "B": {
-                    "type": "pandas.CSVDataSet",
-                    "filepath": "data/02_intermediate/b.csv",
-                },
-                "C": {
-                    "type": "pickle.PickleDataSet",
-                    "filepath": "data/06_models/model.pkl",
-                    "layer": "models",
-                },
-            }
-        )
-
-        # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.dsl.Pipeline(None) as dsl_pipeline:
-            pipeline()
-
-        # then
-        outputs1 = dsl_pipeline.ops["node1"].outputs
-        assert len(outputs1) == 2
-        assert "B" in outputs1
-        assert outputs1["B"] == PipelineParam(
-            name="B", op_name="node1", param_type="Dataset"
-        )
-        outputs2 = dsl_pipeline.ops["node2"].outputs
-        assert outputs2["C"].param_type == "Model"
-
     def test_should_skip_volume_removal_if_requested(self):
         # given
         self.create_generator(config={"volume": {"keep": True}})

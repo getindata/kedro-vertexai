@@ -1,8 +1,6 @@
 import warnings
 import os
 from typing import Iterable
-from distutils.util import strtobool
-
 from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
 from kedro.io import DataCatalog
