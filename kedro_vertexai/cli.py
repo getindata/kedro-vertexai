@@ -38,7 +38,10 @@ def commands():
 def vertexai_group(ctx, metadata, env):
     """Interact with Kubeflow Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
+    ctx.obj["context_helper"] = ContextHelper.init(
+        metadata,
+        env,
+    )
 
 
 @vertexai_group.command()
@@ -264,7 +267,9 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @vertexai_group.command(hidden=True)
 @click.argument("kubeflow_run_id", type=str)
 @click.option(
-    "--output", type=str, default="/tmp/mlflow_run_id",
+    "--output",
+    type=str,
+    default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, kubeflow_run_id: str, output: str):
@@ -307,6 +312,7 @@ def delete_pipeline_volume(pvc_name: str):
     ).read()
 
     kubernetes.client.CoreV1Api().delete_namespaced_persistent_volume_claim(
-        pvc_name, current_namespace,
+        pvc_name,
+        current_namespace,
     )
     click.echo(f"Volume removed: {pvc_name}")

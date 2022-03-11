@@ -2,11 +2,12 @@
 Vertex AI Pipelines specific client, based on AIPlatformClient.
 """
 
+import datetime as dt
 import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-import datetime as dt
+
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
@@ -106,7 +107,11 @@ class VertexAIPipelinesClient:
         )
 
     def compile(
-        self, pipeline, image, output, image_pull_policy="IfNotPresent",
+        self,
+        pipeline,
+        image,
+        output,
+        image_pull_policy="IfNotPresent",
     ):
         """
         Creates json file in given local output path
@@ -121,7 +126,8 @@ class VertexAIPipelinesClient:
             pipeline, image, image_pull_policy, token
         )
         compiler.Compiler().compile(
-            pipeline_func=pipeline_func, package_path=output,
+            pipeline_func=pipeline_func,
+            package_path=output,
         )
         self.log.info(
             "Generated pipeline definition was saved to %s", str(output)

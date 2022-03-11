@@ -3,9 +3,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from kedro_vertexai.client import VertexAIPipelinesClient
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.utils import strip_margin
-from kedro_vertexai.client import VertexAIPipelinesClient
 
 
 class TestKubeflowClient(unittest.TestCase):

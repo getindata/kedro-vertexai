@@ -13,13 +13,13 @@ from kedro_vertexai.cli import (
     compile,
     delete_pipeline_volume,
     init,
-    vertexai_group,
     list_pipelines,
     mlflow_start,
     run_once,
     schedule,
     ui,
     upload_pipeline,
+    vertexai_group,
 )
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.context_helper import ContextHelper
@@ -62,7 +62,14 @@ class TestPluginCLI(unittest.TestCase):
 
         result = runner.invoke(
             run_once,
-            ["-i", "new_img", "-p", "new_pipe", "--param", "key1:some value",],
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+            ],
             obj=config,
         )
 
@@ -244,7 +251,10 @@ class TestPluginCLI(unittest.TestCase):
             "builtins.open", um.mock_open(read_data="unittest-namespace")
         ):
             runner = CliRunner()
-            result = runner.invoke(delete_pipeline_volume, ["workflow-name"],)
+            result = runner.invoke(
+                delete_pipeline_volume,
+                ["workflow-name"],
+            )
             assert result.exit_code == 0
             core_api = k8s_client_mock.CoreV1Api()
             core_api.delete_namespaced_persistent_volume_claim.assert_called_with(
