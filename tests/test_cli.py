@@ -90,7 +90,8 @@ class TestPluginCLI(unittest.TestCase):
 
         assert result.exit_code == 0
         open_new_tab.assert_called_with(
-            f"https://console.cloud.google.com/vertex-ai/pipelines?project={context_helper.config.project_id}"
+            f"https://console.cloud.google.com/vertex-ai/"
+            f"pipelines?project={context_helper.config.project_id}"
         )
 
     def test_compile(self):

@@ -50,8 +50,9 @@ else:
         pass
 
     warnings.warn(
-        "KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set and EnvTemplatedConfigLoader will not be used"
-        " which means formatted config values like ${run_id} will not be substituted at runtime"
+        "KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set "
+        "and EnvTemplatedConfigLoader will not be used which means formatted "
+        "config values like ${run_id} will not be substituted at runtime"
     )
 
 mlflow_iap_hook = MlflowIapAuthHook()
