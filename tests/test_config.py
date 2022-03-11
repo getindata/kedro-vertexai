@@ -7,14 +7,13 @@ from kedro_vertexai.config import PluginConfig
 
 CONFIG_YAML = """
 project_id: test-project-id
+region: some-region
 run_config:
   image: "gcr.io/project-image/test"
   image_pull_policy: "Always"
   experiment_name: "Test Experiment"
-  run_name: "test run"
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
-  wait_for_completion: True
   ttl: 300
   volume:
     storageclass: default
@@ -24,7 +23,6 @@ run_config:
 """
 
 VERTEX_YAML = """
-host: vertex-ai-pipelines
 project_id: some-project
 region: some-region
 run_config:
@@ -42,9 +40,7 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.image == "gcr.io/project-image/test"
         assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
-        assert cfg.run_config.run_name == "test run"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
-        assert cfg.run_config.wait_for_completion
         assert cfg.run_config.resources.is_set_for("node1") is False
         assert cfg.run_config.description == "My awesome pipeline"
         assert cfg.run_config.ttl == 300
@@ -119,6 +115,12 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.vertex_ai_networking.host_aliases == {}
 
     def test_reuse_run_name_for_scheduled_run_name(self):
-        cfg = PluginConfig({"run_config": {"run_name": "some run"}})
-        assert cfg.run_config.run_name == "some run"
+        cfg = PluginConfig(
+            {
+                "run_config": {
+                    "scheduled_run_name": "some run",
+                    "experiment_name": "test",
+                }
+            }
+        )
         assert cfg.run_config.scheduled_run_name == "some run"

@@ -18,7 +18,6 @@ from kedro_vertexai.cli import (
     run_once,
     schedule,
     ui,
-    upload_pipeline,
     vertexai_group,
 )
 from kedro_vertexai.config import PluginConfig
@@ -32,7 +31,6 @@ test_config = PluginConfig(
             "image_pull_policy": "Always",
             "experiment_name": "Test Experiment",
             "run_name": "test run",
-            "wait_for_completion": True,
             "volume": {
                 "storageclass": "default",
                 "size": "3Gi",
@@ -62,14 +60,7 @@ class TestPluginCLI(unittest.TestCase):
 
         result = runner.invoke(
             run_once,
-            [
-                "-i",
-                "new_img",
-                "-p",
-                "new_pipe",
-                "--param",
-                "key1:some value",
-            ],
+            ["-i", "new_img", "-p", "new_pipe", "--param", "key1:some value",],
             obj=config,
         )
 
@@ -78,7 +69,6 @@ class TestPluginCLI(unittest.TestCase):
             image="new_img",
             image_pull_policy="Always",
             pipeline="new_pipe",
-            wait=True,
             parameters={"key1": "some value"},
         )
 
@@ -114,21 +104,9 @@ class TestPluginCLI(unittest.TestCase):
             pipeline="pipe",
         )
 
-    def test_upload_pipeline(self):
-        context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
-        config = dict(context_helper=context_helper)
-        runner = CliRunner()
-
-        result = runner.invoke(
-            upload_pipeline, ["-p", "pipe", "-i", "img"], obj=config
-        )
-
-        assert result.exit_code == 0
-        context_helper.vertexai_client.upload.assert_called_with(
-            image="img", image_pull_policy="Always", pipeline_name="pipe"
-        )
-
+    @unittest.skip(
+        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
+    )
     def test_schedule(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
@@ -140,8 +118,6 @@ class TestPluginCLI(unittest.TestCase):
             [
                 "-c",
                 "* * *",
-                "-x",
-                "test_experiment",
                 "-p",
                 "my-pipeline",
                 "--param",
@@ -251,10 +227,7 @@ class TestPluginCLI(unittest.TestCase):
             "builtins.open", um.mock_open(read_data="unittest-namespace")
         ):
             runner = CliRunner()
-            result = runner.invoke(
-                delete_pipeline_volume,
-                ["workflow-name"],
-            )
+            result = runner.invoke(delete_pipeline_volume, ["workflow-name"],)
             assert result.exit_code == 0
             core_api = k8s_client_mock.CoreV1Api()
             core_api.delete_namespaced_persistent_volume_claim.assert_called_with(

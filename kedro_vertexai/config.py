@@ -20,17 +20,11 @@ run_config:
   # Name of the kubeflow experiment to be created
   experiment_name: {project}
 
-  # Name of the run for run-once, templated with the run-once parameters
-  run_name: {run_name}
-
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: {run_name}
 
   # Optional pipeline description
   #description: "Very Important Pipeline"
-
-  # Flag indicating if the run-once should wait for the pipeline to finish
-  wait_for_completion: False
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
@@ -129,13 +123,9 @@ class RunConfig(Config):
         return self._get_or_fail("experiment_name")
 
     @property
-    def run_name(self):
-        return self._get_or_fail("run_name")
-
-    @property
     def scheduled_run_name(self):
         return self._get_or_default(
-            "scheduled_run_name", self._get_or_fail("run_name")
+            "scheduled_run_name", self._get_or_fail("experiment_name")
         )
 
     @property
@@ -145,10 +135,6 @@ class RunConfig(Config):
     @property
     def resources(self):
         return NodeResources(self._get_or_default("resources", {}))
-
-    @property
-    def wait_for_completion(self):
-        return bool(self._get_or_default("wait_for_completion", False))
 
     @property
     def store_kedro_outputs_as_kfp_artifacts(self):

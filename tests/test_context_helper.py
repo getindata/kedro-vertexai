@@ -64,7 +64,6 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
         config = self.get_config()
         assert config["run_config"]["image"] == "gcr.io/project-image/dirty"
         assert config["run_config"]["experiment_name"] == "[Test] local"
-        assert config["run_config"]["run_name"] == "dirty"
 
     def test_loader_with_env(self):
         with environment(
@@ -78,4 +77,3 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
 
         assert config["run_config"]["image"] == "gcr.io/project-image/123abc"
         assert config["run_config"]["experiment_name"] == "[Test] feature-1"
-        assert config["run_config"]["run_name"] == "123abc"
