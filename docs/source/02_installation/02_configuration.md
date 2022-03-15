@@ -1,32 +1,34 @@
 # Configuration
 
-Plugin maintains the configuration in the `conf/base/kubeflow.yaml` file. Sample configuration can be generated using `kedro kubeflow init`:
+Plugin maintains the configuration in the `conf/base/vertexai.yaml` file. Sample configuration can be generated using `kedro vertexai init`:
 
 ```yaml
-# Base url of the Kubeflow Pipelines, should include the schema (http/https)
-host: https://kubeflow.example.com/pipelines
 
 # Configuration used to run the pipeline
+project_id: my-gcp-mlops-project
+region: us-central1
 run_config:
-
   # Name of the image to run as the pipeline steps
-  image: kubeflow-plugin-demo
+  image: us.gcr.io/my-gcp-mlops-project/example_model:${commit_id}
 
-  # Pull pilicy to be used for the steps. Use Always if you push the images
+  # Pull policy to be used for the steps. Use Always if you push the images
   # on the same tag, or Never if you use only local images
   image_pull_policy: IfNotPresent
-  
-  # Location of Vertex AI GCS root, required only for vertex ai pipelines configuration
-  root: bucket_name/gcs_suffix
+
+  # Location of Vertex AI GCS root
+  root: my-gcp-mlops-project-staging-bucket
 
   # Name of the kubeflow experiment to be created
-  experiment_name: Kubeflow Plugin Demo
+  experiment_name: example-model
 
-  # Name of the run for run-once
-  run_name: Kubeflow Plugin Demo Run
+  # Name of the run for run-once, templated with the run-once parameters
+  run_name: example-model-${run_id}
+
+  # Name of the scheduled run, templated with the schedule parameters
+  scheduled_run_name: example-model
 
   # Optional pipeline description
-  description: Very Important Pipeline
+  #description: "Very Important Pipeline"
 
   # Flag indicating if the run-once should wait for the pipeline to finish
   wait_for_completion: False
@@ -35,33 +37,9 @@ run_config:
   # volume after pipeline finishes) [in seconds]. Default: 1 week
   ttl: 604800
 
-  # Optional volume specification
-  volume:
-
-    # Storage class - use null (or no value) to use the default storage
-    # class deployed on the Kubernetes cluster
-    storageclass: # default
-
-    # The size of the volume that is created. Applicable for some storage
-    # classes
-    size: 1Gi
-
-    # Access mode of the volume used to exchange data. ReadWriteMany is
-    # preferred, but it is not supported on some environements (like GKE)
-    # Default value: ReadWriteOnce
-    #access_modes: [ReadWriteMany]
-
-    # Flag indicating if the data-volume-init step (copying raw data to the
-    # fresh volume) should be skipped
-    skip_init: False
-
-    # Allows to specify user executing pipelines within containers
-    # Default: root user (to avoid issues with volumes in GKE)
-    owner: 0
-
-    # Flak indicating if volume for inter-node data exchange should be
-    # kept after the pipeline is deleted
-    keep: False
+  # What Kedro pipeline should be run as the last step regardless of the
+  # pipeline status. Used to send notifications or raise the alerts
+  # on_exit_pipeline: notify_via_slack
 
   # Optional section allowing adjustment of the resources
   # reservations and limits for the nodes
@@ -89,7 +67,7 @@ run_config:
 
 ## Dynamic configuration support
 
-`kedro-kubeflow` contains hook that enables [TemplatedConfigLoader](https://kedro.readthedocs.io/en/stable/kedro.config.TemplatedConfigLoader.html).
+`kedro-vertexai` contains hook that enables [TemplatedConfigLoader](https://kedro.readthedocs.io/en/stable/kedro.config.TemplatedConfigLoader.html).
 It allows passing environment variables to configuration files. It reads all environment variables following `KEDRO_CONFIG_<NAME>` pattern, which you 
 can later inject in configuration file using `${name}` syntax. 
 

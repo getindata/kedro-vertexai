@@ -36,7 +36,7 @@ def commands():
 @click.pass_obj
 @click.pass_context
 def vertexai_group(ctx, metadata, env):
-    """Interact with Kubeflow Pipelines"""
+    """Interact with Google Cloud Platform :: Vertex AI Pipelines"""
     ctx.ensure_object(dict)
     ctx.obj["context_helper"] = ContextHelper.init(
         metadata,
@@ -92,7 +92,7 @@ def run_once(ctx, image: str, pipeline: str, params: list):
 @vertexai_group.command()
 @click.pass_context
 def ui(ctx) -> None:
-    """Open Kubeflow Pipelines UI in new browser tab"""
+    """Open VertexAI Pipelines UI in new browser tab"""
     vertex_ai_url = "https://console.cloud.google.com/vertex-ai/pipelines?project={}".format(
         ctx.obj["context_helper"].config.project_id
     )
