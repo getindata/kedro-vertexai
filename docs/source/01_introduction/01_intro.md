@@ -25,3 +25,5 @@ We currently support:
 * Airflow on Kubernetes [kedro-airflow-k8s](https://github.com/getindata/kedro-airflow-k8s)
 
 And with this **kedro-vertexai** plugin, you can run your code on GCP Vertex AI Pipelines in a fully managed fashion 
+
+![VertexAi](vertex_ai_pipelines.png)
