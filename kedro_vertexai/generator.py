@@ -17,6 +17,7 @@ from kfp.components.structures import (
     OutputSpec,
 )
 from kfp.v2 import dsl
+
 from kedro_vertexai.config import RunConfig
 from kedro_vertexai.constants import KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED

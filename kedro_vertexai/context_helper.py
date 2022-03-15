@@ -6,7 +6,9 @@ from typing import Dict, Iterable
 from kedro import __version__ as kedro_version
 from kedro.config import TemplatedConfigLoader
 from semver import VersionInfo
+
 from kedro_vertexai.client import VertexAIPipelinesClient
+
 from .config import PluginConfig
 
 

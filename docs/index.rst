@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Kedro Kubeflow Plugin's documentation!
+Welcome to Kedro (Google Cloud Platform) VertexAI Plugin's documentation!
 =================================================
 
 .. toctree::
@@ -12,7 +12,7 @@ Welcome to Kedro Kubeflow Plugin's documentation!
 
    Introduction <source/01_introduction/01_intro.md>
    Installation <source/02_installation/index.rst>
-   Getting Started <source/03_getting_started/index.rst>
+
 
 Indices and tables
 ==================

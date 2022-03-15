@@ -2,11 +2,12 @@
 Vertex AI Pipelines specific client, based on AIPlatformClient.
 """
 
+import datetime as dt
 import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-import datetime as dt
+
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
@@ -65,16 +66,13 @@ class VertexAIPipelinesClient:
         self,
         pipeline,
         image,
-        wait=False,
         image_pull_policy="IfNotPresent",
-        parameters={},
+        parameters=None,
     ):
         """
         Runs the pipeline in Vertex AI Pipelines
         :param pipeline:
         :param image:
-        :param experiment_name:
-        :param wait:
         :param image_pull_policy:
         :return:
         """
@@ -93,7 +91,7 @@ class VertexAIPipelinesClient:
                 job_spec_path=spec_output.name,
                 job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
-                parameter_values={},
+                parameter_values=parameters or {},
                 enable_caching=False,
                 network=self.run_config.vertex_ai_networking.vpc,
             )
@@ -106,7 +104,11 @@ class VertexAIPipelinesClient:
         )
 
     def compile(
-        self, pipeline, image, output, image_pull_policy="IfNotPresent",
+        self,
+        pipeline,
+        image,
+        output,
+        image_pull_policy="IfNotPresent",
     ):
         """
         Creates json file in given local output path
@@ -116,26 +118,17 @@ class VertexAIPipelinesClient:
         :param image_pull_policy:
         :return:
         """
-        token = os.getenv("MLFLOW_TRACKING_TOKEN")
+        token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
         pipeline_func = self.generator.generate_pipeline(
             pipeline, image, image_pull_policy, token
         )
         compiler.Compiler().compile(
-            pipeline_func=pipeline_func, package_path=output,
+            pipeline_func=pipeline_func,
+            package_path=output,
         )
         self.log.info(
             "Generated pipeline definition was saved to %s", str(output)
         )
-
-    def upload(self, pipeline, image, image_pull_policy="IfNotPresent"):
-        """
-        Upload is not supported by Vertex AI Pipelines
-        :param pipeline:
-        :param image:
-        :param image_pull_policy:
-        :return:
-        """
-        raise NotImplementedError("Upload is not supported for VertexAI")
 
     def _cleanup_old_schedule(self, pipeline_name):
         """
@@ -158,17 +151,15 @@ class VertexAIPipelinesClient:
     def schedule(
         self,
         pipeline,
-        experiment_name,
-        experiment_namespace,
         cron_expression,
+        parameter_values=None,
         image_pull_policy="IfNotPresent",
     ):
         """
         Schedule pipeline to Vertex AI with given cron expression
         :param pipeline:
-        :param experiment_name:
-        :param experiment_namespace:
         :param cron_expression:
+        :param parameter_values:
         :param image_pull_policy:
         :return:
         """
@@ -188,6 +179,7 @@ class VertexAIPipelinesClient:
                 schedule=cron_expression,
                 pipeline_root=f"gs://{self.run_config.root}",
                 enable_caching=False,
+                parameter_values=parameter_values or {},
             )
 
             self.log.info("Pipeline scheduled to %s", cron_expression)

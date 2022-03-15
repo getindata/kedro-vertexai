@@ -5,7 +5,6 @@ from unittest.mock import MagicMock
 
 import kfp
 from kedro.pipeline import Pipeline, node
-from kfp.dsl import PipelineParam
 
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.generator import PipelineGenerator

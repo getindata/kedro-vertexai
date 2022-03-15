@@ -19,8 +19,8 @@ from kedro_vertexai import version as release
 
 # -- Project information -----------------------------------------------------
 
-project = "Kedro Kubeflow Plugin"
-copyright = "2020, GetInData"
+project = "Kedro Vertex AI Plugin"
+copyright = "2022, GetInData"
 author = "GetInData"
 
 # The full version, including alpha/beta/rc tags
