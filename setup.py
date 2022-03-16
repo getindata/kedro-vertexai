@@ -35,7 +35,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-vertexai",
-    version="0.0.1",
+    version="0.1.0",
     description="Kedro plugin with Vertex AI support",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -43,7 +43,6 @@ setup(
     python_requires=">=3",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
     keywords="kedro Vertex AI plugin",

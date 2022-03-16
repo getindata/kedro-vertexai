@@ -9,7 +9,7 @@ from .auth import AuthHandler
 from .config import PluginConfig
 from .context_helper import ContextHelper
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def format_params(params: list):
@@ -36,9 +36,12 @@ def commands():
 @click.pass_obj
 @click.pass_context
 def vertexai_group(ctx, metadata, env):
-    """Interact with Kubeflow Pipelines"""
+    """Interact with Google Cloud Platform :: Vertex AI Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
+    ctx.obj["context_helper"] = ContextHelper.init(
+        metadata,
+        env,
+    )
 
 
 @vertexai_group.command()
@@ -81,7 +84,6 @@ def run_once(ctx, image: str, pipeline: str, params: list):
     context_helper.vertexai_client.run_once(
         pipeline=pipeline,
         image=image if image else config.image,
-        wait=config.wait_for_completion,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
@@ -90,7 +92,7 @@ def run_once(ctx, image: str, pipeline: str, params: list):
 @vertexai_group.command()
 @click.pass_context
 def ui(ctx) -> None:
-    """Open Kubeflow Pipelines UI in new browser tab"""
+    """Open VertexAI Pipelines UI in new browser tab"""
     vertex_ai_url = "https://console.cloud.google.com/vertex-ai/pipelines?project={}".format(
         ctx.obj["context_helper"].config.project_id
     )
@@ -135,34 +137,6 @@ def compile(ctx, image, pipeline, output) -> None:
 
 @vertexai_group.command()
 @click.option(
-    "-i",
-    "--image",
-    type=str,
-    help="Docker image to use for pipeline execution.",
-)
-@click.option(
-    "-p",
-    "--pipeline",
-    "pipeline",
-    type=str,
-    help="Name of pipeline to upload",
-    default="__default__",
-)
-@click.pass_context
-def upload_pipeline(ctx, image, pipeline) -> None:
-    """Uploads pipeline to Kubeflow server"""
-    context_helper = ctx.obj["context_helper"]
-    config = context_helper.config.run_config
-
-    context_helper.vertexai_client.upload(
-        pipeline_name=pipeline,
-        image=image if image else config.image,
-        image_pull_policy=config.image_pull_policy,
-    )
-
-
-@vertexai_group.command()
-@click.option(
     "-p",
     "--pipeline",
     "pipeline",
@@ -175,23 +149,7 @@ def upload_pipeline(ctx, image, pipeline) -> None:
     "--cron-expression",
     type=str,
     help="Cron expression for recurring run",
-    required=True,
-)
-@click.option(
-    "-x",
-    "--experiment-name",
-    "experiment_name",
-    type=str,
-    help="Name of experiment associated with this run.",
-)
-@click.option(
-    "-en",
-    "--experiment-namespace",
-    "experiment_namespace",
-    type=str,
-    default=None,
-    help="Namespace where pipeline experiment run should be deployed to. Not needed "
-    "if provided experiment name already exists.",
+    required=False,
 )
 @click.option(
     "--param",
@@ -204,23 +162,13 @@ def upload_pipeline(ctx, image, pipeline) -> None:
 def schedule(
     ctx,
     pipeline: str,
-    experiment_namespace: str,
-    experiment_name: str,
     cron_expression: str,
     params: list,
 ):
     """Schedules recurring execution of latest version of the pipeline"""
-    context_helper = ctx.obj["context_helper"]
-    config = context_helper.config.run_config
-    experiment = experiment_name if experiment_name else config.experiment_name
-
-    context_helper.vertexai_client.schedule(
-        pipeline,
-        experiment,
-        experiment_namespace,
-        cron_expression,
-        run_name=config.scheduled_run_name,
-        parameters=format_params(params),
+    logger.warning(
+        "Scheduler functionality was temporarily disabled, "
+        "follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
     )
 
 
@@ -264,7 +212,9 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @vertexai_group.command(hidden=True)
 @click.argument("kubeflow_run_id", type=str)
 @click.option(
-    "--output", type=str, default="/tmp/mlflow_run_id",
+    "--output",
+    type=str,
+    default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, kubeflow_run_id: str, output: str):
@@ -274,7 +224,7 @@ def mlflow_start(ctx, kubeflow_run_id: str, output: str):
     token = AuthHandler().obtain_id_token()
     if token:
         os.environ["MLFLOW_TRACKING_TOKEN"] = token
-        LOG.info("Configuring MLFLOW_TRACKING_TOKEN")
+        logger.info("Configuring MLFLOW_TRACKING_TOKEN")
 
     try:
         kedro_context = ctx.obj["context_helper"].context
@@ -307,6 +257,7 @@ def delete_pipeline_volume(pvc_name: str):
     ).read()
 
     kubernetes.client.CoreV1Api().delete_namespaced_persistent_volume_claim(
-        pvc_name, current_namespace,
+        pvc_name,
+        current_namespace,
     )
     click.echo(f"Volume removed: {pvc_name}")

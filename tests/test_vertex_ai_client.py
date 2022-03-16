@@ -3,9 +3,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
+from kedro_vertexai.client import VertexAIPipelinesClient
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.utils import strip_margin
-from kedro_vertexai.client import VertexAIPipelinesClient
 
 
 class TestKubeflowClient(unittest.TestCase):
@@ -41,15 +41,6 @@ class TestKubeflowClient(unittest.TestCase):
 
             compiler.compile.assert_called_once()
 
-    def test_upload_not_supported_by_vertex_ai(self):
-        with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ):
-            client_under_test = self.create_client()
-
-            with self.assertRaises(NotImplementedError):
-                client_under_test.upload(MagicMock("pipeline"), "image")
-
     def test_run_once(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
             "kedro_vertexai.client.AIPlatformClient"
@@ -59,9 +50,7 @@ class TestKubeflowClient(unittest.TestCase):
             run_mock = {"run": "mock"}
             ai_client.create_run_from_job_spec.return_value = run_mock
             client_under_test = self.create_client()
-            run = client_under_test.run_once(
-                MagicMock("pipeline"), "image", None, "test-run"
-            )
+            run = client_under_test.run_once(MagicMock("pipeline"), "image")
 
             assert run_mock == run
             _, kwargs = ai_client.create_run_from_job_spec.call_args
@@ -102,6 +91,9 @@ class TestKubeflowClient(unittest.TestCase):
             |        projects/123/locations/europe-west4/pipelineJobs/no-display-name"""
             assert tabulation == strip_margin(expected_output)
 
+    @unittest.skip(
+        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
+    )
     def test_should_schedule_pipeline(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
             "kedro_vertexai.client.AIPlatformClient"
@@ -113,7 +105,7 @@ class TestKubeflowClient(unittest.TestCase):
                 MagicMock("pipeline"), None, None, "0 0 12 * *"
             )
 
-            ai_client.create_schedule_from_job_spec.assert_called_once()
+            ai_client.create_schedule_from_job_spec.assert_not_called()
             args, kwargs = ai_client.create_schedule_from_job_spec.call_args
             assert kwargs["time_zone"] == "Etc/UTC"
             assert kwargs["enable_caching"] is False

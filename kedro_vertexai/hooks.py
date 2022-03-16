@@ -1,7 +1,6 @@
-import warnings
 import os
+import warnings
 from typing import Iterable
-from distutils.util import strtobool
 
 from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
@@ -45,15 +44,15 @@ if not CONFIG_HOOK_DISABLED:
         ) -> ConfigLoader:
             return EnvTemplatedConfigLoader(conf_paths)
 
-
 else:
 
     class KedoVertexAIConfigLoaderHook:
         pass
 
     warnings.warn(
-        f"KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set and EnvTemplatedConfigLoader will not be used"
-        " which means formatted config values like ${run_id} will not be substituted at runtime"
+        "KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set "
+        "and EnvTemplatedConfigLoader will not be used which means formatted "
+        "config values like ${run_id} will not be substituted at runtime"
     )
 
 mlflow_iap_hook = MlflowIapAuthHook()

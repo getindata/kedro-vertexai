@@ -22,10 +22,10 @@ class TestMlflowIapAuthHook(unittest.TestCase):
 @patch.object(mlflow, "set_tag")
 class TestMlflowTagsHook(unittest.TestCase):
     def test_should_set_mlflow_tags(self, mlflow_set_tag):
-        with environment({"KUBEFLOW_RUN_ID": "KFP_123"}):
+        with environment({"KEDRO_CONFIG_RUN_ID": "KFP_123"}):
             MlflowTagsHook().before_node_run()
 
-        mlflow_set_tag.assert_called_with("kubeflow_run_id", "KFP_123")
+        mlflow_set_tag.assert_called_with("vertexai_run_id", "KFP_123")
 
     def test_should_not_set_mlflow_tags_when_kubeflow_run_id_env_is_not_set(
         self, mlflow_set_tag
