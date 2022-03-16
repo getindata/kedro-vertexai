@@ -43,7 +43,6 @@ setup(
     python_requires=">=3",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
     keywords="kedro Vertex AI plugin",
