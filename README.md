@@ -3,7 +3,7 @@
 ### THIS PLUGIN IS A WORK IN PROGRESS NOT READY TO BE PUBLISHED YET
 
 
-[![Python Version](https://img.shields.io/badge/python-3.7%20%7C%203.8-blue.svg)](https://github.com/getindata/kedro-vertexai)
+[![Python Version](https://img.shields.io/badge/python-3.8-blue.svg)](https://github.com/getindata/kedro-vertexai)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
 [![SemVer](https://img.shields.io/badge/semver-2.0.0-green)](https://semver.org/)
 [![PyPI version](https://badge.fury.io/py/kedro-vertexai.svg)](https://pypi.org/project/kedro-vertexai/)
