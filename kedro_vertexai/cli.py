@@ -13,6 +13,7 @@ from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,10 +43,7 @@ def commands():
 def vertexai_group(ctx, metadata, env):
     """Interact with Google Cloud Platform :: Vertex AI Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(
-        metadata,
-        env,
-    )
+    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
 
 
 @vertexai_group.command()
@@ -193,10 +191,7 @@ def compile(ctx, image, pipeline, output) -> None:
 )
 @click.pass_context
 def schedule(
-    ctx,
-    pipeline: str,
-    cron_expression: str,
-    params: list,
+    ctx, pipeline: str, cron_expression: str, params: list,
 ):
     """Schedules recurring execution of latest version of the pipeline"""
     logger.warning(
@@ -245,9 +240,7 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @vertexai_group.command(hidden=True)
 @click.argument("run_id", type=str)
 @click.option(
-    "--output",
-    type=str,
-    default="/tmp/mlflow_run_id",
+    "--output", type=str, default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, run_id: str, output: str):

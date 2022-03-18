@@ -60,14 +60,7 @@ class TestPluginCLI(unittest.TestCase):
 
         result = runner.invoke(
             run_once,
-            [
-                "-i",
-                "new_img",
-                "-p",
-                "new_pipe",
-                "--param",
-                "key1:some value",
-            ],
+            ["-i", "new_img", "-p", "new_pipe", "--param", "key1:some value",],
             obj=config,
         )
 

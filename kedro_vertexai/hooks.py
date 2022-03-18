@@ -45,6 +45,7 @@ if not CONFIG_HOOK_DISABLED:
         ) -> ConfigLoader:
             return EnvTemplatedConfigLoader(conf_paths)
 
+
 else:
 
     class KedoVertexAIConfigLoaderHook:
