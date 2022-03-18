@@ -12,6 +12,7 @@ Welcome to Kedro (Google Cloud Platform) VertexAI Plugin's documentation!
 
    Introduction <source/01_introduction/01_intro.md>
    Installation <source/02_installation/index.rst>
+   Quick start <source/03_getting_started/index.rst>
 
 
 Indices and tables

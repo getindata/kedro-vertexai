@@ -13,6 +13,7 @@ INSTALL_REQUIRES = [
     "semver~=2.10",
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
+    "gcsfs>=2021.11.1",
 ]
 
 # Dev Requirements

@@ -1,6 +1,5 @@
 import os
 import unittest
-import unittest.mock as um
 from collections import namedtuple
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,7 +10,6 @@ from click.testing import CliRunner
 
 from kedro_vertexai.cli import (
     compile,
-    delete_pipeline_volume,
     init,
     list_pipelines,
     mlflow_start,
@@ -21,6 +19,7 @@ from kedro_vertexai.cli import (
     vertexai_group,
 )
 from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 
 test_config = PluginConfig(
@@ -190,15 +189,7 @@ class TestPluginCLI(unittest.TestCase):
             on_push_actions = path / ".github" / "workflows" / "on-push.yml"
             assert on_push_actions.exists()
             with open(on_push_actions, "r") as f:
-                assert "kedro kubeflow run-once" in f.read()
-            on_merge_actions = (
-                path / ".github" / "workflows" / "on-merge-to-master.yml"
-            )
-            assert on_merge_actions.exists()
-            with open(on_merge_actions, "r") as f:
-                content = f.read()
-                assert "kedro kubeflow upload-pipeline" in content
-                assert "kedro kubeflow schedule" in content
+                assert "kedro vertexai run-once" in f.read()
 
     @patch("kedro_mlflow.framework.context.get_mlflow_config")
     @patch("mlflow.start_run")
@@ -217,7 +208,7 @@ class TestPluginCLI(unittest.TestCase):
             run_id_file_path = f"{temp_dir}/run_id"
             result = runner.invoke(
                 mlflow_start,
-                ["KUBEFLOW_RUN_ID", "--output", run_id_file_path],
+                ["test-run-id", "--output", run_id_file_path],
                 obj=config,
             )
 
@@ -226,24 +217,7 @@ class TestPluginCLI(unittest.TestCase):
             with open(run_id_file_path) as f:
                 assert f.read() == "MLFLOW_RUN_ID"
 
-        set_tag_mock.assert_called_with("kubeflow_run_id", "KUBEFLOW_RUN_ID")
-
-    @patch("kubernetes.client")
-    @patch("kubernetes.config")
-    def test_delete_pipeline_volume(self, k8s_config_mock, k8s_client_mock):
-        with um.patch(
-            "builtins.open", um.mock_open(read_data="unittest-namespace")
-        ):
-            runner = CliRunner()
-            result = runner.invoke(
-                delete_pipeline_volume,
-                ["workflow-name"],
-            )
-            assert result.exit_code == 0
-            core_api = k8s_client_mock.CoreV1Api()
-            core_api.delete_namespaced_persistent_volume_claim.assert_called_with(
-                "workflow-name", "unittest-namespace"
-            )
+        set_tag_mock.assert_called_with(VERTEXAI_RUN_ID_TAG, "test-run-id")
 
     @patch.object(ContextHelper, "init")
     def test_handle_env_arguments(self, context_helper_init):
