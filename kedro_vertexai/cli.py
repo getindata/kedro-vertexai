@@ -7,6 +7,7 @@ import click
 
 from .auth import AuthHandler
 from .config import PluginConfig
+from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ def format_params(params: list):
 
 @click.group("VertexAI")
 def commands():
-    """Kedro plugin adding support for Kubeflow Pipelines"""
+    """Kedro plugin adding support for Vertex AI Pipelines"""
     pass
 
 
@@ -76,7 +77,7 @@ def list_pipelines(ctx):
 )
 @click.pass_context
 def run_once(ctx, image: str, pipeline: str, params: list):
-    """Deploy pipeline as a single run within given experiment.
+    """Deploy pipeline as a single run within given experiment
     Config can be specified in kubeflow.yml as well."""
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
@@ -123,7 +124,7 @@ def ui(ctx) -> None:
 )
 @click.pass_context
 def compile(ctx, image, pipeline, output) -> None:
-    """Translates Kedro pipeline into YAML file with Kubeflow Pipeline definition"""
+    """Translates Kedro pipeline into JSON file with VertexAI pipeline definition"""
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
 
@@ -210,14 +211,14 @@ def init(ctx, project_id, region, with_github_actions: bool):
 
 
 @vertexai_group.command(hidden=True)
-@click.argument("kubeflow_run_id", type=str)
+@click.argument("run_id", type=str)
 @click.option(
     "--output",
     type=str,
     default="/tmp/mlflow_run_id",
 )
 @click.pass_context
-def mlflow_start(ctx, kubeflow_run_id: str, output: str):
+def mlflow_start(ctx, run_id: str, output: str):
     import mlflow
     from kedro_mlflow.framework.context import get_mlflow_config
 
@@ -239,25 +240,7 @@ def mlflow_start(ctx, kubeflow_run_id: str, output: str):
     run = mlflow.start_run(
         experiment_id=mlflow_conf.experiment.experiment_id, nested=False
     )
-    mlflow.set_tag("kubeflow_run_id", kubeflow_run_id)
+    mlflow.set_tag(VERTEXAI_RUN_ID_TAG, run_id)
     with open(output, "w") as f:
         f.write(run.info.run_id)
     click.echo(f"Started run: {run.info.run_id}")
-
-
-@vertexai_group.command(hidden=True)
-@click.argument("pvc_name", type=str)
-def delete_pipeline_volume(pvc_name: str):
-    import kubernetes.client
-    import kubernetes.config
-
-    kubernetes.config.load_incluster_config()
-    current_namespace = open(
-        "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-    ).read()
-
-    kubernetes.client.CoreV1Api().delete_namespaced_persistent_volume_claim(
-        pvc_name,
-        current_namespace,
-    )
-    click.echo(f"Volume removed: {pvc_name}")

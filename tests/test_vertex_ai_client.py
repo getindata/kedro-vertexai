@@ -8,7 +8,7 @@ from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.utils import strip_margin
 
 
-class TestKubeflowClient(unittest.TestCase):
+class TestVertexAIClient(unittest.TestCase):
     @patch("kedro_vertexai.client.CloudSchedulerClient")
     def create_client(self, cloud_scheduler_client_mock):
         self.cloud_scheduler_client_mock = (

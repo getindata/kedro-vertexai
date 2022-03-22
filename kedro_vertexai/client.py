@@ -95,7 +95,7 @@ class VertexAIPipelinesClient:
                 enable_caching=False,
                 network=self.run_config.vertex_ai_networking.vpc,
             )
-            self.log.info("Run created %s", str(run))
+            self.log.debug("Run created %s", str(run))
             return run
 
     def _generate_run_name(self, config: PluginConfig):  # noqa

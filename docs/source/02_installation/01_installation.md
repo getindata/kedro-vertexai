@@ -5,7 +5,7 @@
 First, you need to install base Kedro package
 
 ```console
-$ pip install 'kedro'
+$ pip install "kedro>=0.16,<=0.18"
 ```
 
 ## Plugin installation
@@ -34,40 +34,39 @@ You can check available commands by going into project directory and runnning:
 $ kedro vertexai
 Usage: kedro vertexai [OPTIONS] COMMAND [ARGS]...
 
-  Interact with GCP Vertex AI Pipelines
+  Interact with Google Cloud Platform :: Vertex AI Pipelines
 
 Options:
   -e, --env TEXT  Environment to use.
   -h, --help      Show this message and exit.
 
 Commands:
-  compile          Translates Kedro pipeline into YAML file with Kubeflow...
-  init             Initializes configuration for the plugin
-  list-pipelines   List deployed pipeline definitions
-  run-once         Deploy pipeline as a single run within given experiment.
-  schedule         Schedules recurring execution of latest version of the...
-  ui               Open Kubeflow Pipelines UI in new browser tab
-  upload-pipeline  Uploads pipeline to Kubeflow server
+  compile         Translates Kedro pipeline into JSON file with VertexAI...
+  init            Initializes configuration for the plugin
+  list-pipelines  List deployed pipeline definitions
+  run-once        Deploy pipeline as a single run within given experiment...
+  schedule        Schedules recurring execution of latest version of the...
+  ui              Open VertexAI Pipelines UI in new browser tab
 ```
 
 ### `init`
 
-`init` command takes one argument (that is the kubeflow pipelines root url) and generates sample
+`init` command takes two arguments: `PROJECT_ID` and `REGION`. This command generates a sample
 configuration file in `conf/base/vertexai.yaml`. The YAML file content is described in the 
 [Configuration section](../02_installation/02_configuration.md).
 
 ### `ui`
 
-`ui` command opens a web browser pointing to the currently configured VertexAI Pipelines UI on GCP web console.
+`ui` command opens a web browser pointing to the currently configured Vertex AI Pipelines UI on GCP web console.
 
 ### `list-pipelines`
 
-`list-pipelines` uses Kubeflow Pipelines to retrieve all registered pipelines
+`list-pipelines` uses Vertex AI API to retrieve list of all pipelines
 
 ### `compile`
 
 `compile` transforms Kedro pipeline into Vertex AI workflow. The
-resulting `yaml` file can be uploaded to Vertex AI Pipelines via web UI.
+resulting `json` file can be uploaded to Vertex AI Pipelines via [Python Client](https://cloud.google.com/vertex-ai/docs/pipelines/build-pipeline#submit_your_pipeline_run) e.g. from your CI/CD job.
 
 ### `run-once`
 

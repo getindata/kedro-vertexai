@@ -195,7 +195,7 @@ class PluginConfig(Config):
     @staticmethod
     def initialize_github_actions(project_name, where, templates_dir):
         os.makedirs(where / ".github/workflows", exist_ok=True)
-        for template in ["on-merge-to-master.yml", "on-push.yml"]:
+        for template in ["on-push.yml"]:
             file_path = where / ".github/workflows" / template
             template_file = templates_dir / f"github-{template}"
             with open(template_file, "r") as tfile, open(file_path, "w") as f:
