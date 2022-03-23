@@ -6,13 +6,14 @@ from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
 from kedro.io import DataCatalog
 
+from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import EnvTemplatedConfigLoader
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import is_mlflow_enabled
 
 
 class MlflowIapAuthHook:
-    """Allows authentication trough IAP proxy the same way as kubeflow pipelines"""
+    """Allows authentication trough IAP proxy"""
 
     @hook_impl
     def after_catalog_created(self, catalog: DataCatalog, **kwargs) -> None:
@@ -32,7 +33,7 @@ class MlflowTagsHook:
             import mlflow
 
             if run_id := os.getenv("KEDRO_CONFIG_RUN_ID", None):
-                mlflow.set_tag("vertexai_run_id", run_id)
+                mlflow.set_tag(VERTEXAI_RUN_ID_TAG, run_id)
 
 
 if not CONFIG_HOOK_DISABLED:

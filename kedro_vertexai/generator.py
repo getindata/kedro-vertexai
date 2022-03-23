@@ -126,14 +126,6 @@ class PipelineGenerator:
             component = kfp.components.load_component_from_file(spec_file.name)
         return component(tracking_token)
 
-    def _create_params_parameter(self) -> str:
-        params_parameter = ",".join(
-            [f"{key}:{value}" for key, value in self.context.params.items()]
-        )
-        if params_parameter:
-            params_parameter = f"--params {params_parameter}"
-        return params_parameter
-
     def _build_kfp_ops(
         self,
         node_dependencies: Dict[Node, Set[Node]],
@@ -149,8 +141,6 @@ class PipelineGenerator:
             kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
                 image, tracking_token
             )
-
-        params_parameter = self._create_params_parameter()
 
         for node in node_dependencies:
             name = clean_name(node.name)
@@ -168,7 +158,6 @@ class PipelineGenerator:
                     f"KEDRO_CONFIG_RUN_ID={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
-                    f"{params_parameter}",
                     f'--node "{node.name}"',
                 ]
             )

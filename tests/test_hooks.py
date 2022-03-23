@@ -5,6 +5,7 @@ from unittest.mock import patch
 import mlflow
 
 from kedro_vertexai.auth import AuthHandler
+from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.hooks import MlflowIapAuthHook, MlflowTagsHook  # NOQA
 
 from .utils import environment
@@ -25,12 +26,12 @@ class TestMlflowTagsHook(unittest.TestCase):
         with environment({"KEDRO_CONFIG_RUN_ID": "KFP_123"}):
             MlflowTagsHook().before_node_run()
 
-        mlflow_set_tag.assert_called_with("vertexai_run_id", "KFP_123")
+        mlflow_set_tag.assert_called_with(VERTEXAI_RUN_ID_TAG, "KFP_123")
 
     def test_should_not_set_mlflow_tags_when_kubeflow_run_id_env_is_not_set(
         self, mlflow_set_tag
     ):
-        with environment({}, delete_keys=["KUBEFLOW_RUN_ID"]):
+        with environment({}, delete_keys=["KEDRO_CONFIG_RUN_ID"]):
             MlflowTagsHook().before_node_run()
 
         mlflow_set_tag.assert_not_called()
@@ -38,7 +39,7 @@ class TestMlflowTagsHook(unittest.TestCase):
     def test_should_not_set_mlflow_tags_when_kubeflow_run_id_env_is_empty(
         self, mlflow_set_tag
     ):
-        with environment({"KUBEFLOW_RUN_ID": ""}):
+        with environment({"KEDRO_CONFIG_RUN_ID": ""}):
             MlflowTagsHook().before_node_run()
 
         mlflow_set_tag.assert_not_called()
@@ -57,7 +58,7 @@ class TestMlflowTagsHook(unittest.TestCase):
         __builtins__["__import__"] = mlflow_import_disabled
 
         # when
-        with environment({"KUBEFLOW_RUN_ID": "KFP_123"}):
+        with environment({"KEDRO_CONFIG_RUN_ID": "KFP_123"}):
             MlflowTagsHook().before_node_run()
 
         # then
