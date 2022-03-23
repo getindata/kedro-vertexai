@@ -1,4 +1,5 @@
-import os
+from typing import Optional, Dict
+from pydantic import BaseModel
 
 from kedro.config import MissingConfigException
 
@@ -59,96 +60,67 @@ run_config:
 """
 
 
-class Config(object):
-    def __init__(self, raw):
-        self._raw = raw
+class ResourcesConfig(BaseModel):
+    cpu: Optional[str]
+    memory: Optional[str]
 
-    def _get_or_default(self, prop, default):
-        return self._raw.get(prop, default)
 
-    def _get_or_fail(self, prop):
-        if prop in self._raw.keys():
-            return self._raw[prop]
+class RunConfig(BaseModel):
+    image: str
+    image_pull_policy: Optional[str] = "IfNotPresent"
+    root: Optional[str]
+    description: Optional[str]
+    experiment_name: str
+    scheduled_run_name: Optional[str]
+    service_account: Optional[str]
+    ttl: int = 3600 * 24 * 7
+    resources: Optional[Dict[str, ResourcesConfig]] = dict(
+        __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
+    )
+
+    def resources_for(self, node):
+        if node in self.resources.keys():
+            result = self.resources["__default__"].dict()
+            result.update({k: v for k, v in self.resources[node].dict().items() if v is not None})
+            return result
         else:
-            raise MissingConfigException(
-                f"Missing required configuration: '{self._get_prefix()}{prop}'."
-            )
-
-    def _get_prefix(self):
-        return ""
-
-    def __eq__(self, other):
-        if isinstance(other, Config):
-            return self._raw == other._raw
-        else:
-            return False
+            return self.resources["__default__"].dict()
 
 
-class VertexAiNetworkingConfig(Config):
-    @property
-    def vpc(self):
-        return self._get_or_default("vpc", None)
-
-    @property
-    def host_aliases(self):
-        aliases = self._get_or_default("host_aliases", [])
-        return {alias["ip"]: alias["hostnames"] for alias in aliases}
+class NetworkConfig(BaseModel):
+    vpc: str
 
 
-class NodeResources(Config):
-    def is_set_for(self, node_name):
-        return self.get_for(node_name) != {}
-
-    def get_for(self, node_name):
-        defaults = self._get_or_default("__default__", {})
-        node_specific = self._get_or_default(node_name, {})
-        return {**defaults, **node_specific}
+class PluginConfig(BaseModel):
+    project_id: str
+    region: str
+    run_config: RunConfig
 
 
-class RunConfig(Config):
-    @property
-    def image(self):
-        return self._get_or_fail("image")
 
-    @property
-    def image_pull_policy(self):
-        return self._get_or_default("image_pull_policy", "IfNotPresent")
-
-    @property
-    def root(self):
-        return self._get_or_fail("root")
-
-    @property
-    def experiment_name(self):
-        return self._get_or_fail("experiment_name")
-
-    @property
-    def scheduled_run_name(self):
-        return self._get_or_default(
-            "scheduled_run_name", self._get_or_fail("experiment_name")
-        )
-
-    @property
-    def description(self):
-        return self._get_or_default("description", None)
-
-    @property
-    def resources(self):
-        return NodeResources(self._get_or_default("resources", {}))
-
-    @property
-    def store_kedro_outputs_as_kfp_artifacts(self):
-        return bool(
-            self._get_or_default("store_kedro_outputs_as_kfp_artifacts", True)
-        )
-
-    @property
-    def max_cache_staleness(self):
-        return str(self._get_or_default("max_cache_staleness", None))
-
-    @property
-    def ttl(self):
-        return int(self._get_or_default("ttl", 3600 * 24 * 7))
+# class Config(object):
+#     def __init__(self, raw):
+#         self._raw = raw
+#
+#     def _get_or_default(self, prop, default):
+#         return self._raw.get(prop, default)
+#
+#     def _get_or_fail(self, prop):
+#         if prop in self._raw.keys():
+#             return self._raw[prop]
+#         else:
+#             raise MissingConfigException(
+#                 f"Missing required configuration: '{self._get_prefix()}{prop}'."
+#             )
+#
+#     def _get_prefix(self):
+#         return ""
+#
+#     def __eq__(self, other):
+#         if isinstance(other, Config):
+#             return self._raw == other._raw
+#         else:
+#             return False
 
     @property
     def on_exit_pipeline(self):
@@ -174,29 +146,29 @@ class RunConfig(Config):
         return "run_config."
 
 
-class PluginConfig(Config):
-    @property
-    def run_config(self) -> RunConfig:
-        cfg = self._get_or_fail("run_config")
-        return RunConfig(cfg)
-
-    @staticmethod
-    def sample_config(**kwargs):
-        return DEFAULT_CONFIG_TEMPLATE.format(**kwargs)
-
-    @property
-    def project_id(self):
-        return self._get_or_fail("project_id")
-
-    @property
-    def region(self):
-        return self._get_or_fail("region")
-
-    @staticmethod
-    def initialize_github_actions(project_name, where, templates_dir):
-        os.makedirs(where / ".github/workflows", exist_ok=True)
-        for template in ["on-push.yml"]:
-            file_path = where / ".github/workflows" / template
-            template_file = templates_dir / f"github-{template}"
-            with open(template_file, "r") as tfile, open(file_path, "w") as f:
-                f.write(tfile.read().format(project_name=project_name))
+# class PluginConfig(Config):
+#     @property
+#     def run_config(self) -> RunConfig:
+#         cfg = self._get_or_fail("run_config")
+#         return RunConfig(cfg)
+#
+#     @staticmethod
+#     def sample_config(**kwargs):
+#         return DEFAULT_CONFIG_TEMPLATE.format(**kwargs)
+#
+#     @property
+#     def project_id(self):
+#         return self._get_or_fail("project_id")
+#
+#     @property
+#     def region(self):
+#         return self._get_or_fail("region")
+#
+#     @staticmethod
+#     def initialize_github_actions(project_name, where, templates_dir):
+#         os.makedirs(where / ".github/workflows", exist_ok=True)
+#         for template in ["on-push.yml"]:
+#             file_path = where / ".github/workflows" / template
+#             template_file = templates_dir / f"github-{template}"
+#             with open(template_file, "r") as tfile, open(file_path, "w") as f:
+#                 f.write(tfile.read().format(project_name=project_name))

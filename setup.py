@@ -11,6 +11,7 @@ INSTALL_REQUIRES = [
     "kfp~=1.8.0",
     "tabulate>=0.8.7",
     "semver~=2.10",
+    "pydantic~=1.9.0",
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
     "gcsfs>=2021.11.1",

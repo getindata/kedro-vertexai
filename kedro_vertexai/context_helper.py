@@ -63,7 +63,7 @@ class ContextHelper(object):
         raw = EnvTemplatedConfigLoader(
             self.context.config_loader.conf_paths
         ).get(self.CONFIG_FILE_PATTERN)
-        return PluginConfig(raw)
+        return PluginConfig.parse_obj(raw)
 
     @property
     @lru_cache()
