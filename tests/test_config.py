@@ -1,7 +1,6 @@
 import unittest
 
 import yaml
-from kedro.config.config import MissingConfigException
 from pydantic import ValidationError
 
 from kedro_vertexai.config import PluginConfig
@@ -40,7 +39,10 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
-        assert cfg.run_config.resources_for("node1") == {'cpu': '500m', 'memory': '1024Mi'}
+        assert cfg.run_config.resources_for("node1") == {
+            "cpu": "500m",
+            "memory": "1024Mi",
+        }
         assert cfg.run_config.ttl == 300
 
     def test_defaults(self):
@@ -55,23 +57,36 @@ class TestPluginConfig(unittest.TestCase):
 
     def test_resources_default_only(self):
         cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
-        assert cfg.run_config.resources_for("node2") == {"cpu": "500m", "memory": "1024Mi"}
-        assert cfg.run_config.resources_for("node3") == {"cpu": "500m", "memory": "1024Mi"}
+        assert cfg.run_config.resources_for("node2") == {
+            "cpu": "500m",
+            "memory": "1024Mi",
+        }
+        assert cfg.run_config.resources_for("node3") == {
+            "cpu": "500m",
+            "memory": "1024Mi",
+        }
 
     def test_resources_no_default(self):
         obj = yaml.safe_load(CONFIG_MINIMAL)
-        obj['run_config'].update({"resources": {"__default__": {"cpu": None, "memory": None}}})
+        obj["run_config"].update(
+            {"resources": {"__default__": {"cpu": None, "memory": None}}}
+        )
         cfg = PluginConfig.parse_obj(obj)
-        assert cfg.run_config.resources_for("node2") == {'cpu': None, 'memory': None}
+        assert cfg.run_config.resources_for("node2") == {
+            "cpu": None,
+            "memory": None,
+        }
 
     def test_resources_default_and_node_specific(self):
         obj = yaml.safe_load(CONFIG_MINIMAL)
-        obj['run_config'].update({
-            "resources": {
-                "__default__": {"cpu": "200m", "memory": "64Mi"},
-                "node2": {"cpu": "100m"}
+        obj["run_config"].update(
+            {
+                "resources": {
+                    "__default__": {"cpu": "200m", "memory": "64Mi"},
+                    "node2": {"cpu": "100m"},
+                }
             }
-        })
+        )
         cfg = PluginConfig.parse_obj(obj)
         assert cfg.run_config.resources_for("node2") == {
             "cpu": "100m",
@@ -79,7 +94,7 @@ class TestPluginConfig(unittest.TestCase):
         }
         assert cfg.run_config.resources_for("node3") == {
             "cpu": "200m",
-            "memory": "64Mi"
+            "memory": "64Mi",
         }
 
     # def test_parse_vertex_ai_networking_config(self):

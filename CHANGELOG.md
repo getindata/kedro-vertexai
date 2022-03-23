@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Refactored config to use `pydantic` for validation instead of homemade code. 
+
 ## [0.2.0] - 2022-03-23
 
 -   Added quickstart guide to plugin documentation

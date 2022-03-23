@@ -22,9 +22,10 @@ from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 
-test_config = PluginConfig(
+test_config = PluginConfig.parse_obj(
     {
         "project_id": "test-project-id",
+        "region": "test",
         "run_config": {
             "image": "gcr.io/project-image/test",
             "image_pull_policy": "Always",

@@ -84,10 +84,10 @@ class PipelineGenerator:
         return convert_kedro_pipeline_to_kfp
 
     def _generate_hosts_file(self):
-        host_aliases = self.run_config.vertex_ai_networking.host_aliases
+        host_aliases = self.run_config.network.host_aliases
         return " ".join(
-            f"echo {ip}\t{' '.join(hostnames)} >> /etc/hosts;"
-            for ip, hostnames in host_aliases.items()
+            f"echo {ha.ip}\t{' '.join(ha.hostnames)} >> /etc/hosts;"
+            for ha in host_aliases
         )
 
     def _create_mlflow_op(self, image, tracking_token) -> dsl.ContainerOp:
@@ -201,17 +201,10 @@ class PipelineGenerator:
         return operator
 
     def _configure_resources(self, name: str, operator):
-        resources = self.run_config.resources.get_for(name)
-        if "cpu" in resources:
+        resources = self.run_config.resources_for(name)
+        if "cpu" in resources and resources["cpu"]:
             operator.set_cpu_limit(resources["cpu"])
             operator.set_cpu_request(resources["cpu"])
-        if "memory" in resources:
+        if "memory" in resources and resources["memory"]:
             operator.set_memory_limit(resources["memory"])
             operator.set_memory_request(resources["memory"])
-        if "cloud.google.com/gke-accelerator" in resources:
-            operator.add_node_selector_constraint(
-                "cloud.google.com/gke-accelerator",
-                resources["cloud.google.com/gke-accelerator"],
-            )
-        if "nvidia.com/gpu" in resources:
-            operator.set_gpu_limit(resources["nvidia.com/gpu"])
