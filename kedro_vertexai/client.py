@@ -87,7 +87,7 @@ class VertexAIPipelinesClient:
             )
 
             run = self.api_client.create_run_from_job_spec(
-                service_account=os.getenv("SERVICE_ACCOUNT"),
+                service_account=self.run_config.service_account,
                 job_spec_path=spec_output.name,
                 job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
