@@ -1,9 +1,6 @@
 name: End 2 End Tests (Spaceflights Quickstart)
 
 on:
-  push:
-    branches:
-      - develop
   pull_request:
 
 jobs:
@@ -66,10 +63,11 @@ jobs:
         dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
 
     - name: Set up GCP Credentials
-      uses: google-github-actions/setup-gcloud@v0.6.0
+      uses: google-github-actions/auth@v0.6.0
       with:
-        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-        export_default_credentials: true
+        credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        create_credentials_file: true
+        cleanup_credentials: true
 
     - name: Run project on vertex pipeline
       run: |
