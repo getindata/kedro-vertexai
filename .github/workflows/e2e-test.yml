@@ -53,7 +53,7 @@ jobs:
     - name: Build pipeline docker image
       run: |
         cd ./spaceflights
-        docker build --tag kedro-vertexai-e2e:latest --load .
+        docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:latest --load .
 
     - name: Publish docker image to GCR
       uses: mattes/gce-docker-push-action@v1
