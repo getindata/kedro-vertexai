@@ -44,8 +44,8 @@ jobs:
         kedro docker init
         kedro vertexai init gid-ml-ops-sandbox europe-west4
         echo "!data/01_raw" >> .dockerignore
-        mv ../catalog.yml conf/base/catalog.yml
-        mv ../vertexai.yml conf/base/vertexai.yml
+        mv ../e2e/catalog.yml conf/base/catalog.yml
+        mv ../e2e/vertexai.yml conf/base/vertexai.yml
 
     - name: Prepare docker env
       uses: docker/setup-buildx-action@v1
