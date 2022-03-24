@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Refactored config to use `pydantic` for validation instead of homemade code. 
+- Refactored config to use `pydantic` for validation instead of homemade code (#1). 
 
 ## [0.2.0] - 2022-03-23
 

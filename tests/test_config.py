@@ -97,28 +97,44 @@ class TestPluginConfig(unittest.TestCase):
             "memory": "64Mi",
         }
 
-    # def test_parse_vertex_ai_networking_config(self):
-    #     cfg = PluginConfig(yaml.safe_load(CONFIG_MINIMAL))
-    #     assert (
-    #         cfg.run_config.vertex_ai_networking.vpc
-    #         == "projects/some-project-id/global/networks/some-vpc-name"
-    #     )
-    #     assert cfg.run_config.vertex_ai_networking.host_aliases == {
-    #         "10.10.10.10": ["mlflow.internal"]
-    #     }
+    def test_parse_network_config(self):
+        obj = yaml.safe_load(CONFIG_MINIMAL)
+        obj["run_config"].update(
+            {
+                "network": {
+                    "vpc": "projects/some-project-id/global/networks/some-vpc-name",
+                    "host_aliases": [
+                        {"ip": "10.10.10.10", "hostnames": ["mlflow.internal"]}
+                    ],
+                }
+            }
+        )
+        cfg = PluginConfig.parse_obj(obj)
+        assert (
+            cfg.run_config.network.vpc
+            == "projects/some-project-id/global/networks/some-vpc-name"
+        )
+        assert str(cfg.run_config.network.host_aliases[0].ip) == "10.10.10.10"
+        assert (
+            "mlflow.internal"
+            in cfg.run_config.network.host_aliases[0].hostnames
+        )
 
-    # def test_accept_default_vertex_ai_networking_config(self):
-    #     cfg = PluginConfig({"run_config": {}})
-    #     assert cfg.run_config.vertex_ai_networking.vpc is None
-    #     assert cfg.run_config.vertex_ai_networking.host_aliases == {}
+    def test_accept_default_vertex_ai_networking_config(self):
+        cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
+        assert cfg.run_config.network.vpc is None
+        assert cfg.run_config.network.host_aliases == []
 
-    # def test_reuse_run_name_for_scheduled_run_name(self):
-    #     cfg = PluginConfig(
-    #         {
-    #             "run_config": {
-    #                 "scheduled_run_name": "some run",
-    #                 "experiment_name": "test",
-    #             }
-    #         }
-    #     )
-    #     assert cfg.run_config.scheduled_run_name == "some run"
+    @unittest.skip(
+        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
+    )
+    def test_reuse_run_name_for_scheduled_run_name(self):
+        cfg = PluginConfig.parse_obj(
+            {
+                "run_config": {
+                    "scheduled_run_name": "some run",
+                    "experiment_name": "test",
+                }
+            }
+        )
+        assert cfg.run_config.scheduled_run_name == "some run"
