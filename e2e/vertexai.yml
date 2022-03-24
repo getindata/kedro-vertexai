@@ -1,0 +1,53 @@
+project_id: gid-ml-ops-sandbox
+region: europe-west4
+run_config:
+  # Name of the image to run as the pipeline steps
+  image: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${commit_id}
+
+  # Pull policy to be used for the steps. Use Always if you push the images
+  # on the same tag, or Never if you use only local images
+  image_pull_policy: IfNotPresent
+
+  # Location of Vertex AI GCS root
+  root: gid-ml-ops-sandbox-plugin-tests/staging
+
+  # Name of the kubeflow experiment to be created
+  experiment_name: kedro-vertex-e2e
+
+  # Name of the scheduled run, templated with the schedule parameters
+  scheduled_run_name: kedro-vertex-e2e
+
+  # Optional service account to run vertex AI Pipeline with
+  # service_account: pipelines-account@my-project.iam.gserviceaccount.com
+
+  # Optional pipeline description
+  # description: "Very Important Pipeline"
+
+  # How long to keep underlying Argo workflow (together with pods and data
+  # volume after pipeline finishes) [in seconds]. Default: 1 week
+  ttl: 604800
+
+    # Optional network configuration
+    # network:
+
+    # Name of the vpc to use for running Vertex Pipeline
+    # vpc: my-vpc
+
+    # Hosts aliases to be placed in /etc/hosts when pipeline is executed
+    # host_aliases:
+    #  - ip: 127.0.0.1
+  #    hostnames: me.local
+
+  # What Kedro pipeline should be run as the last step regardless of the
+  # pipeline status. Used to send notifications or raise the alerts
+  # on_exit_pipeline: notify_via_slack
+
+  # Optional section allowing adjustment of the resources, reservations and limits
+  # for the nodes. When not provided they're set to 500m cpu and 1024Mi memory.
+  # If you don't want to specify pipeline resources set both to None in __default__.
+  resources:
+
+    # Default settings for the nodes
+    __default__:
+      cpu: 500m
+      memory: 1024Mi

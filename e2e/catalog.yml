@@ -1,0 +1,40 @@
+preprocessed_companies:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_companies.csv
+  layer: intermediate
+
+preprocessed_shuttles:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_shuttles.csv
+  layer: intermediate
+
+model_input_table:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/03_primary/model_input_table.csv
+  layer: primary
+
+X_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_train.pickle
+  layer: model_input
+
+y_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_train.pickle
+  layer: model_input
+
+X_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_test.pickle
+  layer: model_input
+
+y_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_test.pickle
+  layer: model_input
+
+regressor:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/06_models/regressor.pickle
+  versioned: true
+  layer: models

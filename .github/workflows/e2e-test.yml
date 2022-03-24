@@ -5,7 +5,6 @@ on:
     branches: 
       - master
       - develop
-      - end-to-end-tests
   pull_request:
 
 jobs:
@@ -26,13 +25,47 @@ jobs:
         virtualenv venv
         source venv/bin/activate
    
-    - name: Setup kedro spaceflights project
+    - name: Initialize kedro spaceflights project
       run: |
-        pip install . 'kedro<0.18' kedro-docker
+        pip install . 'kedro<0.18'
+        mkdir -p ./e2e/spaceflights
         kedro new --starter spaceflights --config e2e/starter-config.yml
-        
 
     - name: Install project dependencies
       run: |
         cd ./e2e/spaceflights
+        echo "git+git://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
+        echo "kedro-docker" >> src/requirements.txt
+        sed -i '/kedro-telemetry/d' src/requirements.txt
         cat src/requirements.txt
+        pip install -r src/requirements.txt
+
+    - name: Init and update configuration
+      run: |
+        kedro docker init
+        kedro vertexai init
+        echo "!data/01_raw" >> .dockerignore
+        mv ../catalog.yml conf/base/catalog.yml
+        mv ../vertexai.yml conf/base/vertexai.yml
+
+    - name: Prepare docker env
+      uses: docker/setup-buildx-action@v1
+      id: buildx
+      with:
+        install: true
+
+    - name: Build pipeline docker image
+      run: |
+        docker build --tag kedro-vertexai-e2e:latest --load .
+
+    - name: Publish docker image to GCR
+      uses: mattes/gce-docker-push-action@v1
+      with:
+        creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        src: kedro-vertexai-e2e:latest
+        dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
+
+    - name: Run project on vertex pipeline
+      export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
+      kedro vertexai run-once
+

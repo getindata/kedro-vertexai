@@ -1,4 +1,4 @@
-output_dir: ~/e2e/spaceflights
+output_dir: ./e2e/spaceflights
 project_name: Spaceflights (E2E Test)
 repo_name: spaceflights_demo
 python_package: spaceflights_demo
