@@ -18,7 +18,7 @@ run_config:
   scheduled_run_name: kedro-vertex-e2e
 
   # Optional service account to run vertex AI Pipeline with
-  # service_account: pipelines-account@my-project.iam.gserviceaccount.com
+  service_account: vertex-ai-pipelines@gid-ml-ops-sandbox.iam.gserviceaccount.com
 
   # Optional pipeline description
   # description: "Very Important Pipeline"

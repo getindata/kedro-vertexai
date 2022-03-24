@@ -27,7 +27,7 @@ jobs:
     - name: Initialize kedro spaceflights project
       run: |
         pip install . 'kedro<0.18'
-        kedro new --starter spaceflights --config e2e/starter-config.yml --verbose
+        kedro new --starter spaceflights --config tests/e2e/starter-config.yml --verbose
 
     - name: Install project dependencies
       run: |
@@ -44,8 +44,8 @@ jobs:
         kedro docker init
         kedro vertexai init gid-ml-ops-sandbox europe-west4
         echo "!data/01_raw" >> .dockerignore
-        mv ../e2e/catalog.yml conf/base/catalog.yml
-        mv ../e2e/vertexai.yml conf/base/vertexai.yml
+        mv ../tests/e2e/catalog.yml conf/base/catalog.yml
+        mv ../tests/e2e/vertexai.yml conf/base/vertexai.yml
 
     - name: Prepare docker env
       uses: docker/setup-buildx-action@v1
