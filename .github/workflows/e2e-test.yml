@@ -30,11 +30,11 @@ jobs:
       run: |
         pip install . 'kedro<0.18'
         mkdir -p ./e2e/spaceflights
-        kedro new --starter spaceflights --config e2e/starter-config.yml
+        kedro new --starter spaceflights --config e2e/starter-config.yml --verbose
 
     - name: Install project dependencies
       run: |
-        cd ./e2e/spaceflights
+        cd ./spaceflights
         echo "git+git://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
         echo "kedro-docker" >> src/requirements.txt
         sed -i '/kedro-telemetry/d' src/requirements.txt
