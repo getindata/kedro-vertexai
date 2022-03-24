@@ -35,7 +35,7 @@ jobs:
     - name: Install project dependencies
       run: |
         cd ./spaceflights
-        echo "git+git://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
+        echo "git+https://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
         echo "kedro-docker" >> src/requirements.txt
         sed -i '/kedro-telemetry/d' src/requirements.txt
         cat src/requirements.txt
