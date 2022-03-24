@@ -2,10 +2,8 @@ name: End 2 End Test (Quickstart)
 
 on:
   push:
-    branches: 
-      - master
+    branches:
       - develop
-      - end-to-end-tests
   pull_request:
 
 jobs:
