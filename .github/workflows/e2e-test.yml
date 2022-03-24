@@ -5,6 +5,7 @@ on:
     branches: 
       - master
       - develop
+      - end-to-end-tests
   pull_request:
 
 jobs:
@@ -66,6 +67,7 @@ jobs:
         dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
 
     - name: Run project on vertex pipeline
-      export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
-      kedro vertexai run-once
+      run: |
+        export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
+        kedro vertexai run-once
 
