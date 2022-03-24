@@ -34,6 +34,7 @@ jobs:
 
     - name: Install project dependencies
       run: |
+        pwd
         cd ./spaceflights
         echo "git+https://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
         echo "kedro-docker" >> src/requirements.txt
@@ -43,6 +44,8 @@ jobs:
 
     - name: Init and update configuration
       run: |
+        pwd
+        cd ./spaceflights
         kedro docker init
         kedro vertexai init
         echo "!data/01_raw" >> .dockerignore
@@ -57,6 +60,8 @@ jobs:
 
     - name: Build pipeline docker image
       run: |
+        pwd
+        cd ./spaceflights
         docker build --tag kedro-vertexai-e2e:latest --load .
 
     - name: Publish docker image to GCR
@@ -68,6 +73,8 @@ jobs:
 
     - name: Run project on vertex pipeline
       run: |
+        pwd
+        cd ./spaceflights
         export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
         kedro vertexai run-once
 
