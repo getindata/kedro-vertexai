@@ -65,6 +65,12 @@ jobs:
         src: kedro-vertexai-e2e:latest
         dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
 
+    - name: Set up GCP Credentials
+      uses: google-github-actions/setup-gcloud@v0.6.0
+      with:
+        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        export_default_credentials: true
+
     - name: Run project on vertex pipeline
       run: |
         cd ./spaceflights
