@@ -27,7 +27,7 @@ $ pip install 'kedro<0.18' kedro-vertexai kedro-docker
 With the dependencies in place, let's create a new project:
 
 ```
-$ kedro new --starter=spaceflights
+$ kedro new --starter=spaceflights --checkout=0.17.6
 
 Project Name:
 =============
@@ -163,7 +163,7 @@ The usage of `${run_id}` is described in section [Dynamic configuration support]
 Execute:
 
 ```console
-kedro docker build
+kedro docker build --build-arg BASE_IMAGE=python:3.8-buster
 ```
 
 When execution finishes, your docker image is ready. If you don't use local cluster, you should push the image to the remote repository:
