@@ -14,14 +14,14 @@ class TestVertexAIClient(unittest.TestCase):
         self.cloud_scheduler_client_mock = (
             cloud_scheduler_client_mock.return_value
         )
-        config = PluginConfig(
+        config = PluginConfig.parse_obj(
             {
                 "project_id": "PROJECT_ID",
                 "region": "REGION",
                 "run_config": {
                     "image": "IMAGE",
                     "root": "BUCKET/PREFIX",
-                    "vertex_ai_networking": {"vpc": "my-vpc"},
+                    "network": {"vpc": "my-vpc"},
                     "experiment_name": "experiment-name",
                 },
             }
