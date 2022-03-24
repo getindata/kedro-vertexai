@@ -10,6 +10,8 @@ out/
 .LSOverride
 .Trashes
 
+spaceflights
+
 # Vim
 *~
 .*.swo

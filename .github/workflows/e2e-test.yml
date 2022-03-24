@@ -55,7 +55,6 @@ jobs:
 
     - name: Build pipeline docker image
       run: |
-        pwd
         cd ./spaceflights
         docker build --tag kedro-vertexai-e2e:latest --load .
 
@@ -68,7 +67,6 @@ jobs:
 
     - name: Run project on vertex pipeline
       run: |
-        pwd
         cd ./spaceflights
         export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
         kedro vertexai run-once
