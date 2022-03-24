@@ -27,12 +27,10 @@ jobs:
     - name: Initialize kedro spaceflights project
       run: |
         pip install . 'kedro<0.18'
-        mkdir -p ./e2e/spaceflights
         kedro new --starter spaceflights --config e2e/starter-config.yml --verbose
 
     - name: Install project dependencies
       run: |
-        pwd
         cd ./spaceflights
         echo "git+https://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
         echo "kedro-docker" >> src/requirements.txt
@@ -42,10 +40,9 @@ jobs:
 
     - name: Init and update configuration
       run: |
-        pwd
         cd ./spaceflights
         kedro docker init
-        kedro vertexai init
+        kedro vertexai init gid-ml-ops-sandbox europe-west4
         echo "!data/01_raw" >> .dockerignore
         mv ../catalog.yml conf/base/catalog.yml
         mv ../vertexai.yml conf/base/vertexai.yml
