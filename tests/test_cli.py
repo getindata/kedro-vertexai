@@ -163,7 +163,7 @@ class TestPluginCLI(unittest.TestCase):
 
             assert result.exit_code == 0, result.output
             assert result.output.startswith("Configuration generated in ")
-            with open(path.joinpath("conf/base/vertexai.yaml"), "r") as f:
+            with open(path.joinpath("conf/base/vertexai.yml"), "r") as f:
                 cfg = yaml.safe_load(f)
                 assert isinstance(cfg, dict), "Could not parse config as yaml"
 
