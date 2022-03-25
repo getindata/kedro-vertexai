@@ -17,6 +17,12 @@ shuttles:
   load_args:
     engine: openpyxl
 
+model_input_table:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/03_primary/model_input_table.csv
+  layer: primary
+
+### CATALOG ENTRIES FOR starter version <= 0.17.6
 preprocessed_companies:
   type: pandas.CSVDataSet
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_companies.csv
@@ -26,11 +32,6 @@ preprocessed_shuttles:
   type: pandas.CSVDataSet
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_shuttles.csv
   layer: intermediate
-
-model_input_table:
-  type: pandas.CSVDataSet
-  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/03_primary/model_input_table.csv
-  layer: primary
 
 X_train:
   type: pickle.PickleDataSet
@@ -53,6 +54,69 @@ y_test:
   layer: model_input
 
 regressor:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/06_models/regressor.pickle
+  versioned: true
+  layer: models
+
+### CATALOG ENTRIES FOR starter version >= 0.17.7
+data_processing.preprocessed_companies:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_companies.csv
+  layer: intermediate
+
+data_processing.preprocessed_shuttles:
+  type: pandas.CSVDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_shuttles.csv
+  layer: intermediate
+
+data_science.active_modelling_pipeline.X_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_train.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.y_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_train.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.X_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_test.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.y_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_test.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.regressor:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/06_models/regressor.pickle
+  versioned: true
+  layer: models
+
+data_science.candidate_modelling_pipeline.X_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_train.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.y_train:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_train.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.X_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/X_test.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.y_test:
+  type: pickle.PickleDataSet
+  filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/05_model_input/y_test.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.regressor:
   type: pickle.PickleDataSet
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/06_models/regressor.pickle
   versioned: true
