@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add end 2 end tests based on Kedro Spaceflights quickstart guide from our docs.  
 - Move service account configuration from env variables to config file. (#7)
 - Refactored config to use `pydantic` for validation instead of homemade code. (#1)
 

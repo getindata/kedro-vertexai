@@ -196,7 +196,7 @@ def init(ctx, project_id, region, with_github_actions: bool):
         run_name=run_name,
         region=region,
     )
-    config_path = Path.cwd().joinpath("conf/base/vertexai.yaml")
+    config_path = Path.cwd().joinpath("conf/base/vertexai.yml")
     with open(config_path, "w") as f:
         f.write(sample_config)
 
