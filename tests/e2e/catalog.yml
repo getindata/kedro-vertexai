@@ -1,8 +1,6 @@
 companies:
   type: pandas.CSVDataSet
   filepath: data/01_raw/companies.csv
-  # more about layers in the Data Engineering Convention:
-  # https://kedro.readthedocs.io/en/stable/03_tutorial/06_visualise_pipeline.html#interact-with-data-engineering-convention
   layer: raw
 
 reviews:
@@ -22,7 +20,7 @@ model_input_table:
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/03_primary/model_input_table.csv
   layer: primary
 
-### CATALOG ENTRIES FOR starter version <= 0.17.6
+### catalog entries required by starter version <= 0.17.6
 preprocessed_companies:
   type: pandas.CSVDataSet
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_companies.csv
@@ -59,7 +57,7 @@ regressor:
   versioned: true
   layer: models
 
-### CATALOG ENTRIES FOR starter version >= 0.17.7
+### catalog entries required by starter version >= 0.17.7
 data_processing.preprocessed_companies:
   type: pandas.CSVDataSet
   filepath: gs://gid-ml-ops-sandbox-plugin-tests/${run_id}/02_intermediate/preprocessed_companies.csv
