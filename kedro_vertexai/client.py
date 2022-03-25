@@ -6,7 +6,10 @@ import datetime as dt
 import json
 import logging
 import os
+import threading
+from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
+from time import sleep
 
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
@@ -16,6 +19,7 @@ from kfp.v2.google.client import AIPlatformClient
 from tabulate import tabulate
 
 from .config import PluginConfig
+from .data_models import PipelineResult, PipelineStatus
 from .generator import PipelineGenerator
 
 
@@ -104,7 +108,11 @@ class VertexAIPipelinesClient:
         )
 
     def compile(
-        self, pipeline, image, output, image_pull_policy="IfNotPresent",
+        self,
+        pipeline,
+        image,
+        output,
+        image_pull_policy="IfNotPresent",
     ):
         """
         Creates json file in given local output path
@@ -119,7 +127,8 @@ class VertexAIPipelinesClient:
             pipeline, image, image_pull_policy, token
         )
         compiler.Compiler().compile(
-            pipeline_func=pipeline_func, package_path=output,
+            pipeline_func=pipeline_func,
+            package_path=output,
         )
         self.log.info(
             "Generated pipeline definition was saved to %s", str(output)
@@ -178,3 +187,61 @@ class VertexAIPipelinesClient:
             )
 
             self.log.info("Pipeline scheduled to %s", cron_expression)
+
+    def wait_for_completion(
+        self,
+        max_timeout_seconds,
+        interval_seconds=30.0,
+        max_api_fails=5,
+    ) -> PipelineResult:
+        termination_statuses = (
+            PipelineStatus.PIPELINE_STATE_FAILED,
+            PipelineStatus.PIPELINE_STATE_SUCCEEDED,
+            PipelineStatus.PIPELINE_STATE_CANCELLED,
+        )
+
+        status_queue = Queue(1)
+
+        def monitor(q: Queue):
+            fails = 0
+            while fails < max_api_fails:
+                try:
+                    job = self.api_client.get_job(self.run_name)
+                    state = job["state"]
+                    if state in termination_statuses:
+                        q.put(
+                            PipelineResult(
+                                is_success=state
+                                == PipelineStatus.PIPELINE_STATE_SUCCEEDED,
+                                state=state,
+                                job_data=job,
+                            )
+                        )
+                        break
+                    else:
+                        self.log.info(f"Pipeline state: {state}")
+                except:  # noqa: E722
+                    fails += 1
+                    self.log.error(
+                        "Exception occurred while checking the pipeline status",
+                        exc_info=True,
+                    )
+                finally:
+                    sleep(interval_seconds)
+            else:
+                q.put(
+                    PipelineResult(
+                        is_success=False, state="Internal exception"
+                    )
+                )
+
+        thread = threading.Thread(
+            target=monitor, daemon=True, args=(status_queue,)
+        )
+        thread.start()
+        try:
+            return status_queue.get(timeout=max_timeout_seconds)
+        except Empty:
+            return PipelineResult(
+                False, f"Max timeout {max_timeout_seconds}s reached"
+            )
