@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Refactored config to use `pydantic` for validation instead of homemade code (#1). 
+- Move service account configuration from env variables to config file. (#7)
+- Refactored config to use `pydantic` for validation instead of homemade code. (#1)
 
 ## [0.2.0] - 2022-03-23
 

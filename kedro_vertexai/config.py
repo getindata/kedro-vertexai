@@ -25,8 +25,11 @@ run_config:
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: {run_name}
 
+  # Optional service account to run vertex AI Pipeline with
+  # service_account: pipelines-account@my-project.iam.gserviceaccount.com
+
   # Optional pipeline description
-  #description: "Very Important Pipeline"
+  # description: "Very Important Pipeline"
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
@@ -91,6 +94,7 @@ class RunConfig(BaseModel):
     description: Optional[str]
     experiment_name: str
     scheduled_run_name: Optional[str]
+    service_account: Optional[str]
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
@@ -116,7 +120,6 @@ class PluginConfig(BaseModel):
     project_id: str
     region: str
     run_config: RunConfig
-    service_account: Optional[str]
 
     @staticmethod
     def sample_config(**kwargs):

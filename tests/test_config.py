@@ -14,7 +14,15 @@ run_config:
   experiment_name: "Test Experiment"
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
+  service_account: test@pipelines.gserviceaccount.com
   ttl: 300
+  network:
+    vpc: my-vpc
+    host_aliases:
+        - ip: 127.0.0.1
+          hostnames:
+            - myself.local
+            - me.local
   volume:
     storageclass: default
     size: 3Gi
@@ -39,6 +47,16 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
+        assert (
+            cfg.run_config.service_account
+            == "test@pipelines.gserviceaccount.com"
+        )
+        assert cfg.run_config.network.vpc == "my-vpc"
+        assert str(cfg.run_config.network.host_aliases[0].ip) == "127.0.0.1"
+        assert (
+            "myself.local" in cfg.run_config.network.host_aliases[0].hostnames
+        )
+        assert "me.local" in cfg.run_config.network.host_aliases[0].hostnames
         assert cfg.run_config.resources_for("node1") == {
             "cpu": "500m",
             "memory": "1024Mi",
