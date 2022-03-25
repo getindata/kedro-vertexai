@@ -249,7 +249,9 @@ class TestVertexAIClient(unittest.TestCase):
         ), "Number of calls to the API within the specified interval is invalid"
 
     @patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error")
-    @patch("kedro_vertexai.client.AIPlatformClient",)
+    @patch(
+        "kedro_vertexai.client.AIPlatformClient",
+    )
     def test_wait_for_completion_api_errors(self, ai_client, logger):
         ai_client.return_value.get_job.side_effect = Exception()
 
