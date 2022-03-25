@@ -179,11 +179,12 @@ class TestVertexAIClient(unittest.TestCase):
                 == "projects/.../locations/.../jobs/pipeline_pipeline_def"
             )
 
-    @patch(
-        "kfp.v2.google.client.client.AIPlatformClient.get_job",
-        return_value={"state": PipelineStatus.PIPELINE_STATE_SUCCEEDED},
-    )
-    def test_wait_for_completion_success_condition(self, _):
+    @patch("kedro_vertexai.client.AIPlatformClient")
+    def test_wait_for_completion_success_condition(self, ai_client):
+        ai_client.return_value.get_job.return_value = {
+            "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED
+        }
+
         client = self.create_client()
         result = client.wait_for_completion(30)
         assert result.is_success, "Pipeline should be determined as successful"
@@ -192,12 +193,13 @@ class TestVertexAIClient(unittest.TestCase):
         ), "Field job_data should have value in finished pipelines"
 
     def test_wait_for_completion_failure_condition(self):
+
         for state in (
             PipelineStatus.PIPELINE_STATE_CANCELLED,
             PipelineStatus.PIPELINE_STATE_FAILED,
         ):
             with patch(
-                "kfp.v2.google.client.client.AIPlatformClient.get_job",
+                "kedro_vertexai.client.AIPlatformClient.get_job",
                 return_value={"state": state},
             ):
                 client = self.create_client()
@@ -209,14 +211,15 @@ class TestVertexAIClient(unittest.TestCase):
                     result.job_data, dict
                 ), "Field job_data should have value in finished pipelines"
 
+    @patch("kedro_vertexai.client.AIPlatformClient")
     @patch(
-        "kfp.v2.google.client.client.AIPlatformClient.get_job",
+        "kedro_vertexai.client.AIPlatformClient.get_job",
         side_effect=lambda _: {
             "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED,
             "hacky :)": sleep(60.0),
         },
     )
-    def test_wait_for_completion_timeout(self, _):
+    def test_wait_for_completion_timeout(self, _, __):
         client = self.create_client()
         result = client.wait_for_completion(3)
         assert not result.is_success, "Pipeline should be determined as failed"
@@ -228,10 +231,8 @@ class TestVertexAIClient(unittest.TestCase):
         ), "Final state seems invalid"
 
     @patch(
-        "kfp.v2.google.client.client.AIPlatformClient.get_job",
-        return_value={
-            "state": PipelineStatus.PIPELINE_STATE_RUNNING,
-        },
+        "kedro_vertexai.client.AIPlatformClient.get_job",
+        return_value={"state": PipelineStatus.PIPELINE_STATE_RUNNING},
     )
     def test_wait_for_completion_intervals(self, get_job_fn):
         timeout = 2
@@ -245,15 +246,14 @@ class TestVertexAIClient(unittest.TestCase):
             < (timeout / interval) + tolerance
         ), "Number of calls to the API within the specified interval is invalid"
 
-    @patch(
-        "kfp.v2.google.client.client.AIPlatformClient.get_job",
-        side_effect=Exception(),
-    )
+    @patch("kedro_vertexai.client.AIPlatformClient")
     @patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error")
-    def test_wait_for_completion_api_errors(self, logger, get_job_fn):
+    def test_wait_for_completion_api_errors(self, logger, ai_client):
+        ai_client.return_value.get_job.side_effect = Exception()
+
         client = self.create_client()
         result = client.wait_for_completion(
-            30, interval_seconds=0.01, max_api_fails=7
+            5, interval_seconds=0.01, max_api_fails=7
         )
         assert (
             not result.is_success and result.state == "Internal exception"
@@ -261,4 +261,6 @@ class TestVertexAIClient(unittest.TestCase):
         assert (
             logger.call_count == 7
         ), "Invalid number of logger calls on exception"
-        assert get_job_fn.call_count == 7, "Invalid number of API calls"
+        assert (
+            ai_client.return_value.get_job.call_count == 7
+        ), "Invalid number of API calls"
