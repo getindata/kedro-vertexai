@@ -6,11 +6,12 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.16,<=0.18",
+    "kedro>=0.17,<=0.18",
     "click<8.0",
     "kfp~=1.8.0",
     "tabulate>=0.8.7",
     "semver~=2.10",
+    "pydantic~=1.9.0",
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
     "gcsfs>=2021.11.1",
@@ -36,7 +37,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-vertexai",
-    version="0.2.0",
+    version="0.3.0",
     description="Kedro plugin with Vertex AI support",
     long_description=README,
     long_description_content_type="text/markdown",

@@ -4,10 +4,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 from kedro.framework.session import KedroSession
 
-from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.config import PluginConfig, RunConfig
 from kedro_vertexai.context_helper import (
     ContextHelper,
-    ContextHelper16,
     EnvTemplatedConfigLoader,
 )
 
@@ -15,12 +14,6 @@ from .utils import environment
 
 
 class TestContextHelper(unittest.TestCase):
-    def test_init_different_kedro_versions(self):
-
-        with patch("kedro_vertexai.context_helper.kedro_version", "0.16.0"):
-            ch = ContextHelper.init(None, None)
-            assert isinstance(ch, ContextHelper16)
-
     def test_project_name(self):
         metadata = Mock()
         metadata.project_name = "test_project"
@@ -41,6 +34,13 @@ class TestContextHelper(unittest.TestCase):
             create.assert_called_with("test_package", env="test")
 
     def test_config(self):
+        cfg = PluginConfig(
+            project_id="test-project",
+            region="test-region",
+            run_config=RunConfig(
+                image="test-image", experiment_name="test-experiment"
+            ),
+        )
         metadata = Mock()
         metadata.package_name = "test_package"
         context = MagicMock()
@@ -48,9 +48,9 @@ class TestContextHelper(unittest.TestCase):
         with patch.object(KedroSession, "create", context), patch(
             "kedro_vertexai.context_helper.EnvTemplatedConfigLoader"
         ) as config_loader:
-            config_loader.return_value.get.return_value = {}
+            config_loader.return_value.get.return_value = cfg.dict()
             helper = ContextHelper.init(metadata, "test")
-            assert helper.config == PluginConfig({})
+            assert helper.config == cfg
 
 
 class TestEnvTemplatedConfigLoader(unittest.TestCase):

@@ -104,7 +104,30 @@ kedro-vertexai
 This change enforces raw data existence in the image. Also, one of the limitations of running the Kedro pipeline on Vertex AI (and not on local environment) is inability to use `MemoryDataSet`s, as the pipeline nodes do not share memory, so every artifact should be stored as file 
 in a location that can be accessed by the service (e.g. GCS bucket). The `spaceflights` demo configures datasets to output into local `data` folder, so let's change the behaviour by creating a temporary GCS bucket (referred to as `STAGING_BUCKET`) and modifying `conf/base/catalog.yml`:
 
-```console
+```yaml
+companies:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/companies.csv
+  layer: raw
+
+reviews:
+  type: pandas.CSVDataSet
+  filepath: data/01_raw/reviews.csv
+  layer: raw
+
+shuttles:
+  type: pandas.ExcelDataSet
+  filepath: data/01_raw/shuttles.xlsx
+  layer: raw
+  load_args:
+    engine: openpyxl
+
+model_input_table:
+  type: pandas.CSVDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/03_primary/model_input_table.csv
+  layer: primary
+
+### catalog entries required starter version <= 0.17.6
 preprocessed_companies:
   type: pandas.CSVDataSet
   filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_companies.csv
@@ -114,11 +137,6 @@ preprocessed_shuttles:
   type: pandas.CSVDataSet
   filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_shuttles.csv
   layer: intermediate
-
-model_input_table:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/03_primary/model_input_table.csv
-  layer: primary
 
 X_train:
   type: pickle.PickleDataSet
@@ -139,8 +157,71 @@ y_test:
   type: pickle.PickleDataSet
   filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
   layer: model_input
-  
+
 regressor:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
+  versioned: true
+  layer: models
+
+### catalog entries required for starter version >= 0.17.7
+data_processing.preprocessed_companies:
+  type: pandas.CSVDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_companies.csv
+  layer: intermediate
+
+data_processing.preprocessed_shuttles:
+  type: pandas.CSVDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_shuttles.csv
+  layer: intermediate
+
+data_science.active_modelling_pipeline.X_train:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_train.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.y_train:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_train.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.X_test:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_test.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.y_test:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
+  layer: model_input
+
+data_science.active_modelling_pipeline.regressor:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
+  versioned: true
+  layer: models
+
+data_science.candidate_modelling_pipeline.X_train:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_train.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.y_train:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_train.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.X_test:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_test.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.y_test:
+  type: pickle.PickleDataSet
+  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
+  layer: model_input
+
+data_science.candidate_modelling_pipeline.regressor:
   type: pickle.PickleDataSet
   filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
   versioned: true
@@ -163,7 +244,7 @@ The usage of `${run_id}` is described in section [Dynamic configuration support]
 Execute:
 
 ```console
-kedro docker build
+kedro docker build --build-arg BASE_IMAGE=python:3.8-buster
 ```
 
 When execution finishes, your docker image is ready. If you don't use local cluster, you should push the image to the remote repository:

@@ -57,7 +57,13 @@ class TestGenerator(unittest.TestCase):
 
     def test_should_not_add_resources_spec_if_not_requested(self):
         # given
-        self.create_generator(config={})
+        self.create_generator(
+            config={
+                "resources": {
+                    "__default__": {"cpu": None, "memory": None},
+                }
+            }
+        )
 
         # when
         pipeline = self.generator_under_test.generate_pipeline(
@@ -149,7 +155,7 @@ class TestGenerator(unittest.TestCase):
         # given
         self.create_generator(
             config={
-                "vertex_ai_networking": {
+                "network": {
                     "host_aliases": [
                         {
                             "ip": "10.10.10.10",
@@ -215,14 +221,19 @@ class TestGenerator(unittest.TestCase):
             },
         )
         config_with_defaults = {
+            "image": "test",
             "root": "sample-bucket/sample-suffix",
             "experiment_name": "test-experiment",
             "run_name": "test-run",
         }
         config_with_defaults.update(config)
         self.generator_under_test = PipelineGenerator(
-            PluginConfig(
-                {"host": "http://unittest", "run_config": config_with_defaults}
+            PluginConfig.parse_obj(
+                {
+                    "project_id": "test-project",
+                    "region": "test-region",
+                    "run_config": config_with_defaults,
+                }
             ),
             project_name,
             context,

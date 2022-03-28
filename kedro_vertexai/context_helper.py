@@ -1,11 +1,8 @@
 import os
 from functools import lru_cache
-from pathlib import Path
 from typing import Dict, Iterable
 
-from kedro import __version__ as kedro_version
 from kedro.config import TemplatedConfigLoader
-from semver import VersionInfo
 
 from kedro_vertexai.client import VertexAIPipelinesClient
 
@@ -63,33 +60,15 @@ class ContextHelper(object):
         raw = EnvTemplatedConfigLoader(
             self.context.config_loader.conf_paths
         ).get(self.CONFIG_FILE_PATTERN)
-        return PluginConfig(raw)
+        return PluginConfig.parse_obj(raw)
 
     @property
     @lru_cache()
-    def vertexai_client(self):
+    def vertexai_client(self) -> VertexAIPipelinesClient:
         return VertexAIPipelinesClient(
             self.config, self.project_name, self.context
         )
 
     @staticmethod
     def init(metadata, env):
-        version = VersionInfo.parse(kedro_version)
-        if version.match(">=0.17.0"):
-            return ContextHelper(metadata, env)
-        else:
-            return ContextHelper16(metadata, env)
-
-
-class ContextHelper16(ContextHelper):
-    """Variant for compatibility with Kedro 1.6"""
-
-    @property
-    def project_name(self):
-        return self.context.project_name
-
-    @property
-    def context(self):
-        from kedro.framework.context import load_context
-
-        return load_context(Path.cwd(), env=self._env)
+        return ContextHelper(metadata, env)

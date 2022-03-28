@@ -22,9 +22,10 @@ from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 
-test_config = PluginConfig(
+test_config = PluginConfig.parse_obj(
     {
         "project_id": "test-project-id",
+        "region": "test",
         "run_config": {
             "image": "gcr.io/project-image/test",
             "image_pull_policy": "Always",
@@ -76,6 +77,33 @@ class TestPluginCLI(unittest.TestCase):
             image_pull_policy="Always",
             pipeline="new_pipe",
             parameters={"key1": "some value"},
+        )
+
+    def test_run_once_with_wait(self):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--wait-for-completion",
+                "--timeout-seconds",
+                "666",
+            ],
+            obj=config,
+        )
+
+        assert result.exit_code == 0
+        context_helper.vertexai_client.wait_for_completion.assert_called_with(
+            666
         )
 
     @patch("webbrowser.open_new_tab")
@@ -162,7 +190,7 @@ class TestPluginCLI(unittest.TestCase):
 
             assert result.exit_code == 0, result.output
             assert result.output.startswith("Configuration generated in ")
-            with open(path.joinpath("conf/base/vertexai.yaml"), "r") as f:
+            with open(path.joinpath("conf/base/vertexai.yml"), "r") as f:
                 cfg = yaml.safe_load(f)
                 assert isinstance(cfg, dict), "Could not parse config as yaml"
 
