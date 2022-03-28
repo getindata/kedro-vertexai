@@ -1,10 +1,12 @@
 """Test kedro_vertexai module."""
 
 import unittest
+from time import sleep
 from unittest.mock import MagicMock, patch
 
 from kedro_vertexai.client import VertexAIPipelinesClient
 from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.data_models import PipelineStatus
 from kedro_vertexai.utils import strip_margin
 
 
@@ -176,3 +178,93 @@ class TestVertexAIClient(unittest.TestCase):
                 kwargs["name"]
                 == "projects/.../locations/.../jobs/pipeline_pipeline_def"
             )
+
+    @patch("kedro_vertexai.client.AIPlatformClient")
+    def test_wait_for_completion_success_condition(self, ai_client):
+        ai_client.return_value.get_job.return_value = {
+            "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED
+        }
+        client = self.create_client()
+        result = client.wait_for_completion(30)
+        assert result.is_success, "Pipeline should be determined as successful"
+        assert isinstance(
+            result.job_data, dict
+        ), "Field job_data should have value in finished pipelines"
+
+    @patch("kedro_vertexai.client.AIPlatformClient")
+    def test_wait_for_completion_failure_condition(self, ai_client):
+
+        for state in (
+            PipelineStatus.PIPELINE_STATE_CANCELLED,
+            PipelineStatus.PIPELINE_STATE_FAILED,
+        ):
+            with patch.object(
+                ai_client.return_value,
+                "get_job",
+                return_value={"state": state},
+            ):
+                # with patch(
+                #     "kedro_vertexai.client.AIPlatformClient.get_job",
+                #     return_value={"state": state},
+                # ):
+                client = self.create_client()
+                result = client.wait_for_completion(10)
+                assert (
+                    not result.is_success
+                ), "Pipeline should be determined as failed"
+                assert isinstance(
+                    result.job_data, dict
+                ), "Field job_data should have value in finished pipelines"
+
+    @patch("kedro_vertexai.client.AIPlatformClient")
+    def test_wait_for_completion_timeout(self, ai_client):
+        ai_client.return_value.get_job.side_effect = lambda _: {
+            "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED,
+            "hacky :)": sleep(60.0),
+        }
+        client = self.create_client()
+        result = client.wait_for_completion(3)
+        assert not result.is_success, "Pipeline should be determined as failed"
+        assert (
+            result.job_data is None
+        ), "Timed-out pipelines will not have job details"
+        assert (
+            "max timeout" in result.state.lower()
+        ), "Final state seems invalid"
+
+    @patch("kedro_vertexai.client.AIPlatformClient")
+    def test_wait_for_completion_intervals(self, ai_client):
+        ai_client.return_value.get_job.return_value = {
+            "state": PipelineStatus.PIPELINE_STATE_RUNNING
+        }
+        timeout = 2
+        interval = 0.1
+        tolerance = 2
+        client = self.create_client()
+        client.wait_for_completion(2, 0.1)
+        assert (
+            (timeout / interval) - tolerance
+            <= ai_client.return_value.get_job.call_count
+            < (timeout / interval) + tolerance
+        ), "Number of calls to the API within the specified interval is invalid"
+
+    @patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error")
+    @patch(
+        "kedro_vertexai.client.AIPlatformClient",
+    )
+    def test_wait_for_completion_api_errors(self, ai_client, logger):
+        ai_client.return_value.get_job.side_effect = Exception()
+
+        client = self.create_client()
+        result = client.wait_for_completion(
+            5, interval_seconds=0.01, max_api_fails=7
+        )
+        assert (
+            not result.is_success and result.state == "Internal exception"
+        ), "When API rises many times, end status should be failed"
+        assert (
+            logger.call_count == 7
+        ), "Invalid number of logger calls on exception"
+        assert (
+            ai_client.return_value.get_job.call_count == 7
+        ), "Invalid number of API calls"

@@ -77,5 +77,5 @@ jobs:
       run: |
         cd ./spaceflights
         export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
-        kedro vertexai run-once
+        kedro vertexai run-once --wait-for-completion
 

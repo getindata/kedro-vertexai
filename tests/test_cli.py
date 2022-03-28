@@ -79,6 +79,33 @@ class TestPluginCLI(unittest.TestCase):
             parameters={"key1": "some value"},
         )
 
+    def test_run_once_with_wait(self):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--wait-for-completion",
+                "--timeout-seconds",
+                "666",
+            ],
+            obj=config,
+        )
+
+        assert result.exit_code == 0
+        context_helper.vertexai_client.wait_for_completion.assert_called_with(
+            666
+        )
+
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
         context_helper = MagicMock(ContextHelper)

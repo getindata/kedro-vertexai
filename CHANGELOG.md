@@ -5,6 +5,7 @@
 - Add end 2 end tests based on Kedro Spaceflights quickstart guide from our docs.  
 - Move service account configuration from env variables to config file. (#7)
 - Refactored config to use `pydantic` for validation instead of homemade code. (#1)
+- Add `--wait-for-completion` and `--timeout-seconds` parameters to `run-once` command to wait for the Vertex AI job to complete when launched from CLI
 
 ## [0.2.0] - 2022-03-23
 

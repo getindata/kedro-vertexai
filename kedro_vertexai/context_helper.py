@@ -64,7 +64,7 @@ class ContextHelper(object):
 
     @property
     @lru_cache()
-    def vertexai_client(self):
+    def vertexai_client(self) -> VertexAIPipelinesClient:
         return VertexAIPipelinesClient(
             self.config, self.project_name, self.context
         )

@@ -4,11 +4,14 @@ import webbrowser
 from pathlib import Path
 
 import click
+from click import Context
 
 from .auth import AuthHandler
+from .client import VertexAIPipelinesClient
 from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
+from .data_models import PipelineResult
 
 logger = logging.getLogger(__name__)
 
@@ -75,19 +78,48 @@ def list_pipelines(ctx):
     multiple=True,
     help="Parameters override in form of `key=value`",
 )
+@click.option("--wait-for-completion", type=bool, is_flag=True, default=False)
+@click.option(
+    "--timeout-seconds",
+    type=int,
+    default=1800,
+    help="If --wait-for-completion is used, "
+    "this option sets timeout after which the plugin will return non-zero exit code "
+    "if the pipeline does not finish in time",
+)
 @click.pass_context
-def run_once(ctx, image: str, pipeline: str, params: list):
+def run_once(
+    ctx: Context,
+    image: str,
+    pipeline: str,
+    params: list,
+    wait_for_completion: bool,
+    timeout_seconds: int,
+):
     """Deploy pipeline as a single run within given experiment
     Config can be specified in kubeflow.yml as well."""
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
+    client: VertexAIPipelinesClient = context_helper.vertexai_client
 
-    context_helper.vertexai_client.run_once(
+    client.run_once(
         pipeline=pipeline,
         image=image if image else config.image,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
+
+    if wait_for_completion:
+        result: PipelineResult = client.wait_for_completion(
+            timeout_seconds
+        )  # blocking call
+        if result.is_success:
+            logger.info("Pipeline finished successfully!")
+            exit_code = 0
+        else:
+            logger.error(f"Pipeline finished with status: {result.state}")
+            exit_code = 1
+        ctx.exit(exit_code)
 
 
 @vertexai_group.command()
