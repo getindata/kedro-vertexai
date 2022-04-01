@@ -1,9 +1,11 @@
+import json
 import logging
 import os
 import webbrowser
 from pathlib import Path
 
 import click
+import yaml
 from click import Context
 
 from .auth import AuthHandler
@@ -12,7 +14,6 @@ from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,10 @@ def commands():
 def vertexai_group(ctx, metadata, env):
     """Interact with Google Cloud Platform :: Vertex AI Pipelines"""
     ctx.ensure_object(dict)
-    ctx.obj["context_helper"] = ContextHelper.init(metadata, env,)
+    ctx.obj["context_helper"] = ContextHelper.init(
+        metadata,
+        env,
+    )
 
 
 @vertexai_group.command()
@@ -191,7 +195,10 @@ def compile(ctx, image, pipeline, output) -> None:
 )
 @click.pass_context
 def schedule(
-    ctx, pipeline: str, cron_expression: str, params: list,
+    ctx,
+    pipeline: str,
+    cron_expression: str,
+    params: list,
 ):
     """Schedules recurring execution of latest version of the pipeline"""
     logger.warning(
@@ -240,7 +247,9 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @vertexai_group.command(hidden=True)
 @click.argument("run_id", type=str)
 @click.option(
-    "--output", type=str, default="/tmp/mlflow_run_id",
+    "--output",
+    type=str,
+    default="/tmp/mlflow_run_id",
 )
 @click.pass_context
 def mlflow_start(ctx, run_id: str, output: str):
@@ -269,3 +278,32 @@ def mlflow_start(ctx, run_id: str, output: str):
     with open(output, "w") as f:
         f.write(run.info.run_id)
     click.echo(f"Started run: {run.info.run_id}")
+
+
+@vertexai_group.command(hidden=True)
+@click.option("--params", type=str, default="")
+@click.option("--output", type=str, default="config.yaml")
+def store_parameters(params: str, output: str):
+    """
+    Used to store run parameters as config.yaml, because we cannot pass lists
+    as CLI args by default
+    https://stackoverflow.com/questions/62492785/kedro-how-to-pass-list-parameters-from-command-line
+    Bases on ideas from https://github.com/getindata/kedro-kubeflow/pull/90
+    """
+    if params:
+        parameters = json.loads(params.strip("'"))
+        output_path = Path(output)
+        if output_path.exists():
+            with output_path.open("r") as f:
+                config_data = yaml.safe_load(f)
+        else:
+            config_data = {}
+
+        if "run" not in config_data:
+            config_data["run"] = {}
+
+        config_data["run"]["params"] = parameters
+        with output_path.open("w") as f:
+            yaml.dump(config_data, f)
+    else:
+        logger.debug("No params to serialize")
