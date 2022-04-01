@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Add support for list type in parameters (+ restore dynamic parameters functionality (#23)
 
 ## [0.3.0] - 2022-03-28
 
