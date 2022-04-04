@@ -15,7 +15,10 @@ INSTALL_REQUIRES = [
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
     "gcsfs>=2021.11.1",
+    # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
     "google-cloud-storage<2.0.0",
+    "grpcio~=1.44.0",
+    "grpcio-status~=1.45.0",
 ]
 
 # Dev Requirements
