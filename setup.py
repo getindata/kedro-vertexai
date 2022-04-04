@@ -15,6 +15,7 @@ INSTALL_REQUIRES = [
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
     "gcsfs>=2021.11.1",
+    "google-cloud-storage<2.0.0",
 ]
 
 # Dev Requirements
