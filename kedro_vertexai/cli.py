@@ -1,11 +1,9 @@
-import json
 import logging
 import os
 import webbrowser
 from pathlib import Path
 
 import click
-import yaml
 from click import Context
 
 from .auth import AuthHandler
@@ -14,6 +12,7 @@ from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
+from .utils import store_parameters_in_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -290,20 +289,4 @@ def store_parameters(params: str, output: str):
     https://stackoverflow.com/questions/62492785/kedro-how-to-pass-list-parameters-from-command-line
     Bases on ideas from https://github.com/getindata/kedro-kubeflow/pull/90
     """
-    if params:
-        parameters = json.loads(params.strip("'"))
-        output_path = Path(output)
-        if output_path.exists():
-            with output_path.open("r") as f:
-                config_data = yaml.safe_load(f)
-        else:
-            config_data = {}
-
-        if "run" not in config_data:
-            config_data["run"] = {}
-
-        config_data["run"]["params"] = parameters
-        with output_path.open("w") as f:
-            yaml.dump(config_data, f)
-    else:
-        logger.debug("No params to serialize")
+    store_parameters_in_yaml(params, output)
