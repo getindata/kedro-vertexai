@@ -5,6 +5,9 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
+from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.dynamic_config import DynamicConfigProvider
+
 IAP_CLIENT_ID = "IAP_CLIENT_ID"
 DEX_USERNAME = "DEX_USERNAME"
 DEX_PASSWORD = "DEX_PASSWORD"
@@ -14,12 +17,11 @@ class AuthHandler(object):
 
     log = logging.getLogger(__name__)
 
-    def obtain_id_token(self):
+    @classmethod
+    def obtain_id_token(self, client_id: str):
         from google.auth.exceptions import DefaultCredentialsError
         from google.auth.transport.requests import Request
         from google.oauth2 import id_token
-
-        client_id = os.environ.get(IAP_CLIENT_ID, None)
 
         jwt_token = None
 
@@ -83,3 +85,22 @@ class AuthHandler(object):
 
         s.post(form_absolute_url, headers=headers, data=data)
         return s.cookies.get_dict()["authservice_session"]
+
+
+class MLFlowGCPCredentialsProvider(DynamicConfigProvider):
+    def __init__(self, config: PluginConfig, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
+        self.client_id = kwargs["client_id"]
+
+    @property
+    def target_config_file(self) -> str:
+        return "credentials.yml"
+
+    def generate_config(self) -> dict:
+        return {
+            "gcp_credentials": {
+                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_id_token(
+                    self.client_id
+                )
+            }
+        }
