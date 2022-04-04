@@ -1,10 +1,11 @@
 import json
+import logging
 import re
 from pathlib import Path
 
 import yaml
 
-from kedro_vertexai.cli import logger
+logger = logging.getLogger(__name__)
 
 
 def strip_margin(text: str) -> str:
