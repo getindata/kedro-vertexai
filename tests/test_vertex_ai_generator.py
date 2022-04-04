@@ -151,6 +151,27 @@ class TestGenerator(unittest.TestCase):
             in dsl_pipeline.ops["node1"].container.args[0]
         )
 
+    def test_should_dump_params_and_add_config_if_params_are_set(self):
+        self.create_generator(
+            params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
+        )
+        self.mock_mlflow(False)
+        pipeline = self.generator_under_test.generate_pipeline(
+            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+        )
+        with kfp.dsl.Pipeline(None) as dsl_pipeline:
+            pipeline()
+
+        assert (
+            "kedro vertexai -e unittests store-parameters --params="
+            in dsl_pipeline.ops["node1"].container.args[0]
+        )
+
+        assert (
+            'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
+            in dsl_pipeline.ops["node1"].container.args[0]
+        )
+
     def test_should_add_host_aliases_if_requested(self):
         # given
         self.create_generator(

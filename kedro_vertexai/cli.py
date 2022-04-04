@@ -12,6 +12,7 @@ from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
+from .utils import store_parameters_in_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -276,3 +277,16 @@ def mlflow_start(ctx, run_id: str, output: str):
     with open(output, "w") as f:
         f.write(run.info.run_id)
     click.echo(f"Started run: {run.info.run_id}")
+
+
+@vertexai_group.command(hidden=True)
+@click.option("--params", type=str, default="")
+@click.option("--output", type=str, default="config.yaml")
+def store_parameters(params: str, output: str):
+    """
+    Used to store run parameters as config.yaml, because we cannot pass lists
+    as CLI args by default
+    https://stackoverflow.com/questions/62492785/kedro-how-to-pass-list-parameters-from-command-line
+    Bases on ideas from https://github.com/getindata/kedro-kubeflow/pull/90
+    """
+    store_parameters_in_yaml(params, output)

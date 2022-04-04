@@ -1,7 +1,7 @@
 """
 Generator for Vertex AI pipelines
 """
-
+import json
 import logging
 from tempfile import NamedTemporaryFile
 from typing import Dict, Set
@@ -152,6 +152,8 @@ class PipelineGenerator:
                 else []
             )
 
+            should_add_params = len(self.context.params) > 0
+
             kedro_command = " ".join(
                 [
                     f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
@@ -159,13 +161,16 @@ class PipelineGenerator:
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
                     f'--node "{node.name}"',
+                    "--config config.yaml" if should_add_params else "",
                 ]
             )
 
             node_command = " ".join(
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
-                    mlflow_tokens + kedro_command,
+                    self._generate_params_command(should_add_params),
+                    mlflow_tokens,
+                    kedro_command,
                 ]
             ).strip()
 
@@ -186,6 +191,13 @@ class PipelineGenerator:
             kfp_ops[name] = self._create_kedro_op(name, spec, component_params)
 
         return kfp_ops
+
+    def _generate_params_command(self, should_add_params) -> str:
+        return (
+            f"kedro vertexai -e {self.context.env} store-parameters --params='{json.dumps(self.context.params, indent=None)}' &&"  # noqa: E501
+            if should_add_params
+            else ""
+        )
 
     def _create_kedro_op(
         self, name: str, spec: ComponentSpec, op_function_parameters
