@@ -19,7 +19,7 @@ run_config:
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Name of the kubeflow experiment to be created
+  # Prefix of Vertex AI pipeline run
   experiment_name: {project}
 
   # Name of the scheduled run, templated with the schedule parameters
@@ -44,7 +44,8 @@ run_config:
     # Hosts aliases to be placed in /etc/hosts when pipeline is executed
     # host_aliases:
     #  - ip: 127.0.0.1
-    #    hostnames: me.local
+    #    hostnames:
+    #     - me.local
 
   # What Kedro pipeline should be run as the last step regardless of the
   # pipeline status. Used to send notifications or raise the alerts
