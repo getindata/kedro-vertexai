@@ -18,7 +18,7 @@ class DynamicConfigProvider(ABC):
 
         try:
             cls = getattr(import_module(module_name), class_name)
-            return cls(config, *provider_config.args, **provider_config.kwargs)
+            return cls(config, **provider_config.params)
         except:  # noqa: E722
             logger.error(
                 f"Could not load dynamic config loader class {provider_config.cls}, "
@@ -26,7 +26,7 @@ class DynamicConfigProvider(ABC):
                 exc_info=True,
             )
 
-    def __init__(self, config: PluginConfig, *args, **kwargs):
+    def __init__(self, config: PluginConfig, **kwargs):
         self.config = config
 
     @property

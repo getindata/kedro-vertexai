@@ -4,24 +4,11 @@ from typing import Iterable
 
 from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
-from kedro.io import DataCatalog
 
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import EnvTemplatedConfigLoader
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import is_mlflow_enabled
-
-
-class MlflowIapAuthHook:
-    """Allows authentication trough IAP proxy"""
-
-    @hook_impl
-    def after_catalog_created(self, catalog: DataCatalog, **kwargs) -> None:
-        from .auth import AuthHandler
-
-        token = AuthHandler().obtain_id_token()
-        if token:
-            os.environ["MLFLOW_TRACKING_TOKEN"] = token
 
 
 class MlflowTagsHook:
@@ -56,6 +43,5 @@ else:
         "config values like ${run_id} will not be substituted at runtime"
     )
 
-mlflow_iap_hook = MlflowIapAuthHook()
 mlflow_tags_hook = MlflowTagsHook()
 env_templated_config_loader_hook = KedoVertexAIConfigLoaderHook()

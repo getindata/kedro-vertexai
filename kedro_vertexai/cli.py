@@ -4,7 +4,6 @@ import webbrowser
 from pathlib import Path
 
 import click
-import yaml
 from click import Context
 
 from .client import VertexAIPipelinesClient
@@ -12,8 +11,7 @@ from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
-from .dynamic_config import DynamicConfigProvider
-from .utils import store_parameters_in_yaml
+from .utils import materialize_dynamic_configuration, store_parameters_in_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -299,35 +297,4 @@ def initialize_job(ctx, params: str, output: str):
     store_parameters_in_yaml(params, output)
 
     # 2.
-    from kedro.framework.project import settings
-
-    for provider_config in config.run_config.dynamic_config_providers:
-        provider = DynamicConfigProvider.build(config, provider_config)
-
-        if provider is None:
-            logger.warning(
-                f"Provider {provider_config.cls} could not be initialized, see the error messages above"
-            )
-            continue
-
-        dynamic_config = provider.generate_config()
-
-        target_path = (
-            context_helper.context.project_path
-            / settings.CONF_ROOT
-            / provider.target_env
-            / provider.target_config_file
-        )
-
-        if target_path.exists():
-            logger.info(
-                f"Merging dynamic config for {target_path} with existing one"
-            )
-            with target_path.open("r") as f:
-                dynamic_config = provider.merge_with_existing(
-                    yaml.safe_load(f), dynamic_config
-                )
-
-        logger.info(f"Saving dynamic config {target_path} [{type(provider)}]")
-        with target_path.open("w") as f:
-            yaml.safe_dump(dynamic_config, f)
+    materialize_dynamic_configuration(config, context_helper)

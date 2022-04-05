@@ -76,9 +76,9 @@ run_config:
   # (which in case of Vertex AI would be a separate container / machine)
   # Example:
   # dynamic_config_providers:
-  #  - cls: kedro_vertexai.auth.gcp_credentials_provider.GCPCredentialsProvider
-  #    args: []
-  #    kwargs: {}
+  #  - cls: kedro_vertexai.auth.gcp.MLFlowGoogleOAuthCredentialsProvider
+  #    params:
+  #      client_id: iam-client-id
 
   dynamic_config_providers: []
 """
@@ -101,8 +101,7 @@ class NetworkConfig(BaseModel):
 
 class DynamicConfigProviderConfig(BaseModel):
     cls: str
-    args: Optional[List[str]] = []
-    kwargs: Optional[Dict[str, str]] = {}
+    params: Optional[Dict[str, str]] = {}
 
 
 class RunConfig(BaseModel):

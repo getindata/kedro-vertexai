@@ -13,15 +13,17 @@ DEX_USERNAME = "DEX_USERNAME"
 DEX_PASSWORD = "DEX_PASSWORD"
 
 
-class AuthHandler(object):
+class AuthHandler:
 
     log = logging.getLogger(__name__)
 
-    @classmethod
     def obtain_id_token(self, client_id: str):
-        from google.auth.exceptions import DefaultCredentialsError
-        from google.auth.transport.requests import Request
-        from google.oauth2 import id_token
+        """
+        Obtain OAuth2.0 token to be used with HTTPs requests
+        """
+        from google.auth.exceptions import DefaultCredentialsError  # noqa
+        from google.auth.transport.requests import Request  # noqa
+        from google.oauth2 import id_token  # noqa
 
         jwt_token = None
 
@@ -32,36 +34,39 @@ class AuthHandler(object):
             return jwt_token
 
         try:
-            self.log.debug("Attempt to get IAP token for %s." + client_id)
+            self.log.debug(f"Attempt to get IAP token for {client_id}")
             jwt_token = id_token.fetch_id_token(Request(), client_id)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
-        except DefaultCredentialsError as ex:
+        except DefaultCredentialsError:
             self.log.warning(
-                str(ex)
-                + (
+                (
                     " Note that this authentication method does not work with default"
                     " credentials obtained via 'gcloud auth application-default login'"
                     " command. Refer to documentation on how to configure service account"
                     " locally"
                     " (https://cloud.google.com/docs/authentication/production#manually)"
-                )
+                ),
+                exc_info=True,
             )
-        except Exception as e:
-            self.log.error("Failed to obtain IAP access token. " + str(e))
-        finally:
+        except Exception as e:  # noqa
+            self.log.error("Failed to obtain IAP access token.", exc_info=True)
+        finally:  # noqa
             return jwt_token
 
     def obtain_dex_authservice_session(self, kfp_api):
+        """
+        Obtain token for DEX-protected service
+        """
         if DEX_USERNAME not in os.environ or DEX_PASSWORD not in os.environ:
             self.log.debug(
                 "Skipping DEX authentication due to missing env variables"
             )
             return None
 
-        s = requests.Session()
-        r = s.get(kfp_api)
+        session = requests.Session()
+        response = session.get(kfp_api)
         form_relative_url = re.search(
-            '/dex/auth/local\\?req=([^"]*)', r.text
+            '/dex/auth/local\\?req=([^"]*)', response.text
         ).group(0)
 
         kfp_url_parts = urlsplit(kfp_api)
@@ -83,11 +88,11 @@ class AuthHandler(object):
             "password": os.environ[DEX_PASSWORD],
         }
 
-        s.post(form_absolute_url, headers=headers, data=data)
-        return s.cookies.get_dict()["authservice_session"]
+        session.post(form_absolute_url, headers=headers, data=data)
+        return session.cookies.get_dict()["authservice_session"]
 
 
-class MLFlowGCPCredentialsProvider(DynamicConfigProvider):
+class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
     def __init__(self, config: PluginConfig, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.client_id = kwargs["client_id"]
