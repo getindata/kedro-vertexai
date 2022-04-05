@@ -44,7 +44,7 @@ run_config:
     # Hosts aliases to be placed in /etc/hosts when pipeline is executed
     # host_aliases:
     #  - ip: 127.0.0.1
-    #    hostnames: 
+    #    hostnames:
     #     - me.local
 
   # What Kedro pipeline should be run as the last step regardless of the
