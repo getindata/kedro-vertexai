@@ -194,7 +194,7 @@ class PipelineGenerator:
 
     def _generate_params_command(self, should_add_params) -> str:
         return (
-            f"kedro vertexai -e {self.context.env} store-parameters --params='{json.dumps(self.context.params, indent=None)}' &&"  # noqa: E501
+            f"kedro vertexai -e {self.context.env} initialize-job --params='{json.dumps(self.context.params, indent=None)}' &&"  # noqa: E501
             if should_add_params
             else ""
         )

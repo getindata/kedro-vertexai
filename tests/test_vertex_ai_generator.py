@@ -163,7 +163,7 @@ class TestGenerator(unittest.TestCase):
             pipeline()
 
         assert (
-            "kedro vertexai -e unittests store-parameters --params="
+            "kedro vertexai -e unittests initialize-job --params="
             in dsl_pipeline.ops["node1"].container.args[0]
         )
 
