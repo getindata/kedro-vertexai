@@ -27,15 +27,12 @@ class AuthHandler:
         """
         Obtain OAuth2.0 token to be used with HTTPs requests
         """
-        from google.auth.exceptions import (  # pylint: disable=wrong-import-position
-            DefaultCredentialsError,
-        )
-        from google.auth.transport.requests import (  # pylint: disable=wrong-import-position
-            Request,
-        )
-        from google.oauth2 import (  # pylint: disable=wrong-import-position
-            id_token,
-        )
+        # pylint: disable=wrong-import-position
+        from google.auth.exceptions import DefaultCredentialsError
+        from google.auth.transport.requests import Request
+        from google.oauth2 import id_token
+
+        # pylint enable=wrong-import-position
 
         jwt_token = None
 
@@ -46,7 +43,7 @@ class AuthHandler:
             return jwt_token
 
         try:
-            self.log.debug("Attempt to get IAP token for %s" % client_id)
+            self.log.debug("Attempt to get IAP token for %s", client_id)
             jwt_token = id_token.fetch_id_token(Request(), client_id)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
