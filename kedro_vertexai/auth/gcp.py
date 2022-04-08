@@ -17,6 +17,9 @@ DEX_PASSWORD = "DEX_PASSWORD"
 
 
 class AuthHandler:
+    """
+    Utils for handling authorization
+    """
 
     log = logging.getLogger(__name__)
 
@@ -24,9 +27,15 @@ class AuthHandler:
         """
         Obtain OAuth2.0 token to be used with HTTPs requests
         """
-        from google.auth.exceptions import DefaultCredentialsError  # noqa
-        from google.auth.transport.requests import Request  # noqa
-        from google.oauth2 import id_token  # noqa
+        from google.auth.exceptions import (  # pylint: disable=wrong-import-position
+            DefaultCredentialsError,
+        )
+        from google.auth.transport.requests import (  # pylint: disable=wrong-import-position
+            Request,
+        )
+        from google.oauth2 import (  # pylint: disable=wrong-import-position
+            id_token,
+        )
 
         jwt_token = None
 
@@ -37,7 +46,7 @@ class AuthHandler:
             return jwt_token
 
         try:
-            self.log.debug(f"Attempt to get IAP token for {client_id}")
+            self.log.debug("Attempt to get IAP token for %s" % client_id)
             jwt_token = id_token.fetch_id_token(Request(), client_id)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
@@ -51,10 +60,10 @@ class AuthHandler:
                 ),
                 exc_info=True,
             )
-        except Exception as e:  # noqa
+        except Exception:  # pylint: disable=broad-except
             self.log.error("Failed to obtain IAP access token.", exc_info=True)
-        finally:  # noqa
-            return jwt_token
+
+        return jwt_token
 
     def obtain_dex_authservice_session(self, kfp_api):
         """
@@ -96,6 +105,10 @@ class AuthHandler:
 
 
 class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
+    """
+    Uses Google OAuth to generate MLFLOW_TRACKING_TOKEN
+    """
+
     def __init__(self, config: PluginConfig, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.client_id = kwargs["client_id"]

@@ -15,7 +15,7 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
 
     VAR_PREFIX = "KEDRO_CONFIG_"
     # defaults provided so default variables ${commit_id|dirty} work for some entries
-    ENV_DEFAULTS = {"commit_id": "", "branch_name": None, "run_id": ""}
+    ENV_DEFAULTS = {"commit_id": None, "branch_name": None, "run_id": ""}
 
     def __init__(self, conf_paths: Iterable[str]):
         super().__init__(conf_paths, globals_dict=self.read_env())
