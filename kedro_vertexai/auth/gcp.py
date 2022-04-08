@@ -27,12 +27,12 @@ class AuthHandler:
         """
         Obtain OAuth2.0 token to be used with HTTPs requests
         """
-        # pylint: disable=wrong-import-position
+        # pylint: disable=import-outside-toplevel
         from google.auth.exceptions import DefaultCredentialsError
         from google.auth.transport.requests import Request
         from google.oauth2 import id_token
 
-        # pylint enable=wrong-import-position
+        # pylint enable=import-outside-toplevel
 
         jwt_token = None
 
