@@ -59,6 +59,10 @@ run_config:
   #                              lazy evaluation (e.g. SparkML)
   #generator_class: DefaultPipelineGenerator
 
+  # Optional environment parameters passed to the kedro invocations
+  # environment:
+  #   NAME: value
+
   # Optional section allowing adjustment of the resources, reservations and limits
   # for the nodes. When not provided they're set to 500m cpu and 1024Mi memory.
   # If you don't want to specify pipeline resources set both to None in __default__.
@@ -115,6 +119,7 @@ class RunConfig(BaseModel):
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
     generator_class: GeneratorClassEnum = GeneratorClassEnum.DEFAULT
+    environment: Dict[str, str] = {}
 
     def resources_for(self, node):
         if node in self.resources.keys():

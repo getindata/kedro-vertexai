@@ -244,10 +244,9 @@ class SquashedPipelineGenerator(DefaultPipelineGenerator):
         pipeline,
         tracking_token=None,
     ) -> dsl.ContainerOp:
-
         inputs = []
         command = []
-        env = {}
+        env = self.run_config.environment
         should_add_params = len(self.context.params) > 0
         name = clean_name(pipeline)
 
