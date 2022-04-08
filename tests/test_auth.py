@@ -5,20 +5,19 @@ from unittest.mock import patch
 import responses
 from google.auth.exceptions import DefaultCredentialsError
 
-from kedro_vertexai.auth import AuthHandler
+from kedro_vertexai.auth.gcp import AuthHandler
 
 
 class TestAuthHandler(unittest.TestCase):
     @patch("google.oauth2.id_token.fetch_id_token")
     def test_should_error_on_invalid_creds(self, fetch_id_token_mock):
         # given
-        os.environ["IAP_CLIENT_ID"] = "unittest-client-id"
         fetch_id_token_mock.side_effect = Exception()
 
         with self.assertLogs("kedro_vertexai.auth", level="ERROR") as cm:
             # when
 
-            token = AuthHandler().obtain_id_token()
+            token = AuthHandler().obtain_id_token("unittest-client-id")
 
             # then
             assert "Failed to obtain IAP access token" in cm.output[0]
@@ -31,12 +30,11 @@ class TestAuthHandler(unittest.TestCase):
         self, fetch_id_token_mock
     ):
         # given
-        os.environ["IAP_CLIENT_ID"] = "unittest-client-id"
         fetch_id_token_mock.side_effect = DefaultCredentialsError()
 
         with self.assertLogs("kedro_vertexai.auth", level="WARNING") as cm:
             # when
-            token = AuthHandler().obtain_id_token()
+            token = AuthHandler().obtain_id_token("unittest-client-id")
 
             # then
             assert (
@@ -48,14 +46,22 @@ class TestAuthHandler(unittest.TestCase):
     @patch("google.oauth2.id_token.fetch_id_token")
     def test_should_provide_valid_token(self, fetch_id_token_mock):
         # given
-        os.environ["IAP_CLIENT_ID"] = "unittest-client-id"
         fetch_id_token_mock.return_value = "TOKEN"
 
         # when
-        token = AuthHandler().obtain_id_token()
+        token = AuthHandler().obtain_id_token("unittest-client-id")
 
         # then
         assert token == "TOKEN"
+
+    def test_empty_client_id(self):
+        # for better test coverage
+
+        # when
+        token = AuthHandler().obtain_id_token("")
+
+        # then
+        assert token is None
 
     def test_should_skip_dex_auth_if_env_is_not_set(self):
         # given

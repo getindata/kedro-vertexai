@@ -1,23 +1,12 @@
-import os
 import unittest
 from unittest.mock import patch
 
 import mlflow
 
-from kedro_vertexai.auth import AuthHandler
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
-from kedro_vertexai.hooks import MlflowIapAuthHook, MlflowTagsHook  # NOQA
+from kedro_vertexai.hooks import MlflowTagsHook
 
 from .utils import environment
-
-
-class TestMlflowIapAuthHook(unittest.TestCase):
-    @patch.object(AuthHandler, "obtain_id_token", return_value="TEST_TOKEN")
-    def test_should_inject_token_when_env_is_set(self, obtain_id_token):
-        MlflowIapAuthHook().after_catalog_created(catalog=None)
-
-        assert os.environ["MLFLOW_TRACKING_TOKEN"] == "TEST_TOKEN"
-        obtain_id_token.assert_called_with()
 
 
 @patch.object(mlflow, "set_tag")

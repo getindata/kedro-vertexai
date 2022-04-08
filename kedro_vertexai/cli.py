@@ -6,13 +6,12 @@ from pathlib import Path
 import click
 from click import Context
 
-from .auth import AuthHandler
 from .client import VertexAIPipelinesClient
 from .config import PluginConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
-from .utils import store_parameters_in_yaml
+from .utils import materialize_dynamic_configuration, store_parameters_in_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -255,11 +254,6 @@ def mlflow_start(ctx, run_id: str, output: str):
     import mlflow
     from kedro_mlflow.framework.context import get_mlflow_config
 
-    token = AuthHandler().obtain_id_token()
-    if token:
-        os.environ["MLFLOW_TRACKING_TOKEN"] = token
-        logger.info("Configuring MLFLOW_TRACKING_TOKEN")
-
     try:
         kedro_context = ctx.obj["context_helper"].context
         mlflow_conf = get_mlflow_config(kedro_context)
@@ -282,11 +276,27 @@ def mlflow_start(ctx, run_id: str, output: str):
 @vertexai_group.command(hidden=True)
 @click.option("--params", type=str, default="")
 @click.option("--output", type=str, default="config.yaml")
-def store_parameters(params: str, output: str):
+@click.pass_context
+def initialize_job(ctx, params: str, output: str):
     """
-    Used to store run parameters as config.yaml, because we cannot pass lists
+    Initializes node in Vertex AI runtime
+
+    Current responsibilities:
+
+    1. Store run parameters as config.yaml, because we cannot pass lists
     as CLI args by default
     https://stackoverflow.com/questions/62492785/kedro-how-to-pass-list-parameters-from-command-line
     Bases on ideas from https://github.com/getindata/kedro-kubeflow/pull/90
+
+    2. Generate dynamic config files (e.g. with credentials that need to be refreshed per-node)
     """
+    logger.info("Initializing VertexAI job")
+
+    context_helper: ContextHelper = ctx.obj["context_helper"]
+    config: PluginConfig = context_helper.config
+
+    # 1.
     store_parameters_in_yaml(params, output)
+
+    # 2.
+    materialize_dynamic_configuration(config, context_helper)

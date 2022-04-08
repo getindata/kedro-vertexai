@@ -12,35 +12,18 @@ from click.testing import CliRunner
 from kedro_vertexai.cli import (
     compile,
     init,
+    initialize_job,
     list_pipelines,
     mlflow_start,
     run_once,
     schedule,
-    store_parameters,
     ui,
     vertexai_group,
 )
-from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 
-test_config = PluginConfig.parse_obj(
-    {
-        "project_id": "test-project-id",
-        "region": "test",
-        "run_config": {
-            "image": "gcr.io/project-image/test",
-            "image_pull_policy": "Always",
-            "experiment_name": "Test Experiment",
-            "run_name": "test run",
-            "volume": {
-                "storageclass": "default",
-                "size": "3Gi",
-                "access_modes": "[ReadWriteOnce]",
-            },
-        },
-    }
-)
+from .utils import test_config
 
 
 class TestPluginCLI(unittest.TestCase):
@@ -153,7 +136,7 @@ class TestPluginCLI(unittest.TestCase):
             output_path = Path(tmp_dir) / "config.yaml"
 
             result = runner.invoke(
-                store_parameters,
+                initialize_job,
                 [
                     "--params",
                     f"'{json.dumps(params)}'",
@@ -197,7 +180,7 @@ class TestPluginCLI(unittest.TestCase):
                 yaml.safe_dump(exiting_config_yaml_content, f)
 
             result = runner.invoke(
-                store_parameters,
+                initialize_job,
                 [
                     "--params",
                     f"'{json.dumps(params)}'",
