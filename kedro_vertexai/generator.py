@@ -26,6 +26,20 @@ from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 
 
 class PipelineGenerator:
+    def generate_pipeline(self, pipeline, image, image_pull_policy, token):
+        """
+        This method return @dsl.pipeline annotated function that contains
+        dynamically generated pipelines.
+        :param pipeline: kedro pipeline
+        :param image: full docker image name
+        :param image_pull_policy: docker pull policy
+        :param token: mlflow authentication token
+        :return: kfp pipeline function
+        """
+        raise NotImplementedError()
+
+
+class DefaultPipelineGenerator(PipelineGenerator):
     """
     Generator creates Vertex AI pipeline function that operatoes with Vertex AI specific
     opertator spec.
@@ -48,16 +62,6 @@ class PipelineGenerator:
         return self.project_name.lower().replace(" ", "-")
 
     def generate_pipeline(self, pipeline, image, image_pull_policy, token):
-        """
-        This method return @dsl.pipeline annotated function that contains
-        dynamically generated pipelines.
-        :param pipeline: kedro pipeline
-        :param image: full docker image name
-        :param image_pull_policy: docker pull policy
-        :param token: mlflow authentication token
-        :return: kfp pipeline function
-        """
-
         def set_dependencies(node, dependencies, kfp_ops):
             for dependency in dependencies:
                 name = clean_name(node.name)
@@ -220,3 +224,82 @@ class PipelineGenerator:
         if "memory" in resources and resources["memory"]:
             operator.set_memory_limit(resources["memory"])
             operator.set_memory_request(resources["memory"])
+
+
+class SquashedPipelineGenerator(DefaultPipelineGenerator):
+    def generate_pipeline(self, pipeline, image, image_pull_policy, token):
+        @dsl.pipeline(
+            name=self.get_pipeline_name(),
+            description=self.run_config.description,
+        )
+        def convert_kedro_pipeline_to_kfp() -> None:
+            kfp_op = self._build_kfp_pipeline_op(image, pipeline, token)
+            kfp_op.container.set_image_pull_policy(image_pull_policy)
+
+        return convert_kedro_pipeline_to_kfp
+
+    def _build_kfp_pipeline_op(
+        self,
+        image,
+        pipeline,
+        tracking_token=None,
+    ) -> dsl.ContainerOp:
+
+        inputs = []
+        command = []
+        env = {}
+        should_add_params = len(self.context.params) > 0
+        name = clean_name(pipeline)
+
+        def _decorate_command(cmd, env):
+            return (
+                " ".join(f"{key}={value}" for key, value in env.items())
+                + " "
+                + cmd
+            )
+
+        if self.run_config.network.host_aliases:
+            command.append(self._generate_hosts_file())
+
+        if should_add_params:
+            command.append(self._generate_params_command(should_add_params))
+
+        if is_mlflow_enabled():
+            inputs.append(InputSpec("mlflow_tracking_token", "String"))
+            env[
+                "MLFLOW_TRACKING_TOKEN"
+            ] = "{{$.inputs.parameters['mlflow_tracking_token']}}"
+            command.append(
+                _decorate_command(
+                    f"kedro vertexai -e {self.context.env} mlflow-start --output /tmp/mlflow.run.id {self.run_name} &&",
+                    env,
+                )
+            )
+            env["MLFLOW_RUN_ID"] = "`cat /tmp/mlflow.run.id`"
+
+        if CONFIG_HOOK_DISABLED:
+            env["KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK"] = "true"
+
+        command.append(
+            _decorate_command(
+                f"kedro run -e {self.context.env} --pipeline {pipeline}"
+                + (" --config config.yaml" if should_add_params else ""),
+                env,
+            )
+        )
+
+        spec = ComponentSpec(
+            name=name,
+            inputs=inputs,
+            outputs=[],
+            implementation=ContainerImplementation(
+                container=ContainerSpec(
+                    image=image,
+                    command=["/bin/bash", "-c"],
+                    args=[" ".join(command)],
+                )
+            ),
+        )
+        return self._create_kedro_op(
+            name, spec, [tracking_token] if is_mlflow_enabled() else []
+        )

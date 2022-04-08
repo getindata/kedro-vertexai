@@ -20,7 +20,10 @@ from tabulate import tabulate
 
 from .config import PluginConfig
 from .data_models import PipelineResult, PipelineStatus
-from .generator import PipelineGenerator
+from .generator import (  # noqa
+    DefaultPipelineGenerator,
+    SquashedPipelineGenerator,
+)
 
 
 class VertexAIPipelinesClient:
@@ -41,7 +44,7 @@ class VertexAIPipelinesClient:
         )
         self.run_config = config.run_config
         self.run_name = self._generate_run_name(config)
-        self.generator = PipelineGenerator(
+        self.generator = globals()[self.run_config.generator_class](
             config, project_name, context, self.run_name
         )
 
