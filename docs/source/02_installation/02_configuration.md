@@ -56,6 +56,18 @@ run_config:
     __default__:
       cpu: 200m
       memory: 64Mi
+      
+  # Optional section allowing to generate config files at runtime,
+  # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml
+  # but the credentials need to be refreshed per-node
+  # (which in case of Vertex AI would be a separate container / machine)
+  # Example:
+  # dynamic_config_providers:
+  #  - cls: kedro_vertexai.auth.gcp.MLFlowGoogleOAuthCredentialsProvider
+  #    params:
+  #      client_id: iam-client-id
+
+  dynamic_config_providers: []
 ```
 
 ## Dynamic configuration support
@@ -94,3 +106,37 @@ KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set and EnvTemplatedC
 ```
 
 To make plugin-compatible custom config loader you can extend the class `kedro_vertexai.context_helper.EnvTemplatedConfigLoader` and register your own hook.
+
+### Dynamic config providers
+When running the job in VertexAI it's possible to generate new configuration files **at runtime** if that's required, one example could be generating Kedro credentials on a Vertex AI's node level (the opposite would be supplying the credentials when starting the job).
+
+Example:
+```yaml
+run_config:
+  # ... 
+  dynamic_config_providers:
+    - cls: kedro_vertexai.auth.gcp.MLFlowGoogleOAuthCredentialsProvider
+      params:
+        client_id: iam-client-id
+```
+
+The `cls` fields should contain a fully qualified reference to a class implementing abstract `kedro_vertexai.dynamic_config.DynamicConfigProvider`. All `params` will be passed as `kwargs` to the class's constructor.
+Two required methods are:
+```python
+@property
+def target_config_file(self) -> str:
+    return "name-of-the-config-file.yml"
+
+def generate_config(self) -> dict:
+    return {
+        "layout": {
+            "of-the-target": {
+                "config-file": "value"
+            }
+        }
+    }
+```
+
+First one - `target_config_file` should return the name of the configuration file to be generated (e.g. `credentials.yml`) and the `generate_config` should return a dictionary, which will be then serialized into the target file as YAML. If the target file already exists during the invocation, it will be merged (see method `kedro_vertexai.dynamic_config.DynamicConfigProvider.merge_with_existing` ) with the existing one and then saved again.
+Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible. 
+

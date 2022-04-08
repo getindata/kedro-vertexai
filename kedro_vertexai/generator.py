@@ -1,8 +1,9 @@
 """
 Generator for Vertex AI pipelines
 """
-
+import json
 import logging
+import os
 from tempfile import NamedTemporaryFile
 from typing import Dict, Set
 
@@ -19,7 +20,10 @@ from kfp.components.structures import (
 from kfp.v2 import dsl
 
 from kedro_vertexai.config import RunConfig
-from kedro_vertexai.constants import KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK
+from kedro_vertexai.constants import (
+    KEDRO_GLOBALS_PATTERN,
+    KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK,
+)
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
@@ -152,20 +156,26 @@ class PipelineGenerator:
                 else []
             )
 
+            should_add_params = len(self.context.params) > 0
+
             kedro_command = " ".join(
                 [
                     f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
                     f"KEDRO_CONFIG_RUN_ID={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
+                    self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
                     f'--node "{node.name}"',
+                    "--config config.yaml" if should_add_params else "",
                 ]
             )
 
             node_command = " ".join(
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
-                    mlflow_tokens + kedro_command,
+                    self._generate_params_command(should_add_params),
+                    mlflow_tokens,
+                    kedro_command,
                 ]
             ).strip()
 
@@ -186,6 +196,25 @@ class PipelineGenerator:
             kfp_ops[name] = self._create_kedro_op(name, spec, component_params)
 
         return kfp_ops
+
+    def _globals_env(self) -> str:
+        return (
+            f'{KEDRO_GLOBALS_PATTERN}="{globals_env}"'
+            if (globals_env := os.getenv(KEDRO_GLOBALS_PATTERN, None))
+            else ""
+        )
+
+    def _generate_params_command(self, should_add_params) -> str:
+        return (
+            " ".join(
+                [
+                    self._globals_env(),
+                    f"kedro vertexai -e {self.context.env} initialize-job --params='{json.dumps(self.context.params, indent=None)}' &&",  # noqa: E501
+                ]
+            ).strip()
+            if should_add_params
+            else ""
+        )
 
     def _create_kedro_op(
         self, name: str, spec: ComponentSpec, op_function_parameters

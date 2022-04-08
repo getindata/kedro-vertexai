@@ -1,7 +1,11 @@
 import os
+import shutil
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, Mock, patch
 
+import yaml
 from kedro.framework.session import KedroSession
 
 from kedro_vertexai.config import PluginConfig, RunConfig
@@ -54,9 +58,12 @@ class TestContextHelper(unittest.TestCase):
 
 
 class TestEnvTemplatedConfigLoader(unittest.TestCase):
-    @staticmethod
-    def get_config():
-        config_path = [os.path.dirname(os.path.abspath(__file__))]
+    @property
+    def test_dir(self) -> str:
+        return os.path.dirname(os.path.abspath(__file__))
+
+    def get_config(self, config_dir=None):
+        config_path = [self.test_dir] if not config_dir else [config_dir]
         loader = EnvTemplatedConfigLoader(config_path)
         return loader.get("test_config.yml")
 
@@ -77,3 +84,27 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
 
         assert config["run_config"]["image"] == "gcr.io/project-image/123abc"
         assert config["run_config"]["experiment_name"] == "[Test] feature-1"
+
+    def test_loader_with_globals(self):
+        test_config_file = Path(self.test_dir) / "test_config.yml"
+        with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):
+            with TemporaryDirectory() as tmp_dir:
+                shutil.copy(
+                    test_config_file, Path(tmp_dir) / "test_config.yml"
+                )
+
+                globals_path = Path(tmp_dir) / "globals.yml"
+                with globals_path.open("w") as f:
+                    yaml.safe_dump(
+                        {"image_pull_policy": "GlobalsTestPullPolicy"},
+                        f,
+                    )
+
+                config = self.get_config(tmp_dir)
+                assert (
+                    config["run_config"]["image_pull_policy"]
+                    == "GlobalsTestPullPolicy"
+                ), "Variable defined in globals.yml was not used in the target config"
+                assert (
+                    config["run_config"]["experiment_name"] == "[Test] local"
+                )

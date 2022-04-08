@@ -6,7 +6,7 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.17,<=0.18",
+    "kedro>=0.17,<0.18",
     "click<8.0",
     "kfp~=1.8.0",
     "tabulate>=0.8.7",
@@ -15,6 +15,10 @@ INSTALL_REQUIRES = [
     "google-auth<2.0dev",
     "google-cloud-scheduler>=2.3.2",
     "gcsfs>=2021.11.1",
+    # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
+    "google-cloud-storage<2.0.0",
+    "grpcio~=1.44.0",
+    "grpcio-status~=1.44.0",
 ]
 
 # Dev Requirements
@@ -37,7 +41,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-vertexai",
-    version="0.3.0",
+    version="0.4.0",
     description="Kedro plugin with Vertex AI support",
     long_description=README,
     long_description_content_type="text/markdown",

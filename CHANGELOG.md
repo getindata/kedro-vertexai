@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-04-08
+
+-   Add support for list type in parameters (+ restore dynamic parameters functionality (#23))
+-   Add support for dynamic configuration generation within VertexAI job (#18)
+-   Support config globals via optional `KEDRO_GLOBALS_PATTERN` environment variable in `EnvTemplatedConfigLoader` (#28)
+
 ## [0.3.0] - 2022-03-28
 
 -   Fix issues with data catalog namespacing for new spaceflights starter (#19)
@@ -18,7 +24,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.4.0...HEAD
+
+[0.4.0]: https://github.com/getindata/kedro-vertexai/compare/0.3.0...0.4.0
 
 [0.3.0]: https://github.com/getindata/kedro-vertexai/compare/0.2.0...0.3.0
 

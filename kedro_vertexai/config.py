@@ -19,7 +19,7 @@ run_config:
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Name of the kubeflow experiment to be created
+  # Prefix of Vertex AI pipeline run
   experiment_name: {project}
 
   # Name of the scheduled run, templated with the schedule parameters
@@ -44,7 +44,8 @@ run_config:
     # Hosts aliases to be placed in /etc/hosts when pipeline is executed
     # host_aliases:
     #  - ip: 127.0.0.1
-    #    hostnames: me.local
+    #    hostnames:
+    #     - me.local
 
   # What Kedro pipeline should be run as the last step regardless of the
   # pipeline status. Used to send notifications or raise the alerts
@@ -69,6 +70,18 @@ run_config:
     __default__:
       cpu: 200m
       memory: 64Mi
+
+  # Optional section allowing to generate config files at runtime,
+  # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml
+  # but the credentials need to be refreshed per-node
+  # (which in case of Vertex AI would be a separate container / machine)
+  # Example:
+  # dynamic_config_providers:
+  #  - cls: kedro_vertexai.auth.gcp.MLFlowGoogleOAuthCredentialsProvider
+  #    params:
+  #      client_id: iam-client-id
+
+  dynamic_config_providers: []
 """
 
 
@@ -87,6 +100,11 @@ class NetworkConfig(BaseModel):
     host_aliases: Optional[List[HostAliasConfig]] = []
 
 
+class DynamicConfigProviderConfig(BaseModel):
+    cls: str
+    params: Optional[Dict[str, str]] = {}
+
+
 class RunConfig(BaseModel):
     image: str
     image_pull_policy: Optional[str] = "IfNotPresent"
@@ -100,6 +118,7 @@ class RunConfig(BaseModel):
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
+    dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
 
     def resources_for(self, node):
         if node in self.resources.keys():

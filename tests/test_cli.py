@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 from collections import namedtuple
@@ -11,6 +12,7 @@ from click.testing import CliRunner
 from kedro_vertexai.cli import (
     compile,
     init,
+    initialize_job,
     list_pipelines,
     mlflow_start,
     run_once,
@@ -18,27 +20,10 @@ from kedro_vertexai.cli import (
     ui,
     vertexai_group,
 )
-from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 
-test_config = PluginConfig.parse_obj(
-    {
-        "project_id": "test-project-id",
-        "region": "test",
-        "run_config": {
-            "image": "gcr.io/project-image/test",
-            "image_pull_policy": "Always",
-            "experiment_name": "Test Experiment",
-            "run_name": "test run",
-            "volume": {
-                "storageclass": "default",
-                "size": "3Gi",
-                "access_modes": "[ReadWriteOnce]",
-            },
-        },
-    }
-)
+from .utils import test_config
 
 
 class TestPluginCLI(unittest.TestCase):
@@ -138,6 +123,89 @@ class TestPluginCLI(unittest.TestCase):
             output="output",
             pipeline="pipe",
         )
+
+    def test_store_params_empty(self):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        params = {"p1": 1, "p2": "value", "p3": [3.0, 4.0, 5.0]}
+
+        with TemporaryDirectory() as tmp_dir:
+            output_path = Path(tmp_dir) / "config.yaml"
+
+            result = runner.invoke(
+                initialize_job,
+                [
+                    "--params",
+                    f"'{json.dumps(params)}'",
+                    "--output",
+                    str(output_path.absolute()),
+                ],
+                obj=config,
+            )
+
+            assert result.exit_code == 0
+
+            with output_path.open("r") as f:
+                data = yaml.safe_load(f)
+                assert (
+                    "run" in data and "params" in data["run"]
+                ), "Invalid keys in output file"
+                self.assertDictEqual(
+                    data["run"]["params"],
+                    params,
+                    "Saved parameters are different form input ones",
+                )
+
+    def test_store_params_exiting_config_yaml(self):
+        """
+        Covers the case when there is an exiting config.yaml in the pwd
+        """
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        params = {"p1": 1, "p2": "value", "p3": [3.0, 4.0, 5.0]}
+        exiting_config_yaml_content = {
+            "run": {"data": "abc"},
+            "other_keys": 66.6,
+        }
+
+        with TemporaryDirectory() as tmp_dir:
+            output_path = Path(tmp_dir) / "config.yaml"
+            with output_path.open("w") as f:
+                yaml.safe_dump(exiting_config_yaml_content, f)
+
+            result = runner.invoke(
+                initialize_job,
+                [
+                    "--params",
+                    f"'{json.dumps(params)}'",
+                    "--output",
+                    str(output_path.absolute()),
+                ],
+                obj=config,
+            )
+
+            assert result.exit_code == 0
+
+            with output_path.open("r") as f:
+                data = yaml.safe_load(f)
+                assert (
+                    "run" in data and "params" in data["run"]
+                ), "Invalid keys in output file"
+                self.assertDictEqual(
+                    data["run"]["params"],
+                    params,
+                    "Saved parameters are different form input ones",
+                )
+
+                assert (
+                    data["run"]["data"] == "abc" and data["other_keys"] == 66.6
+                ), "Other keys were modified"
 
     @unittest.skip(
         "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"

@@ -7,7 +7,9 @@ import kfp
 from kedro.pipeline import Pipeline, node
 
 from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.constants import KEDRO_GLOBALS_PATTERN
 from kedro_vertexai.generator import PipelineGenerator
+from tests.utils import environment
 
 
 def identity(input1: str):
@@ -150,6 +152,47 @@ class TestGenerator(unittest.TestCase):
             'kedro run -e unittests --pipeline pipeline --node "node1"'
             in dsl_pipeline.ops["node1"].container.args[0]
         )
+
+    def test_should_dump_params_and_add_config_if_params_are_set(self):
+        self.create_generator(
+            params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
+        )
+        self.mock_mlflow(False)
+        pipeline = self.generator_under_test.generate_pipeline(
+            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+        )
+        with kfp.dsl.Pipeline(None) as dsl_pipeline:
+            pipeline()
+
+        assert (
+            "kedro vertexai -e unittests initialize-job --params="
+            in dsl_pipeline.ops["node1"].container.args[0]
+        )
+
+        assert (
+            'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
+            in dsl_pipeline.ops["node1"].container.args[0]
+        )
+
+    def test_should_add_globals_env_if_present(self):
+        with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):
+            self.create_generator(
+                params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
+            )
+            self.mock_mlflow(False)
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.dsl.Pipeline(None) as dsl_pipeline:
+                pipeline()
+
+            expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
+            assert expected in dsl_pipeline.ops["node1"].container.args[0]
+
+            assert (
+                dsl_pipeline.ops["node1"].container.args[0].count(expected)
+                == 2
+            ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
     def test_should_add_host_aliases_if_requested(self):
         # given
