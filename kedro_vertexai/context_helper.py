@@ -7,6 +7,7 @@ from kedro.config import TemplatedConfigLoader
 from kedro_vertexai.client import VertexAIPipelinesClient
 
 from .config import PluginConfig
+from .constants import KEDRO_GLOBALS_PATTERN
 
 
 class EnvTemplatedConfigLoader(TemplatedConfigLoader):
@@ -21,7 +22,7 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
         super().__init__(
             conf_paths,
             globals_dict=self.read_env(),
-            globals_pattern=os.getenv("KEDRO_GLOBALS_PATTERN", None),
+            globals_pattern=os.getenv(KEDRO_GLOBALS_PATTERN, None),
         )
 
     def read_env(self) -> Dict:

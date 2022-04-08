@@ -3,6 +3,7 @@ Generator for Vertex AI pipelines
 """
 import json
 import logging
+import os
 from tempfile import NamedTemporaryFile
 from typing import Dict, Set
 
@@ -19,7 +20,10 @@ from kfp.components.structures import (
 from kfp.v2 import dsl
 
 from kedro_vertexai.config import RunConfig
-from kedro_vertexai.constants import KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK
+from kedro_vertexai.constants import (
+    KEDRO_GLOBALS_PATTERN,
+    KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK,
+)
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
@@ -158,6 +162,7 @@ class PipelineGenerator:
                 [
                     f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
                     f"KEDRO_CONFIG_RUN_ID={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
+                    self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
                     f'--node "{node.name}"',
@@ -192,9 +197,21 @@ class PipelineGenerator:
 
         return kfp_ops
 
+    def _globals_env(self) -> str:
+        return (
+            f'{KEDRO_GLOBALS_PATTERN}="{globals_env}"'
+            if (globals_env := os.getenv(KEDRO_GLOBALS_PATTERN, None))
+            else ""
+        )
+
     def _generate_params_command(self, should_add_params) -> str:
         return (
-            f"kedro vertexai -e {self.context.env} initialize-job --params='{json.dumps(self.context.params, indent=None)}' &&"  # noqa: E501
+            " ".join(
+                [
+                    self._globals_env(),
+                    f"kedro vertexai -e {self.context.env} initialize-job --params='{json.dumps(self.context.params, indent=None)}' &&",  # noqa: E501
+                ]
+            ).strip()
             if should_add_params
             else ""
         )
