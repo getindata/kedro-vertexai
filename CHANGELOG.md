@@ -3,6 +3,7 @@
 ## [Unreleased]
 - Add support for list type in parameters (+ restore dynamic parameters functionality (#23))
 - Add support for dynamic configuration generation within VertexAI job (#18)
+- Support config globals via optional `KEDRO_GLOBALS_PATTERN` environment variable in `EnvTemplatedConfigLoader` (#28)
 
 ## [0.3.0] - 2022-03-28
 
