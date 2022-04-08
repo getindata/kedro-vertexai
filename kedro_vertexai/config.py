@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel
@@ -51,6 +52,18 @@ run_config:
   # pipeline status. Used to send notifications or raise the alerts
   # on_exit_pipeline: notify_via_slack
 
+  # Class used for pipeline generation. Possible options:
+  # DefaultPipelineGenerator -> creates one Vertex AI component for every
+  #                             Kedro node (default)
+  # SquashedPipelineGenerator -> creates one Vertex AI component for the entire
+  #                              Kedo pipeline, useful for libraries that support
+  #                              lazy evaluation (e.g. SparkML)
+  #generator_class: DefaultPipelineGenerator
+
+  # Optional environment parameters passed to the kedro invocations
+  # environment:
+  #   NAME: value
+
   # Optional section allowing adjustment of the resources, reservations and limits
   # for the nodes. When not provided they're set to 500m cpu and 1024Mi memory.
   # If you don't want to specify pipeline resources set both to None in __default__.
@@ -88,6 +101,11 @@ class NetworkConfig(BaseModel):
     host_aliases: Optional[List[HostAliasConfig]] = []
 
 
+class GeneratorClassEnum(str, Enum):
+    DEFAULT = "DefaultPipelineGenerator"
+    SQUASHED = "SquashedPipelineGenerator"
+
+
 class RunConfig(BaseModel):
     image: str
     image_pull_policy: Optional[str] = "IfNotPresent"
@@ -101,6 +119,8 @@ class RunConfig(BaseModel):
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
+    generator_class: GeneratorClassEnum = GeneratorClassEnum.DEFAULT
+    environment: Dict[str, str] = {}
 
     def resources_for(self, node):
         if node in self.resources.keys():
