@@ -1,3 +1,6 @@
+"""
+GCP related authorization code
+"""
 import logging
 import os
 import re

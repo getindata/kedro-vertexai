@@ -54,6 +54,15 @@ class TestAuthHandler(unittest.TestCase):
         # then
         assert token == "TOKEN"
 
+    def test_empty_client_id(self):
+        # for better test coverage
+
+        # when
+        token = AuthHandler().obtain_id_token("")
+
+        # then
+        assert token is None
+
     def test_should_skip_dex_auth_if_env_is_not_set(self):
         # given
         # no env set

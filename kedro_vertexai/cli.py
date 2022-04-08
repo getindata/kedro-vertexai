@@ -290,6 +290,8 @@ def initialize_job(ctx, params: str, output: str):
 
     2. Generate dynamic config files (e.g. with credentials that need to be refreshed per-node)
     """
+    logger.info("Initializing VertexAI job")
+
     context_helper: ContextHelper = ctx.obj["context_helper"]
     config: PluginConfig = context_helper.config
 
