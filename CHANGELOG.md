@@ -1,7 +1,8 @@
 # Changelog
 
 ## [Unreleased]
-- Add support for list type in parameters (+ restore dynamic parameters functionality (#23)
+- Add support for list type in parameters (+ restore dynamic parameters functionality (#23))
+- Add support for dynamic configuration generation within VertexAI job (#18)
 
 ## [0.3.0] - 2022-03-28
 
