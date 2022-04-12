@@ -94,9 +94,8 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, tracking_token) -> dsl.ContainerOp:
+    def _create_mlflow_op(self, image, tracking_token, should_add_params) -> dsl.ContainerOp:
 
-        should_add_params = len(self.context.params) > 0
         mlflow_command = " ".join(
             [
                 self._generate_hosts_file(),
@@ -104,7 +103,6 @@ class PipelineGenerator:
                 "`dirname {{$.outputs.parameters['output'].output_file}}`",
                 "&&",
                 self._generate_params_command(should_add_params),
-                "&&",
                 "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}}",
                 f"kedro vertexai -e {self.context.env} mlflow-start",
                 "--output {{$.outputs.parameters['output'].output_file}}",
@@ -144,10 +142,12 @@ class PipelineGenerator:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_ops = {}
 
+        should_add_params = len(self.context.params) > 0
+
         mlflow_enabled = is_mlflow_enabled()
         if mlflow_enabled:
             kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
-                image, tracking_token
+                image, tracking_token, should_add_params
             )
 
         for node in node_dependencies:
@@ -159,8 +159,6 @@ class PipelineGenerator:
                 if mlflow_enabled
                 else []
             )
-
-            should_add_params = len(self.context.params) > 0
 
             kedro_command = " ".join(
                 [
