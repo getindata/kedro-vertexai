@@ -95,11 +95,15 @@ class PipelineGenerator:
         )
 
     def _create_mlflow_op(self, image, tracking_token) -> dsl.ContainerOp:
+
+        should_add_params = len(self.context.params) > 0
         mlflow_command = " ".join(
             [
                 self._generate_hosts_file(),
                 "mkdir --parents",
                 "`dirname {{$.outputs.parameters['output'].output_file}}`",
+                "&&",
+                self._generate_params_command(should_add_params),
                 "&&",
                 "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}}",
                 f"kedro vertexai -e {self.context.env} mlflow-start",
