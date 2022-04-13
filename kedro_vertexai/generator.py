@@ -94,7 +94,9 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, tracking_token, should_add_params) -> dsl.ContainerOp:
+    def _create_mlflow_op(
+        self, image, tracking_token, should_add_params
+    ) -> dsl.ContainerOp:
 
         mlflow_command = " ".join(
             [

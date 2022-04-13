@@ -7,6 +7,7 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
+from retry import retry
 
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
@@ -23,6 +24,7 @@ class AuthHandler:
 
     log = logging.getLogger(__name__)
 
+    @retry(Exception, tries=3, delay=5, backoff=10)
     def obtain_id_token(self, client_id: str):
         """
         Obtain OAuth2.0 token to be used with HTTPs requests
