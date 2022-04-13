@@ -7,7 +7,7 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
-from retry import retry
+from retry.api import retry_call
 
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
@@ -24,7 +24,6 @@ class AuthHandler:
 
     log = logging.getLogger(__name__)
 
-    @retry(Exception, tries=3, delay=5, backoff=10)
     def obtain_id_token(self, client_id: str):
         """
         Obtain OAuth2.0 token to be used with HTTPs requests
@@ -46,7 +45,7 @@ class AuthHandler:
 
         try:
             self.log.debug("Attempt to get IAP token for %s", client_id)
-            jwt_token = id_token.fetch_id_token(Request(), client_id)
+            jwt_token = retry_call(id_token.fetch_id_token, fargs=[Request(), client_id], tries=5, delay=5, jitter=5)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
             self.log.warning(
