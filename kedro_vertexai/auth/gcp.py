@@ -7,6 +7,7 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
+from google.auth.exceptions import TransportError
 from retry.api import retry_call
 
 from kedro_vertexai.config import PluginConfig
@@ -42,10 +43,59 @@ class AuthHandler:
                 "No IAP_CLIENT_ID provided, skipping custom IAP authentication"
             )
             return jwt_token
+        HEADERS = {"Metadata-Flavor": "Google"}
+        try:
+            r = requests.get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity",
+                         params={
+                             "audience": "887254626752-8l79mcpv0cfmtukh9klei9cgn7q9dmp7.apps.googleusercontent.com",
+                             "format":"full"
+                         },
+                         headers=HEADERS)
+            self.log.info(r.text)
+        except Exception:
+            self.log.error("Call failed", exc_info=True)
+
+        try:
+            r = requests.get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/willa-vertex-pipelines@willapay-mlops-staging.iam.gserviceaccount.com/identity",
+                         params={
+                             "audience": "887254626752-8l79mcpv0cfmtukh9klei9cgn7q9dmp7.apps.googleusercontent.com",
+                             "format": "full"
+                         },
+                         headers=HEADERS)
+            self.log.info(r.text)
+        except Exception:
+            self.log.error("Call failed", exc_info=True)
+
+        try:
+            r = requests.get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/willa-vertex-pipelines@willapay-mlops-staging.iam.gserviceaccount.com/identity",
+                             params={
+                                 "audience": "887254626752-8l79mcpv0cfmtukh9klei9cgn7q9dmp7.apps.googleusercontent.com",
+                                 "format": "full",
+                                 "recursive": True
+                             },
+                             headers=HEADERS)
+            self.log.info(r.text)
+        except Exception:
+            self.log.error("Call failed", exc_info=True)
+
+
+        try:
+            r = requests.get("http://metadata.google.internal/computeMetadata/v1/instance/service-accounts",
+                             params={
+                                 "audience": "887254626752-8l79mcpv0cfmtukh9klei9cgn7q9dmp7.apps.googleusercontent.com",
+                                 "format": "full"
+                             },
+                             headers=HEADERS)
+            self.log.info(r.text)
+        except Exception:
+            self.log.error("Call failed", exc_info=True)
+
 
         try:
             self.log.debug("Attempt to get IAP token for %s", client_id)
-            jwt_token = retry_call(id_token.fetch_id_token, fargs=[Request(), client_id], tries=5, delay=5, jitter=5)
+            requests.get("http:/")
+            jwt_token = retry_call(id_token.fetch_id_token, fargs=[Request(), client_id], tries=5, delay=5, jitter=5,
+                                   exceptions=TransportError)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
             self.log.warning(
