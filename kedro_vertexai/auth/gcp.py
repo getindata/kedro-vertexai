@@ -6,8 +6,8 @@ import os
 import re
 from urllib.parse import urlsplit, urlunsplit
 
-from google.auth.exceptions import TransportError
 import requests
+from google.auth.exceptions import TransportError
 from retry.api import retry_call
 
 from kedro_vertexai.config import PluginConfig
@@ -46,8 +46,14 @@ class AuthHandler:
 
         try:
             self.log.debug("Attempt to get IAP token for %s", client_id)
-            jwt_token = retry_call(id_token.fetch_id_token, fargs=[Request(), client_id], tries=5, delay=5, jitter=10,
-                                   exceptions=TransportError)
+            jwt_token = retry_call(
+                id_token.fetch_id_token,
+                fargs=[Request(), client_id],
+                tries=5,
+                delay=5,
+                jitter=10,
+                exceptions=TransportError,
+            )
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
             self.log.warning(
@@ -125,3 +131,35 @@ class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
                 )
             }
         }
+
+
+class MLFlowGoogleIAPCredentialsProvider(DynamicConfigProvider):
+    """
+    Uses Google OAuth to generate MLFLOW_TRACKING_TOKEN
+    """
+
+    def __init__(self, config: PluginConfig, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
+        self.client_id = kwargs["client_id"]
+        self.service_account = kwargs["service_account"]
+
+    @property
+    def target_config_file(self) -> str:
+        return "credentials.yml"
+
+    def generate_config(self) -> dict:
+        return {
+            "gcp_credentials": {
+                "MLFLOW_TRACKING_TOKEN": self._obtain_credentials()
+            }
+        }
+
+    def _obtain_credentials(self):
+        from google.cloud import iam_credentials
+
+        client = iam_credentials.IAMCredentialsClient()
+        return client.generate_id_token(
+            name=f"projects/-/serviceAccounts/{self.service_account}",
+            audience=self.client_id,
+            include_email=True,
+        ).token
