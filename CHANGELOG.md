@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Add missing `initialize-job` for `mlflow-start-run` step, added MLFlowGoogleIAMCredentialsProvider. 
+
 ## [0.4.0] - 2022-04-08
 
 -   Add support for list type in parameters (+ restore dynamic parameters functionality (#23))

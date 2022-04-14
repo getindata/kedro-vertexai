@@ -12,8 +12,9 @@ INSTALL_REQUIRES = [
     "tabulate>=0.8.7",
     "semver~=2.10",
     "pydantic~=1.9.0",
-    "google-auth<2.0dev",
+    "google-auth<2",
     "google-cloud-scheduler>=2.3.2",
+    "google-cloud-iam",
     "gcsfs>=2021.11.1",
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
     "google-cloud-storage<2.0.0",
