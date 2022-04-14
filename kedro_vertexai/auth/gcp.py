@@ -7,8 +7,6 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
-from google.auth.exceptions import TransportError
-from retry.api import retry_call
 
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
@@ -46,14 +44,7 @@ class AuthHandler:
 
         try:
             self.log.debug("Attempt to get IAP token for %s", client_id)
-            jwt_token = retry_call(
-                id_token.fetch_id_token,
-                fargs=[Request(), client_id],
-                tries=5,
-                delay=5,
-                jitter=10,
-                exceptions=TransportError,
-            )
+            jwt_token = id_token.fetch_id_token(Request(), client_id)
             self.log.info("Obtained JWT token for IAP proxy authentication.")
         except DefaultCredentialsError:
             self.log.warning(
