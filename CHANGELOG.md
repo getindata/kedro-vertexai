@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.4.1] - 2022-04-14
+
+-   Add missing `initialize-job` for `mlflow-start-run` step, added MLFlowGoogleIAMCredentialsProvider. 
+
 ## [0.4.0] - 2022-04-08
 
 -   Add support for list type in parameters (+ restore dynamic parameters functionality (#23))
@@ -24,7 +28,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.4.1...HEAD
+
+[0.4.1]: https://github.com/getindata/kedro-vertexai/compare/0.4.0...0.4.1
 
 [0.4.0]: https://github.com/getindata/kedro-vertexai/compare/0.3.0...0.4.0
 

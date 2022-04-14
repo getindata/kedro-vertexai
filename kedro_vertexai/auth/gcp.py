@@ -122,3 +122,35 @@ class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
                 )
             }
         }
+
+
+class MLFlowGoogleIAMCredentialsProvider(DynamicConfigProvider):
+    """
+    Uses Google IAM API to generate MLFLOW_TRACKING_TOKEN
+    """
+
+    def __init__(self, config: PluginConfig, *args, **kwargs):
+        super().__init__(config, *args, **kwargs)
+        self.client_id = kwargs["client_id"]
+        self.service_account = kwargs["service_account"]
+
+    @property
+    def target_config_file(self) -> str:
+        return "credentials.yml"
+
+    def generate_config(self) -> dict:
+        return {
+            "gcp_credentials": {
+                "MLFLOW_TRACKING_TOKEN": self._obtain_credentials()
+            }
+        }
+
+    def _obtain_credentials(self):
+        from google.cloud import iam_credentials
+
+        client = iam_credentials.IAMCredentialsClient()
+        return client.generate_id_token(
+            name=f"projects/-/serviceAccounts/{self.service_account}",
+            audience=self.client_id,
+            include_email=True,
+        ).token
