@@ -124,9 +124,9 @@ class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
         }
 
 
-class MLFlowGoogleIAPCredentialsProvider(DynamicConfigProvider):
+class MLFlowGoogleIAMCredentialsProvider(DynamicConfigProvider):
     """
-    Uses Google OAuth to generate MLFLOW_TRACKING_TOKEN
+    Uses Google IAM API to generate MLFLOW_TRACKING_TOKEN
     """
 
     def __init__(self, config: PluginConfig, *args, **kwargs):

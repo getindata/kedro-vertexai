@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
--   Add missing `initialize-job` for `mlflow-start-run` step.  
+-   Add missing `initialize-job` for `mlflow-start-run` step, added MLFlowGoogleIAMCredentialsProvider. 
 
 ## [0.4.0] - 2022-04-08
 
