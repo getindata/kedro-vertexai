@@ -6,8 +6,8 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.17,<0.18",
-    "click<8.0",
+    "kedro>=0.18.1, <0.19.0",
+    "click>=8.0.4",
     "kfp>=1.8.12,<2.0",
     "tabulate>=0.8.7",
     "semver~=2.10",
@@ -15,7 +15,8 @@ INSTALL_REQUIRES = [
     "google-auth<2",
     "google-cloud-scheduler>=2.3.2",
     "google-cloud-iam",
-    "gcsfs>=2021.11.1",
+    "gcsfs<=2022.1,>=2021.4",
+    "fsspec<=2022.1,>=2021.4",
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
     "google-cloud-storage<2.0.0",
     "grpcio~=1.44.0",
@@ -24,9 +25,9 @@ INSTALL_REQUIRES = [
 
 # Dev Requirements
 EXTRA_REQUIRE = {
-    "mlflow": ["kedro-mlflow>=0.4.1,<0.8.0"],
+    "mlflow": ["kedro-mlflow~=0.11.1"],
     "tests": [
-        "pytest>=5.4.0, <7.0.0",
+        "pytest>=7.0.0",
         "pytest-cov>=2.8.0, <3.0.0",
         "pytest-subtests>=0.5.0, <1.0.0",
         "tox==3.23.1",

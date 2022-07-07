@@ -77,7 +77,7 @@ def _generate_and_save_dynamic_config(
     dynamic_config = provider.generate_config()
     target_path = (
         context_helper.context.project_path
-        / settings.CONF_ROOT
+        / settings.CONF_SOURCE
         / provider.target_env
         / provider.target_config_file
     )
