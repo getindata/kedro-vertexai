@@ -3,6 +3,9 @@
 ## [Unreleased]
 -   Add support for `kedro>=0.18.1,<0.19` (#36)
 
+- Update pip to 22.1.2 for build process
+- Add compatibility support for python 3.9 and 3.10
+
 ## [0.4.1] - 2022-04-14
 
 -   Add missing `initialize-job` for `mlflow-start-run` step, added MLFlowGoogleIAMCredentialsProvider. 
