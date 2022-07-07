@@ -8,7 +8,7 @@ with open("README.md") as f:
 INSTALL_REQUIRES = [
     "kedro>=0.17,<0.18",
     "click<8.0",
-    "kfp>=1.8.12,<2.0",
+    "kfp~=2.0.0b0",
     "tabulate>=0.8.7",
     "semver~=2.10",
     "pydantic~=1.9.0",
@@ -17,7 +17,7 @@ INSTALL_REQUIRES = [
     "google-cloud-iam",
     "gcsfs>=2021.11.1",
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
-    "google-cloud-storage<2.0.0",
+    "google-cloud-storage<=2.2.1",
     "grpcio~=1.44.0",
     "grpcio-status~=1.44.0",
 ]
