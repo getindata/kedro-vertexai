@@ -11,11 +11,11 @@ from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
 from time import sleep
 
+from google.cloud import aiplatform
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
-from kfp.v2 import compiler
-from kfp.v2.google.client import AIPlatformClient
+from kfp import compiler
 from tabulate import tabulate
 
 from .config import PluginConfig
@@ -32,8 +32,8 @@ class VertexAIPipelinesClient:
 
     def __init__(self, config: PluginConfig, project_name, context):
 
-        self.api_client = AIPlatformClient(
-            project_id=config.project_id, region=config.region
+        aiplatform.init(
+            project=config.project_id, location=config.region
         )
         self.cloud_scheduler_client = CloudSchedulerClient()
         self.location = (
@@ -50,19 +50,11 @@ class VertexAIPipelinesClient:
         List all the jobs (current and historical) on Vertex AI Pipelines
         :return:
         """
-        list_jobs_response = self.api_client.list_jobs()
-        self.log.debug(list_jobs_response)
+        list_pipelines_response = aiplatform.PipelineJob.list()
+        self.log.debug(list_pipelines_response)
 
-        jobs_key = "pipelineJobs"
         headers = ["Name", "ID"]
-        data = (
-            map(
-                lambda x: [x.get("displayName"), x["name"]],
-                list_jobs_response[jobs_key],
-            )
-            if jobs_key in list_jobs_response
-            else []
-        )
+        data = [(pipeline.display_name, pipeline.name) for pipeline in list_pipelines_response]
 
         return tabulate(data, headers=headers)
 
@@ -90,16 +82,22 @@ class VertexAIPipelinesClient:
                 image_pull_policy=image_pull_policy,
             )
 
-            run = self.api_client.create_run_from_job_spec(
-                service_account=self.run_config.service_account,
-                job_spec_path=spec_output.name,
+            pipeline_job = aiplatform.PipelineJob(
+                template_path=spec_output.name,
                 job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values=parameters or {},
                 enable_caching=False,
+                display_name=self.run_name
+            )
+            pipeline_job.run(
+                service_account=self.run_config.service_account,
                 network=self.run_config.network.vpc,
             )
-            self.log.debug("Run created %s", str(run))
+
+            run = aiplatform.PipelineJob.get(self.run_name)
+            # self.log.debug("Run created %s", str(run))
+
             return run
 
     def _generate_run_name(self, config: PluginConfig):  # noqa
@@ -206,8 +204,10 @@ class VertexAIPipelinesClient:
             fails = 0
             while fails < max_api_fails:
                 try:
-                    job = self.api_client.get_job(self.run_name)
-                    state = job["state"]
+                    job = aiplatform.PipelineJob.get(self.run_name)
+                    state = job.state.name
+                    print("!!!!!!!!!!!!!!")
+                    print(state)
                     if state in termination_statuses:
                         q.put(
                             PipelineResult(

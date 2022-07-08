@@ -14,6 +14,7 @@ INSTALL_REQUIRES = [
     "pydantic~=1.9.0",
     "google-auth<3",
     "google-cloud-scheduler>=2.3.2",
+    "google-cloud-aiplatform~=1.15.0",
     "google-cloud-iam",
     "gcsfs<=2022.1,>=2021.4",
     "fsspec<=2022.1,>=2021.4",
