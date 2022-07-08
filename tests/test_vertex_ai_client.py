@@ -1,8 +1,11 @@
 """Test kedro_vertexai module."""
 
 import unittest
+from tempfile import NamedTemporaryFile
 from time import sleep
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
+
+from google.cloud.aiplatform.pipeline_jobs import PipelineJob
 
 from kedro_vertexai.client import VertexAIPipelinesClient
 from kedro_vertexai.config import PluginConfig
@@ -28,12 +31,12 @@ class TestVertexAIClient(unittest.TestCase):
                 },
             }
         )
-        return VertexAIPipelinesClient(config, MagicMock(), MagicMock())
+        return VertexAIPipelinesClient(config, 'test_project_name', MagicMock())
 
     def test_compile(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ), patch("kfp.v2.compiler.Compiler") as Compiler:
+            "kedro_vertexai.client.aiplatform"
+        ), patch("kfp.compiler.Compiler") as Compiler:
             compiler = Compiler.return_value
 
             client_under_test = self.create_client()
@@ -45,52 +48,55 @@ class TestVertexAIClient(unittest.TestCase):
 
     def test_run_once(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
-            ai_client = AIPlatformClient.return_value
+            "kedro_vertexai.client.aiplatform"
+        ), patch(
+            "kfp.compiler.Compiler"
+        ), patch("kedro_vertexai.client.aiplatform.PipelineJob") as PipelineJobClient:
+            pipeline_client = PipelineJobClient.return_value
 
-            run_mock = {"run": "mock"}
-            ai_client.create_run_from_job_spec.return_value = run_mock
             client_under_test = self.create_client()
-            run = client_under_test.run_once(MagicMock("pipeline"), "image")
+            client_under_test.run_once(MagicMock("pipeline"), "image")
 
-            assert run_mock == run
-            _, kwargs = ai_client.create_run_from_job_spec.call_args
+            pipeline_client.run.assert_called_once()
+            _, kwargs = pipeline_client.run.call_args
             assert kwargs["network"] == "my-vpc"
 
     def test_should_list_pipelines(self):
         with patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient:
-            ai_client = AIPlatformClient.return_value
-            ai_client.list_jobs.return_value = {
-                "pipelineJobs": [
-                    {
-                        "displayName": "run1",
-                        "name": "projects/29350373243/locations/"
-                        "europe-west4/pipelineJobs/run1",
-                    },
-                    {
-                        "displayName": "run2",
-                        "name": "projects/29350373243/locations/"
-                        "europe-west4/pipelineJobs/run2",
-                    },
-                    {
-                        "name": "projects/123/locations/"
-                        "europe-west4/pipelineJobs/no-display-name",
-                    },
-                ]
-            }
+            "kedro_vertexai.client.aiplatform"
+        ), patch(
+            "kedro_vertexai.client.aiplatform.PipelineJob"
+        ) as PipelineJobClient:
+
+            pipeline_client = PipelineJobClient
+
+            pipeline_job1 = MagicMock(spec=PipelineJob)
+            pipeline_job1.configure_mock(
+                name="projects/29350373243/locations/europe-west4/pipelineJobs/run1",
+                display_name="run1"
+            )
+            pipeline_job2 = MagicMock(spec=PipelineJob)
+            pipeline_job2.configure_mock(
+                name="projects/29350373243/locations/europe-west4/pipelineJobs/run2",
+                display_name="run2"
+            )
+            pipeline_job3 = MagicMock(spec=PipelineJob)
+            pipeline_job3.configure_mock(
+                name="projects/123/locations/europe-west4/pipelineJobs/run3",
+                display_name="run3"
+            )
+
+            pipeline_client.list.return_value = [pipeline_job1, pipeline_job2, pipeline_job3]
 
             client_under_test = self.create_client()
             tabulation = client_under_test.list_pipelines()
-
             expected_output = """
             |Name    ID
-            |------  ----------------------------------------------------------------
+            |------  -------------------------------------------------------------
             |run1    projects/29350373243/locations/europe-west4/pipelineJobs/run1
             |run2    projects/29350373243/locations/europe-west4/pipelineJobs/run2
-            |        projects/123/locations/europe-west4/pipelineJobs/no-display-name"""
+            |run3    projects/123/locations/europe-west4/pipelineJobs/run3"""
+
             assert tabulation == strip_margin(expected_output)
 
     @unittest.skip(
@@ -98,7 +104,7 @@ class TestVertexAIClient(unittest.TestCase):
     )
     def test_should_schedule_pipeline(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
+            "kedro_vertexai.client.aiplatform"
         ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
             ai_client = AIPlatformClient.return_value
 
@@ -114,6 +120,9 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["schedule"] == "0 0 12 * *"
             assert kwargs["pipeline_root"] == "gs://BUCKET/PREFIX"
 
+    @unittest.skip(
+        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
+    )
     def test_should_remove_old_schedule(self):
         def mock_job(job_name, pipeline_name=None):
             if pipeline_name:
@@ -137,7 +146,7 @@ class TestVertexAIClient(unittest.TestCase):
         with patch(
             "kedro_vertexai.client.PipelineGenerator"
         ) as generator, patch(
-            "kedro_vertexai.client.AIPlatformClient"
+            "kedro_vertexai.client.aiplatform"
         ) as AIPlatformClient, patch(
             "kfp.v2.compiler.Compiler"
         ):
@@ -179,19 +188,25 @@ class TestVertexAIClient(unittest.TestCase):
                 == "projects/.../locations/.../jobs/pipeline_pipeline_def"
             )
 
-    @patch("kedro_vertexai.client.AIPlatformClient")
-    def test_wait_for_completion_success_condition(self, ai_client):
-        ai_client.return_value.get_job.return_value = {
-            "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED
-        }
-        client = self.create_client()
-        result = client.wait_for_completion(30)
-        assert result.is_success, "Pipeline should be determined as successful"
-        assert isinstance(
-            result.job_data, dict
-        ), "Field job_data should have value in finished pipelines"
+    def test_wait_for_completion_success_condition(self):
+        with patch(
+            "kedro_vertexai.client.aiplatform"
+        ), patch("kedro_vertexai.client.aiplatform.PipelineJob") as PipelineJobClient:
 
-    @patch("kedro_vertexai.client.AIPlatformClient")
+            pipeline_client = PipelineJobClient
+
+            job_state = MagicMock(spec=PipelineJob)
+            job_state.state.name = PipelineStatus.PIPELINE_STATE_SUCCEEDED
+            pipeline_client.get.return_value = job_state
+
+            client = self.create_client()
+            result = client.wait_for_completion(30)
+            assert result.is_success, "Pipeline should be determined as successful"
+            assert isinstance(
+                result.job_data, PipelineJob
+            ), "Field job_data should have value in finished pipelines"
+
+    @patch("kedro_vertexai.client.aiplatform")
     def test_wait_for_completion_failure_condition(self, ai_client):
 
         for state in (
@@ -204,7 +219,7 @@ class TestVertexAIClient(unittest.TestCase):
                 return_value={"state": state},
             ):
                 # with patch(
-                #     "kedro_vertexai.client.AIPlatformClient.get_job",
+                #     "kedro_vertexai.client.aiplatform.get_job",
                 #     return_value={"state": state},
                 # ):
                 client = self.create_client()
@@ -216,7 +231,7 @@ class TestVertexAIClient(unittest.TestCase):
                     result.job_data, dict
                 ), "Field job_data should have value in finished pipelines"
 
-    @patch("kedro_vertexai.client.AIPlatformClient")
+    @patch("kedro_vertexai.client.aiplatform")
     def test_wait_for_completion_timeout(self, ai_client):
         ai_client.return_value.get_job.side_effect = lambda _: {
             "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED,
@@ -232,7 +247,7 @@ class TestVertexAIClient(unittest.TestCase):
             "max timeout" in result.state.lower()
         ), "Final state seems invalid"
 
-    @patch("kedro_vertexai.client.AIPlatformClient")
+    @patch("kedro_vertexai.client.aiplatform")
     def test_wait_for_completion_intervals(self, ai_client):
         ai_client.return_value.get_job.return_value = {
             "state": PipelineStatus.PIPELINE_STATE_RUNNING
@@ -250,7 +265,7 @@ class TestVertexAIClient(unittest.TestCase):
 
     @patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error")
     @patch(
-        "kedro_vertexai.client.AIPlatformClient",
+        "kedro_vertexai.client.aiplatform",
     )
     def test_wait_for_completion_api_errors(self, ai_client, logger):
         ai_client.return_value.get_job.side_effect = Exception()

@@ -9,15 +9,15 @@ from typing import Dict, Set
 
 import kfp
 from kedro.pipeline.node import Node
+from kfp.components.placeholders import OutputPathPlaceholder
 from kfp.components.structures import (
     ComponentSpec,
-    ContainerImplementation,
+    Implementation,
     ContainerSpec,
     InputSpec,
-    OutputPathPlaceholder,
     OutputSpec,
 )
-from kfp.v2 import dsl
+from kfp import dsl
 
 from kedro_vertexai.config import RunConfig
 from kedro_vertexai.constants import (
@@ -96,7 +96,7 @@ class PipelineGenerator:
 
     def _create_mlflow_op(
         self, image, tracking_token, should_add_params
-    ) -> dsl.ContainerOp:
+    ) -> dsl.PipelineTask:
 
         mlflow_command = " ".join(
             [
@@ -116,7 +116,7 @@ class PipelineGenerator:
             name="mlflow-start-run",
             inputs=[InputSpec("mlflow_tracking_token", "String")],
             outputs=[OutputSpec("output", "String")],
-            implementation=ContainerImplementation(
+            implementation=Implementation(
                 container=ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
@@ -140,7 +140,7 @@ class PipelineGenerator:
         image,
         pipeline,
         tracking_token=None,
-    ) -> Dict[str, dsl.ContainerOp]:
+    ) -> Dict[str, dsl.PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_ops = {}
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from google.cloud.aiplatform.pipeline_jobs import PipelineJob
 
 # Source: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/PipelineState
 class PipelineStatus:
@@ -19,4 +20,4 @@ class PipelineStatus:
 class PipelineResult:
     is_success: bool
     state: str
-    job_data: Optional[dict] = None
+    job_data: Optional[PipelineJob] = None
