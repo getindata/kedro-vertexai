@@ -28,14 +28,14 @@ EXTRA_REQUIRE = {
     "mlflow": ["kedro-mlflow~=0.11.1"],
     "tests": [
         "pytest>=7.0.0",
-        "pytest-cov>=2.8.0, <3.0.0",
+        "pytest-cov>=2.8.0, <4.0.0",
         "pytest-subtests>=0.5.0, <1.0.0",
         "tox==3.23.1",
         "pre-commit==2.9.3",
         "responses>=0.13.4",
     ],
     "docs": [
-        "sphinx==3.4.2",
+        "sphinx==5.0.2",
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==0.6.0",
     ],
