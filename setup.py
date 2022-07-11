@@ -18,7 +18,7 @@ INSTALL_REQUIRES = [
     "gcsfs<=2022.1,>=2021.4",
     "fsspec<=2022.1,>=2021.4",
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
-    "google-cloud-storage<2.0.0",
+    "google-cloud-storage<3.0.0",
     "grpcio~=1.44.0",
     "grpcio-status~=1.44.0",
     "protobuf<=3.20.0",
