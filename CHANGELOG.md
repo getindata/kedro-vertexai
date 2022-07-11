@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Add support for `kedro>=0.18.1,<0.19` (#36)
 
 ## [0.4.1] - 2022-04-14
 
