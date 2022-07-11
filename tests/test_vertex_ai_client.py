@@ -48,11 +48,9 @@ class TestVertexAIClient(unittest.TestCase):
 
     def test_run_once(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.aiplatform"
-        ), patch(
             "kfp.compiler.Compiler"
-        ), patch("kedro_vertexai.client.aiplatform.PipelineJob") as PipelineJobClient:
-            pipeline_client = PipelineJobClient.return_value
+        ), patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob.return_value
 
             client_under_test = self.create_client()
             client_under_test.run_once(MagicMock("pipeline"), "image")
@@ -62,13 +60,8 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["network"] == "my-vpc"
 
     def test_should_list_pipelines(self):
-        with patch(
-            "kedro_vertexai.client.aiplatform"
-        ), patch(
-            "kedro_vertexai.client.aiplatform.PipelineJob"
-        ) as PipelineJobClient:
-
-            pipeline_client = PipelineJobClient
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob
 
             pipeline_job1 = MagicMock(spec=PipelineJob)
             pipeline_job1.configure_mock(
@@ -189,11 +182,8 @@ class TestVertexAIClient(unittest.TestCase):
             )
 
     def test_wait_for_completion_success_condition(self):
-        with patch(
-            "kedro_vertexai.client.aiplatform"
-        ), patch("kedro_vertexai.client.aiplatform.PipelineJob") as PipelineJobClient:
-
-            pipeline_client = PipelineJobClient
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob
 
             job_state = MagicMock(spec=PipelineJob)
             job_state.state.name = PipelineStatus.PIPELINE_STATE_SUCCEEDED
@@ -206,80 +196,83 @@ class TestVertexAIClient(unittest.TestCase):
                 result.job_data, PipelineJob
             ), "Field job_data should have value in finished pipelines"
 
-    @patch("kedro_vertexai.client.aiplatform")
-    def test_wait_for_completion_failure_condition(self, ai_client):
+    def test_wait_for_completion_failure_condition(self):
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob
 
-        for state in (
-            PipelineStatus.PIPELINE_STATE_CANCELLED,
-            PipelineStatus.PIPELINE_STATE_FAILED,
-        ):
-            with patch.object(
-                ai_client.return_value,
-                "get_job",
-                return_value={"state": state},
+            for state in (
+                PipelineStatus.PIPELINE_STATE_CANCELLED,
+                PipelineStatus.PIPELINE_STATE_FAILED,
             ):
-                # with patch(
-                #     "kedro_vertexai.client.aiplatform.get_job",
-                #     return_value={"state": state},
-                # ):
+                job_state = MagicMock(spec=PipelineJob)
+                job_state.state.name = state
+                with patch.object(
+                    pipeline_client,
+                    "get",
+                    return_value=job_state,
+                ):
+                    client = self.create_client()
+                    result = client.wait_for_completion(10)
+                    assert (
+                        not result.is_success
+                    ), "Pipeline should be determined as failed"
+                    assert isinstance(
+                        result.job_data, PipelineJob
+                    ), "Field job_data should have value in finished pipelines"
+
+    def test_wait_for_completion_timeout(self):
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob
+
+            pipeline_client.get.side_effect = lambda _: {
+                "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED,
+                "hacky :)": sleep(60.0),
+            }
+            client = self.create_client()
+            result = client.wait_for_completion(3)
+            assert not result.is_success, "Pipeline should be determined as failed"
+            assert (
+                result.job_data is None
+            ), "Timed-out pipelines will not have job details"
+            assert (
+                "max timeout" in result.state.lower()
+            ), "Final state seems invalid"
+
+    def test_wait_for_completion_intervals(self):
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            pipeline_client = ai_client.PipelineJob
+
+            job_state = MagicMock(spec=PipelineJob)
+            job_state.state.name = PipelineStatus.PIPELINE_STATE_RUNNING
+            pipeline_client.get.return_value = job_state
+            timeout = 2
+            interval = 0.1
+            tolerance = 2
+            client = self.create_client()
+            client.wait_for_completion(2, 0.1)
+            assert (
+                (timeout / interval) - tolerance
+                <= pipeline_client.get.call_count
+                < (timeout / interval) + tolerance
+            ), "Number of calls to the API within the specified interval is invalid"
+
+    def test_wait_for_completion_api_errors(self):
+        with patch("kedro_vertexai.client.aiplatform") as ai_client:
+            with patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error") as logger:
+
+                pipeline_client = ai_client.PipelineJob
+                pipeline_client.get.side_effect = Exception()
+
                 client = self.create_client()
-                result = client.wait_for_completion(10)
+                result = client.wait_for_completion(
+                    5, interval_seconds=0.01, max_api_fails=7
+                )
                 assert (
-                    not result.is_success
-                ), "Pipeline should be determined as failed"
-                assert isinstance(
-                    result.job_data, dict
-                ), "Field job_data should have value in finished pipelines"
-
-    @patch("kedro_vertexai.client.aiplatform")
-    def test_wait_for_completion_timeout(self, ai_client):
-        ai_client.return_value.get_job.side_effect = lambda _: {
-            "state": PipelineStatus.PIPELINE_STATE_SUCCEEDED,
-            "hacky :)": sleep(60.0),
-        }
-        client = self.create_client()
-        result = client.wait_for_completion(3)
-        assert not result.is_success, "Pipeline should be determined as failed"
-        assert (
-            result.job_data is None
-        ), "Timed-out pipelines will not have job details"
-        assert (
-            "max timeout" in result.state.lower()
-        ), "Final state seems invalid"
-
-    @patch("kedro_vertexai.client.aiplatform")
-    def test_wait_for_completion_intervals(self, ai_client):
-        ai_client.return_value.get_job.return_value = {
-            "state": PipelineStatus.PIPELINE_STATE_RUNNING
-        }
-        timeout = 2
-        interval = 0.1
-        tolerance = 2
-        client = self.create_client()
-        client.wait_for_completion(2, 0.1)
-        assert (
-            (timeout / interval) - tolerance
-            <= ai_client.return_value.get_job.call_count
-            < (timeout / interval) + tolerance
-        ), "Number of calls to the API within the specified interval is invalid"
-
-    @patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error")
-    @patch(
-        "kedro_vertexai.client.aiplatform",
-    )
-    def test_wait_for_completion_api_errors(self, ai_client, logger):
-        ai_client.return_value.get_job.side_effect = Exception()
-
-        client = self.create_client()
-        result = client.wait_for_completion(
-            5, interval_seconds=0.01, max_api_fails=7
-        )
-        assert (
-            not result.is_success and result.state == "Internal exception"
-        ), "When API rises many times, end status should be failed"
-        assert (
-            logger.call_count == 7
-        ), "Invalid number of logger calls on exception"
-        assert (
-            ai_client.return_value.get_job.call_count == 7
-        ), "Invalid number of API calls"
+                    not result.is_success and result.state == "Internal exception"
+                ), "When API rises many times, end status should be failed"
+                assert (
+                    logger.call_count == 7
+                ), "Invalid number of logger calls on exception"
+                assert (
+                    pipeline_client.get.call_count == 7
+                ), "Invalid number of API calls"

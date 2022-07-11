@@ -206,8 +206,6 @@ class VertexAIPipelinesClient:
                 try:
                     job = aiplatform.PipelineJob.get(self.run_name)
                     state = job.state.name
-                    print("!!!!!!!!!!!!!!")
-                    print(state)
                     if state in termination_statuses:
                         q.put(
                             PipelineResult(
