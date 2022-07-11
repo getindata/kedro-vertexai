@@ -6,7 +6,7 @@ with open("README.md") as f:
 
 # Runtime Requirements.
 INSTALL_REQUIRES = [
-    "kedro>=0.18.1, <0.19.0",
+    "kedro>=0.18.2, <0.19.0",
     "click>=8.0.4",
     "kfp>=1.8.12,<2.0",
     "tabulate>=0.8.7",
