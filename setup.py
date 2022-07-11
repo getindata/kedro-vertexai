@@ -12,7 +12,7 @@ INSTALL_REQUIRES = [
     "tabulate>=0.8.7",
     "semver~=2.10",
     "pydantic~=1.9.0",
-    "google-auth<2",
+    "google-auth<3",
     "google-cloud-scheduler>=2.3.2",
     "google-cloud-iam",
     "gcsfs<=2022.1,>=2021.4",
