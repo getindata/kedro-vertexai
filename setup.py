@@ -38,7 +38,7 @@ EXTRA_REQUIRE = {
     "docs": [
         "sphinx==5.0.2",
         "recommonmark==0.7.1",
-        "sphinx_rtd_theme==0.6.0",
+        "sphinx_rtd_theme==1.0.0",
     ],
 }
 
@@ -53,6 +53,8 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     keywords="kedro Vertex AI plugin",
     author="Mateusz Pytel, Mariusz Strzelecki, Marcin Zabłocki",

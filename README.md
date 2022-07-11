@@ -1,6 +1,6 @@
 # Kedro Vertex AI Plugin
 
-[![Python Version](https://img.shields.io/badge/python-3.8-blue.svg)](https://github.com/getindata/kedro-vertexai)
+[![Python Version](https://img.shields.io/pypi/pyversions/kedro-vertexai)](https://github.com/getindata/kedro-vertexai)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
 [![SemVer](https://img.shields.io/badge/semver-2.0.0-green)](https://semver.org/)
 [![PyPI version](https://badge.fury.io/py/kedro-vertexai.svg)](https://pypi.org/project/kedro-vertexai/)
@@ -34,15 +34,14 @@ Options:
   -h, --help      Show this message and exit.
 
 Commands:
-  compile         Translates Kedro pipeline into YAML file with Kubeflow...
+  compile         Translates Kedro pipeline into JSON file with Kubeflow...
   init            Initializes configuration for the plugin
   list-pipelines  List deployed pipeline definitions
   run-once        Deploy pipeline as a single run within given experiment.
-  schedule        Schedules recurring execution of latest version of the...
   ui              Open VertexAI Pipelines UI in new browser tab
 ```
 
 ## Configuration file
 
 `kedro init` generates configuration file for the plugin, but users may want to adjust it to match the run environment 
-requirements. Check documentation for details - [kedro-kubeflow.readthedocs.io](https://kedro-kubeflow.readthedocs.io/en/latest/source/02_installation/02_configuration.html)
+requirements. Check documentation for details - [kedro-vertexai.readthedocs.io](https://kedro-vertexai.readthedocs.io/en/latest/source/02_installation/02_configuration.html)
