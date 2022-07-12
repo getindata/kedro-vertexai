@@ -61,7 +61,7 @@ def generate_mlflow_inputs():
             structures.InputSpec("mlflow_run_id", "String"),
         ]
         if is_mlflow_enabled()
-        else []
+        else {}
     )
     mlflow_tokens = (
         "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}} "
