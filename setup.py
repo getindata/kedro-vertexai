@@ -21,7 +21,7 @@ INSTALL_REQUIRES = [
     "google-cloud-storage<2.0.0",
     "grpcio~=1.44.0",
     "grpcio-status~=1.44.0",
-    "protobuf<=3.20.0",
+    "protobuf<4.22.0",
 ]
 
 # Dev Requirements
