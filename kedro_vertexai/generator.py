@@ -83,8 +83,8 @@ class PipelineGenerator:
             for node, dependencies in node_dependencies.items():
                 set_dependencies(node, dependencies, kfp_ops)
 
-            for operator in kfp_ops.values():
-                operator.container.set_image_pull_policy(image_pull_policy)
+            # for operator in kfp_ops.values():
+            #     operator.container.set_image_pull_policy(image_pull_policy)
 
         return convert_kedro_pipeline_to_kfp
 
@@ -187,8 +187,8 @@ class PipelineGenerator:
             spec = ComponentSpec(
                 name=name,
                 inputs=mlflow_inputs,
-                outputs=[],
-                implementation=ContainerImplementation(
+                outputs={},
+                implementation=Implementation(
                     container=ContainerSpec(
                         image=image,
                         command=["/bin/bash", "-c"],
@@ -227,7 +227,7 @@ class PipelineGenerator:
         with NamedTemporaryFile(
             mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
         ) as spec_file:
-            spec.save(spec_file.name)
+            spec.save_to_component_yaml(spec_file.name)
             component = kfp.components.load_component_from_file(spec_file.name)
 
         operator = component(*op_function_parameters)
@@ -238,7 +238,7 @@ class PipelineGenerator:
         resources = self.run_config.resources_for(name)
         if "cpu" in resources and resources["cpu"]:
             operator.set_cpu_limit(resources["cpu"])
-            operator.set_cpu_request(resources["cpu"])
+            # operator.set_cpu_request(resources["cpu"])
         if "memory" in resources and resources["memory"]:
             operator.set_memory_limit(resources["memory"])
-            operator.set_memory_request(resources["memory"])
+            # operator.set_memory_request(resources["memory"])
