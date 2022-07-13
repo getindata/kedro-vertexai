@@ -55,14 +55,11 @@ def generate_mlflow_inputs():
     Generates inputs that are required to correctly generate mlflow specific data.
     :return: mlflow_inputs, mlflow_tokens
     """
-    mlflow_inputs = (
-        [
-            structures.InputSpec("mlflow_tracking_token", "String"),
-            structures.InputSpec("mlflow_run_id", "String"),
-        ]
-        if is_mlflow_enabled()
-        else {}
-    )
+    mlflow_inputs = {
+        "MLFLOW_TRACKING_TOKEN": structures.InputSpec(type="String"),
+        "mlflow_run_id": structures.InputSpec(type="String")
+    } if is_mlflow_enabled() else {}
+
     mlflow_tokens = (
         "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}} "
         "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "

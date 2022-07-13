@@ -38,7 +38,7 @@ class TestGenerator(unittest.TestCase):
 
         # then
         assert dsl_pipeline.tasks["node1"].container_spec.image == "unittest-image"
-        # assert dsl_pipeline.ops["node1"].container.image_pull_policy == "Never"  # not supported yet in v2
+        # assert dsl_pipeline.tasks["node1"].container_spec.image_pull_policy == "Never"  # not supported yet in v2
 
     @unittest.skip("volumes not supported in v2 yet")
     def test_should_skip_volume_init_if_requested(self):
@@ -53,10 +53,10 @@ class TestGenerator(unittest.TestCase):
             pipeline()
 
         # then
-        assert len(dsl_pipeline.ops) == 2
-        assert "data-volume-init" not in dsl_pipeline.ops
+        assert len(dsl_pipeline.tasks) == 2
+        assert "data-volume-init" not in dsl_pipeline.tasks
         for node_name in ["node1", "node2"]:
-            assert not dsl_pipeline.ops[node_name].container.volume_mounts
+            assert not dsl_pipeline.tasks[node_name].container_spec.volume_mounts
 
     def test_should_not_add_resources_spec_if_not_requested(self):
         # given
@@ -122,6 +122,7 @@ class TestGenerator(unittest.TestCase):
         # then
         assert pipeline._component_description == "DESC"
 
+    @unittest.skip("volumes not supported in v2 yet")
     def test_should_skip_volume_removal_if_requested(self):
         # given
         self.create_generator(config={"volume": {"keep": True}})
@@ -134,7 +135,7 @@ class TestGenerator(unittest.TestCase):
             pipeline()
 
         # then
-        assert "schedule-volume-termination" not in dsl_pipeline.ops
+        assert "schedule-volume-termination" not in dsl_pipeline.tasks
 
     def test_should_add_env_and_pipeline_in_the_invocations(self):
         # given
@@ -151,11 +152,11 @@ class TestGenerator(unittest.TestCase):
         # then
         assert (
             "kedro vertexai -e unittests mlflow-start"
-            in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
+            in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
         )
         assert (
             'kedro run -e unittests --pipeline pipeline --node "node1"'
-            in dsl_pipeline.ops["node1"].container.args[0]
+            in dsl_pipeline.tasks["node1"].container_spec.args[0]
         )
 
     def test_should_dump_params_and_add_config_if_params_are_set(self):
@@ -171,12 +172,12 @@ class TestGenerator(unittest.TestCase):
 
         assert (
             "kedro vertexai -e unittests initialize-job --params="
-            in dsl_pipeline.ops["node1"].container.args[0]
+            in dsl_pipeline.tasks["node1"].container_spec.args[0]
         )
 
         assert (
             'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
-            in dsl_pipeline.ops["node1"].container.args[0]
+            in dsl_pipeline.tasks["node1"].container_spec.args[0]
         )
 
     def test_should_add_globals_env_if_present(self):
@@ -192,10 +193,10 @@ class TestGenerator(unittest.TestCase):
                 pipeline()
 
             expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-            assert expected in dsl_pipeline.ops["node1"].container.args[0]
+            assert expected in dsl_pipeline.tasks["node1"].container_spec.args[0]
 
             assert (
-                dsl_pipeline.ops["node1"].container.args[0].count(expected)
+                dsl_pipeline.tasks["node1"].container_spec.args[0].count(expected)
                 == 2
             ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
@@ -228,9 +229,9 @@ class TestGenerator(unittest.TestCase):
         )
         assert (
             hosts_entry_cmd
-            in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
+            in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
         )
-        assert hosts_entry_cmd in dsl_pipeline.ops["node1"].container.args[0]
+        assert hosts_entry_cmd in dsl_pipeline.tasks["node1"].container_spec.args[0]
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):

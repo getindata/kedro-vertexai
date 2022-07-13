@@ -115,8 +115,8 @@ class PipelineGenerator:
 
         spec = ComponentSpec(
             name="mlflow-start-run",
-            inputs=[InputSpec("mlflow_tracking_token", "String")],
-            outputs=[OutputSpec("output", "String")],
+            inputs={"MLFLOW_TRACKING_TOKEN": InputSpec(type="String")},
+            outputs={"output": OutputSpec(type="String")},
             implementation=Implementation(
                 container=ContainerSpec(
                     image=image,
@@ -128,12 +128,8 @@ class PipelineGenerator:
                 )
             ),
         )
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-        return component(tracking_token)
+        component = PipelineTask(component_spec=spec, args={"MLFLOW_TRACKING_TOKEN": tracking_token})
+        return component
 
     def _build_kfp_ops(
         self,
@@ -157,11 +153,9 @@ class PipelineGenerator:
             name = clean_name(node.name)
 
             mlflow_inputs, mlflow_tokens = generate_mlflow_inputs()
-            component_params = (
-                [tracking_token, kfp_ops["mlflow-start-run"].output]
-                if mlflow_enabled
-                else []
-            )
+            component_params = {
+                tracking_token: kfp_ops["mlflow-start-run"].output
+            } if mlflow_enabled else {}
 
             kedro_command = " ".join(
                 [
