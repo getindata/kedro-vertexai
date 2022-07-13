@@ -3,6 +3,7 @@ from typing import Optional
 
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
 
+
 # Source: https://cloud.google.com/vertex-ai/docs/reference/rest/v1/PipelineState
 class PipelineStatus:
     PIPELINE_STATE_UNSPECIFIED = "PIPELINE_STATE_UNSPECIFIED"
