@@ -9,3 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: protobuf
+        versions: ["3.x", "4.x"]

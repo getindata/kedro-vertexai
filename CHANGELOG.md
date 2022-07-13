@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+- Add support for `kedro>=0.18.1,<0.19` (#36)
+- Dependency update `kfp==0.18.1` (#45)
+- Added tests and support for python 3.9 and 3.10 (#37)
 
 ## [0.4.1] - 2022-04-14
 

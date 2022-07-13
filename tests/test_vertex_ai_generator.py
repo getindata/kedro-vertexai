@@ -1,7 +1,7 @@
 """Test generator"""
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import kfp
 from kedro.pipeline import Pipeline, node
@@ -30,15 +30,19 @@ class TestGenerator(unittest.TestCase):
         self.create_generator()
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        assert dsl_pipeline.tasks["node1"].container_spec.image == "unittest-image"
-        # assert dsl_pipeline.tasks["node1"].container_spec.image_pull_policy == "Never"  # not supported yet in v2
+            # then
+            assert dsl_pipeline.tasks["node1"].container_spec.image == "unittest-image"
+            # assert dsl_pipeline.tasks["node1"].container_spec.image_pull_policy == "Never"  # not supported yet in v2
 
     @unittest.skip("volumes not supported in v2 yet")
     def test_should_skip_volume_init_if_requested(self):
@@ -46,17 +50,21 @@ class TestGenerator(unittest.TestCase):
         self.create_generator(config={"volume": {"skip_init": True}})
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        assert len(dsl_pipeline.tasks) == 2
-        assert "data-volume-init" not in dsl_pipeline.tasks
-        for node_name in ["node1", "node2"]:
-            assert not dsl_pipeline.tasks[node_name].container_spec.volume_mounts
+            # then
+            assert len(dsl_pipeline.tasks) == 2
+            assert "data-volume-init" not in dsl_pipeline.tasks
+            for node_name in ["node1", "node2"]:
+                assert not dsl_pipeline.tasks[node_name].container_spec.volume_mounts
 
     def test_should_not_add_resources_spec_if_not_requested(self):
         # given
@@ -69,16 +77,20 @@ class TestGenerator(unittest.TestCase):
         )
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        for node_name in ["node1", "node2"]:
-            spec = dsl_pipeline.tasks[node_name].container_spec
-            assert spec.resources is None
+            # then
+            for node_name in ["node1", "node2"]:
+                spec = dsl_pipeline.tasks[node_name].container_spec
+                assert spec.resources is None
 
     def test_should_add_resources_spec(self):
         # given
@@ -92,23 +104,24 @@ class TestGenerator(unittest.TestCase):
         )
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
-        )
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
-
-        # then
-        assert len(dsl_pipeline.tasks) == 2
-
-        node1_spec = dsl_pipeline.tasks["node1"].container_spec.resources
-        node2_spec = dsl_pipeline.tasks["node2"].container_spec.resources
-        assert node1_spec.cpu_limit == 0.4
-        assert node1_spec.memory_limit == 68.719476736
-
-        assert node2_spec.cpu_limit == 0.1
-        assert node2_spec.memory_limit is None
+            # then
+            assert len(dsl_pipeline.tasks) == 2
+            node1_spec = dsl_pipeline.tasks["node1"].container_spec.resources
+            node2_spec = dsl_pipeline.tasks["node2"].container_spec.resources
+            assert node1_spec.cpu_limit == 0.4
+            assert node1_spec.memory_limit == 68.719476736
+            assert node2_spec.cpu_limit == 0.1
+            assert node2_spec.memory_limit is None
 
     def test_should_set_description(self):
         # given
@@ -128,14 +141,18 @@ class TestGenerator(unittest.TestCase):
         self.create_generator(config={"volume": {"keep": True}})
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Always", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        assert "schedule-volume-termination" not in dsl_pipeline.tasks
+            # then
+            assert "schedule-volume-termination" not in dsl_pipeline.tasks
 
     def test_should_add_env_and_pipeline_in_the_invocations(self):
         # given
@@ -143,42 +160,49 @@ class TestGenerator(unittest.TestCase):
         self.mock_mlflow(True)
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        assert (
-            "kedro vertexai -e unittests mlflow-start"
-            in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
-        )
-        assert (
-            'kedro run -e unittests --pipeline pipeline --node "node1"'
-            in dsl_pipeline.tasks["node1"].container_spec.args[0]
-        )
+            # then
+            assert (
+                    "kedro vertexai -e unittests mlflow-start"
+                    in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
+            )
+            assert (
+                    'kedro run -e unittests --pipeline pipeline --node "node1"'
+                    in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            )
 
     def test_should_dump_params_and_add_config_if_params_are_set(self):
         self.create_generator(
             params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
         )
-        self.mock_mlflow(False)
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+                "kedro.framework.project.pipelines",
+                new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        assert (
-            "kedro vertexai -e unittests initialize-job --params="
-            in dsl_pipeline.tasks["node1"].container_spec.args[0]
-        )
+            assert (
+                    "kedro vertexai -e unittests initialize-job --params="
+                    in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            )
 
-        assert (
-            'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
-            in dsl_pipeline.tasks["node1"].container_spec.args[0]
-        )
+            assert (
+                    'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
+                    in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            )
 
     def test_should_add_globals_env_if_present(self):
         with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):
@@ -186,19 +210,27 @@ class TestGenerator(unittest.TestCase):
                 params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
             )
             self.mock_mlflow(False)
-            pipeline = self.generator_under_test.generate_pipeline(
-                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
-            )
-            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with patch(
+                "kedro.framework.project.pipelines",
+                new=self.pipelines_under_test,
+            ):
 
-            expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-            assert expected in dsl_pipeline.tasks["node1"].container_spec.args[0]
+                pipeline = self.generator_under_test.generate_pipeline(
+                    "pipeline",
+                    "unittest-image",
+                    "Never",
+                    "MLFLOW_TRACKING_TOKEN",
+                )
+                with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                    pipeline()
 
-            assert (
-                dsl_pipeline.tasks["node1"].container_spec.args[0].count(expected)
-                == 2
-            ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
+                expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
+                assert expected in dsl_pipeline.tasks["node1"].container_spec.args[0]
+
+                assert (
+                    dsl_pipeline.tasks["node1"].container_spec.args[0].count(expected)
+                    == 2
+                ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
     def test_should_add_host_aliases_if_requested(self):
         # given
@@ -217,21 +249,27 @@ class TestGenerator(unittest.TestCase):
         self.mock_mlflow(True)
 
         # when
-        pipeline = self.generator_under_test.generate_pipeline(
-            "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
-        )
-        with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
-            pipeline()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+                pipeline()
 
-        # then
-        hosts_entry_cmd = (
-            "echo 10.10.10.10\tmlflow.internal mlflow.cloud >> /etc/hosts;"
-        )
-        assert (
-            hosts_entry_cmd
-            in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
-        )
-        assert hosts_entry_cmd in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            # then
+            hosts_entry_cmd = (
+                "echo 10.10.10.10\tmlflow.internal mlflow.cloud >> /etc/hosts;"
+            )
+            assert (
+                hosts_entry_cmd
+                in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
+            )
+            assert (
+                hosts_entry_cmd in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            )
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
@@ -259,16 +297,18 @@ class TestGenerator(unittest.TestCase):
                 "env": "unittests",
                 "params": params,
                 "config_loader": config_loader,
-                "pipelines": {
-                    "pipeline": Pipeline(
-                        [
-                            node(identity, "A", "B", name="node1"),
-                            node(identity, "B", "C", name="node2"),
-                        ]
-                    )
-                },
             },
         )
+
+        self.pipelines_under_test = {
+            "pipeline": Pipeline(
+                [
+                    node(identity, "A", "B", name="node1"),
+                    node(identity, "B", "C", name="node2"),
+                ]
+            )
+        }
+
         config_with_defaults = {
             "image": "test",
             "root": "sample-bucket/sample-suffix",

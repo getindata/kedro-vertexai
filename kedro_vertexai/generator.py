@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 from typing import Dict, Set
 
 import kfp
+from kedro.framework.context import KedroContext
 from kedro.pipeline.node import Node
 from kfp.components.pipeline_task import PipelineTask
 from kfp.components.placeholders import OutputPathPlaceholder
@@ -42,7 +43,7 @@ class PipelineGenerator:
         assert run_name, "run_name cannot be empty / None"
         self.run_name = run_name
         self.project_name = project_name
-        self.context = context
+        self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
 
@@ -50,7 +51,7 @@ class PipelineGenerator:
         """
         Returns Vertex-compatible pipeline name
         """
-        return self.project_name.lower().replace(" ", "-")
+        return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
     def generate_pipeline(self, pipeline, image, image_pull_policy, token):
         """
@@ -74,9 +75,9 @@ class PipelineGenerator:
             description=self.run_config.description,
         )
         def convert_kedro_pipeline_to_kfp() -> None:
-            node_dependencies = self.context.pipelines.get(
-                pipeline
-            ).node_dependencies
+            from kedro.framework.project import pipelines
+
+            node_dependencies = pipelines[pipeline].node_dependencies
             kfp_ops = self._build_kfp_ops(
                 node_dependencies, image, pipeline, token
             )
