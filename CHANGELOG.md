@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-07-13
+
+-   Add support for `kedro>=0.18.1,<0.19` (#36)
+-   Dependency update `kfp==0.18.1` (#45)
+-   Added tests and support for python 3.9 and 3.10 (#37)
+
 ## [0.4.1] - 2022-04-14
 
 -   Add missing `initialize-job` for `mlflow-start-run` step, added MLFlowGoogleIAMCredentialsProvider. 
@@ -28,7 +34,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.4.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.5.0...HEAD
+
+[0.5.0]: https://github.com/getindata/kedro-vertexai/compare/0.4.1...0.5.0
 
 [0.4.1]: https://github.com/getindata/kedro-vertexai/compare/0.4.0...0.4.1
 
