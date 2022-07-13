@@ -120,12 +120,15 @@ class TestGenerator(unittest.TestCase):
                 pipeline()
 
             # then
-            node1_spec = dsl_pipeline.ops["node1"].container.resources
-            node2_spec = dsl_pipeline.ops["node2"].container.resources
-            assert node1_spec.limits == {"cpu": "400m", "memory": "64Gi"}
-            assert node1_spec.requests == {"cpu": "400m", "memory": "64Gi"}
-            assert node2_spec.limits == {"cpu": "100m"}
-            assert node2_spec.requests == {"cpu": "100m"}
+            assert len(dsl_pipeline.tasks) == 2
+
+            node1_spec = dsl_pipeline.tasks["node1"].container_spec.resources
+            node2_spec = dsl_pipeline.tasks["node2"].container_spec.resources
+            assert node1_spec.cpu_limit == 0.4
+            assert node1_spec.memory_limit == 68.719476736
+
+            assert node2_spec.cpu_limit == 0.1
+            assert node2_spec.memory_limit is None
 
     def test_should_set_description(self):
         # given
