@@ -287,9 +287,12 @@ class TestPluginCLI(unittest.TestCase):
             with open(on_push_actions, "r") as f:
                 assert "kedro vertexai run-once" in f.read()
 
+    @patch("kedro_mlflow.framework.context.get_mlflow_config")
     @patch("mlflow.start_run")
     @patch("mlflow.set_tag")
-    def test_mlflow_start(self, set_tag_mock, start_run_mock):
+    def test_mlflow_start(
+        self, set_tag_mock, start_run_mock, get_mlflow_config_mock
+    ):
         context_helper: ContextHelper = MagicMock(ContextHelper)
         config = dict(context_helper=context_helper)
         runner = CliRunner()

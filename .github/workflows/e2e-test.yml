@@ -26,9 +26,8 @@ jobs:
         source venv/bin/activate
    
     - name: Initialize kedro spaceflights project
-      # kedro 0.18.1 is on purpose here, due to https://github.com/kedro-org/kedro-starters/issues/99
       run: |
-        pip install . 'kedro==0.18.1'
+        pip install . 'kedro<0.18'
         kedro new --starter spaceflights --config tests/e2e/starter-config.yml --verbose
 
     - name: Install project dependencies

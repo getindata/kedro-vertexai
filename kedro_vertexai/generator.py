@@ -4,20 +4,21 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
+from tempfile import NamedTemporaryFile
 from typing import Dict, Set
 
-from kedro.framework.context import KedroContext
+import kfp
 from kedro.pipeline.node import Node
-from kfp import dsl
 from kfp.components.pipeline_task import PipelineTask
 from kfp.components.placeholders import OutputPathPlaceholder
 from kfp.components.structures import (
     ComponentSpec,
-    ContainerSpec,
     Implementation,
+    ContainerSpec,
     InputSpec,
     OutputSpec,
 )
+from kfp import dsl
 
 from kedro_vertexai.config import RunConfig
 from kedro_vertexai.constants import (
@@ -41,7 +42,7 @@ class PipelineGenerator:
         assert run_name, "run_name cannot be empty / None"
         self.run_name = run_name
         self.project_name = project_name
-        self.context: KedroContext = context
+        self.context = context
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
 
@@ -49,7 +50,7 @@ class PipelineGenerator:
         """
         Returns Vertex-compatible pipeline name
         """
-        return self.project_name.lower().replace(" ", "-").replace("_", "-")
+        return self.project_name.lower().replace(" ", "-")
 
     def generate_pipeline(self, pipeline, image, image_pull_policy, token):
         """
@@ -73,9 +74,9 @@ class PipelineGenerator:
             description=self.run_config.description,
         )
         def convert_kedro_pipeline_to_kfp() -> None:
-            from kedro.framework.project import pipelines
-
-            node_dependencies = pipelines[pipeline].node_dependencies
+            node_dependencies = self.context.pipelines.get(
+                pipeline
+            ).node_dependencies
             kfp_ops = self._build_kfp_ops(
                 node_dependencies, image, pipeline, token
             )
@@ -127,9 +128,7 @@ class PipelineGenerator:
                 )
             ),
         )
-        component = PipelineTask(
-            component_spec=spec, args={"MLFLOW_TRACKING_TOKEN": tracking_token}
-        )
+        component = PipelineTask(component_spec=spec, args={"MLFLOW_TRACKING_TOKEN": tracking_token})
         return component
 
     def _build_kfp_ops(
@@ -154,11 +153,9 @@ class PipelineGenerator:
             name = clean_name(node.name)
 
             mlflow_inputs, mlflow_tokens = generate_mlflow_inputs()
-            component_params = (
-                {tracking_token: kfp_ops["mlflow-start-run"].output}
-                if mlflow_enabled
-                else {}
-            )
+            component_params = {
+                tracking_token: kfp_ops["mlflow-start-run"].output
+            } if mlflow_enabled else {}
 
             kedro_command = " ".join(
                 [
@@ -221,9 +218,7 @@ class PipelineGenerator:
     def _create_kedro_op(
         self, name: str, spec: ComponentSpec, op_function_parameters
     ):
-        operator = PipelineTask(
-            component_spec=spec, args=op_function_parameters
-        )
+        operator = PipelineTask(component_spec=spec, args=op_function_parameters)
         self._configure_resources(name, operator)
         return operator
 

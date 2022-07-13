@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import Any, Dict
+from typing import Dict, Iterable
 
 from kedro.config import TemplatedConfigLoader
 
@@ -18,23 +18,11 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
     # defaults provided so default variables ${commit_id|dirty} work for some entries
     ENV_DEFAULTS = {"commit_id": None, "branch_name": None, "run_id": ""}
 
-    def __init__(
-        self,
-        conf_source: str,
-        env: str = None,
-        runtime_params: Dict[str, Any] = None,
-        *,
-        base_env: str = "base",
-        default_run_env: str = "local"
-    ):
+    def __init__(self, conf_paths: Iterable[str]):
         super().__init__(
-            conf_source,
-            env=env,
-            runtime_params=runtime_params,
+            conf_paths,
             globals_dict=self.read_env(),
             globals_pattern=os.getenv(KEDRO_GLOBALS_PATTERN, None),
-            base_env=base_env,
-            default_run_env=default_run_env,
         )
 
     def read_env(self) -> Dict:
@@ -75,7 +63,7 @@ class ContextHelper(object):
     @lru_cache()
     def config(self) -> PluginConfig:
         raw = EnvTemplatedConfigLoader(
-            self.context.config_loader.conf_source
+            self.context.config_loader.conf_paths
         ).get(self.CONFIG_FILE_PATTERN)
         return PluginConfig.parse_obj(raw)
 

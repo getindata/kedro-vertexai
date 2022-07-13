@@ -60,11 +60,11 @@ class TestContextHelper(unittest.TestCase):
 class TestEnvTemplatedConfigLoader(unittest.TestCase):
     @property
     def test_dir(self) -> str:
-        return str(Path(os.path.dirname(os.path.abspath(__file__))) / "conf")
+        return os.path.dirname(os.path.abspath(__file__))
 
     def get_config(self, config_dir=None):
-        config_path: str = self.test_dir if not config_dir else config_dir
-        loader = EnvTemplatedConfigLoader(config_path, default_run_env="base")
+        config_path = [self.test_dir] if not config_dir else [config_dir]
+        loader = EnvTemplatedConfigLoader(config_path)
         return loader.get("test_config.yml")
 
     def test_loader_with_defaults(self):
@@ -86,17 +86,14 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
         assert config["run_config"]["experiment_name"] == "[Test] feature-1"
 
     def test_loader_with_globals(self):
-        test_config_file = Path(self.test_dir) / "base" / "test_config.yml"
+        test_config_file = Path(self.test_dir) / "test_config.yml"
         with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):
             with TemporaryDirectory() as tmp_dir:
-                tmp_config_dir = (Path(tmp_dir)) / "base"
-                tmp_config_dir.mkdir()
-
                 shutil.copy(
-                    test_config_file, tmp_config_dir / "test_config.yml"
+                    test_config_file, Path(tmp_dir) / "test_config.yml"
                 )
 
-                globals_path = tmp_config_dir / "globals.yml"
+                globals_path = Path(tmp_dir) / "globals.yml"
                 with globals_path.open("w") as f:
                     yaml.safe_dump(
                         {"image_pull_policy": "GlobalsTestPullPolicy"},

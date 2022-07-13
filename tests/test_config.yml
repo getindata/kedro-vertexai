@@ -1,0 +1,4 @@
+run_config:
+  image: "gcr.io/project-image/${commit_id|dirty}"
+  experiment_name: "[Test] ${branch_name|local}"
+  image_pull_policy: "${image_pull_policy|IfNotPresent}"

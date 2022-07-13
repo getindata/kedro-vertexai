@@ -21,8 +21,8 @@ def clean_name(name: str) -> str:
 
 def is_mlflow_enabled() -> bool:
     try:
-        import kedro_mlflow  # NOQA
         import mlflow  # NOQA
+        from kedro_mlflow.framework.context import get_mlflow_config  # NOQA
 
         return True
     except ImportError:
@@ -77,7 +77,7 @@ def _generate_and_save_dynamic_config(
     dynamic_config = provider.generate_config()
     target_path = (
         context_helper.context.project_path
-        / settings.CONF_SOURCE
+        / settings.CONF_ROOT
         / provider.target_env
         / provider.target_config_file
     )
