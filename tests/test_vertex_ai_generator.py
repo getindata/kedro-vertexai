@@ -37,7 +37,10 @@ class TestGenerator(unittest.TestCase):
             pipeline()
 
         # then
-        assert dsl_pipeline.tasks["node1"].container_spec.image == "unittest-image"
+        assert (
+            dsl_pipeline.tasks["node1"].container_spec.image
+            == "unittest-image"
+        )
         # assert dsl_pipeline.tasks["node1"].container_spec.image_pull_policy == "Never"  # not supported yet in v2
 
     @unittest.skip("volumes not supported in v2 yet")
@@ -56,7 +59,9 @@ class TestGenerator(unittest.TestCase):
         assert len(dsl_pipeline.tasks) == 2
         assert "data-volume-init" not in dsl_pipeline.tasks
         for node_name in ["node1", "node2"]:
-            assert not dsl_pipeline.tasks[node_name].container_spec.volume_mounts
+            assert not dsl_pipeline.tasks[
+                node_name
+            ].container_spec.volume_mounts
 
     def test_should_not_add_resources_spec_if_not_requested(self):
         # given
@@ -189,14 +194,20 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.components.pipeline_context.Pipeline(None) as dsl_pipeline:
+            with kfp.components.pipeline_context.Pipeline(
+                None
+            ) as dsl_pipeline:
                 pipeline()
 
             expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-            assert expected in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            assert (
+                expected in dsl_pipeline.tasks["node1"].container_spec.args[0]
+            )
 
             assert (
-                dsl_pipeline.tasks["node1"].container_spec.args[0].count(expected)
+                dsl_pipeline.tasks["node1"]
+                .container_spec.args[0]
+                .count(expected)
                 == 2
             ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
@@ -231,7 +242,10 @@ class TestGenerator(unittest.TestCase):
             hosts_entry_cmd
             in dsl_pipeline.tasks["mlflow-start-run"].container_spec.args[0]
         )
-        assert hosts_entry_cmd in dsl_pipeline.tasks["node1"].container_spec.args[0]
+        assert (
+            hosts_entry_cmd
+            in dsl_pipeline.tasks["node1"].container_spec.args[0]
+        )
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):

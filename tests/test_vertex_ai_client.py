@@ -1,9 +1,8 @@
 """Test kedro_vertexai module."""
 
 import unittest
-from tempfile import NamedTemporaryFile
 from time import sleep
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
 
@@ -31,7 +30,9 @@ class TestVertexAIClient(unittest.TestCase):
                 },
             }
         )
-        return VertexAIPipelinesClient(config, 'test_project_name', MagicMock())
+        return VertexAIPipelinesClient(
+            config, "test_project_name", MagicMock()
+        )
 
     def test_compile(self):
         with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
@@ -66,20 +67,24 @@ class TestVertexAIClient(unittest.TestCase):
             pipeline_job1 = MagicMock(spec=PipelineJob)
             pipeline_job1.configure_mock(
                 name="projects/29350373243/locations/europe-west4/pipelineJobs/run1",
-                display_name="run1"
+                display_name="run1",
             )
             pipeline_job2 = MagicMock(spec=PipelineJob)
             pipeline_job2.configure_mock(
                 name="projects/29350373243/locations/europe-west4/pipelineJobs/run2",
-                display_name="run2"
+                display_name="run2",
             )
             pipeline_job3 = MagicMock(spec=PipelineJob)
             pipeline_job3.configure_mock(
                 name="projects/123/locations/europe-west4/pipelineJobs/run3",
-                display_name="run3"
+                display_name="run3",
             )
 
-            pipeline_client.list.return_value = [pipeline_job1, pipeline_job2, pipeline_job3]
+            pipeline_client.list.return_value = [
+                pipeline_job1,
+                pipeline_job2,
+                pipeline_job3,
+            ]
 
             client_under_test = self.create_client()
             tabulation = client_under_test.list_pipelines()
@@ -191,7 +196,9 @@ class TestVertexAIClient(unittest.TestCase):
 
             client = self.create_client()
             result = client.wait_for_completion(30)
-            assert result.is_success, "Pipeline should be determined as successful"
+            assert (
+                result.is_success
+            ), "Pipeline should be determined as successful"
             assert isinstance(
                 result.job_data, PipelineJob
             ), "Field job_data should have value in finished pipelines"
@@ -230,7 +237,9 @@ class TestVertexAIClient(unittest.TestCase):
             }
             client = self.create_client()
             result = client.wait_for_completion(3)
-            assert not result.is_success, "Pipeline should be determined as failed"
+            assert (
+                not result.is_success
+            ), "Pipeline should be determined as failed"
             assert (
                 result.job_data is None
             ), "Timed-out pipelines will not have job details"
@@ -258,7 +267,9 @@ class TestVertexAIClient(unittest.TestCase):
 
     def test_wait_for_completion_api_errors(self):
         with patch("kedro_vertexai.client.aiplatform") as ai_client:
-            with patch("kedro_vertexai.client.VertexAIPipelinesClient.log.error") as logger:
+            with patch(
+                "kedro_vertexai.client.VertexAIPipelinesClient.log.error"
+            ) as logger:
 
                 pipeline_client = ai_client.PipelineJob
                 pipeline_client.get.side_effect = Exception()
@@ -268,7 +279,8 @@ class TestVertexAIClient(unittest.TestCase):
                     5, interval_seconds=0.01, max_api_fails=7
                 )
                 assert (
-                    not result.is_success and result.state == "Internal exception"
+                    not result.is_success
+                    and result.state == "Internal exception"
                 ), "When API rises many times, end status should be failed"
                 assert (
                     logger.call_count == 7
