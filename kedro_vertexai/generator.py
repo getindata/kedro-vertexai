@@ -9,6 +9,7 @@ from typing import Dict, Set
 
 import kfp
 from kedro.pipeline.node import Node
+from kfp.components.pipeline_task import PipelineTask
 from kfp.components.placeholders import OutputPathPlaceholder
 from kfp.components.structures import (
     ComponentSpec,
@@ -83,7 +84,7 @@ class PipelineGenerator:
                 set_dependencies(node, dependencies, kfp_ops)
 
             # for operator in kfp_ops.values():
-            #     operator.container.set_image_pull_policy(image_pull_policy)
+            #     operator.container.set_image_pull_policy(image_pull_policy)  # not supported in kfp v2
 
         return convert_kedro_pipeline_to_kfp
 
@@ -223,13 +224,7 @@ class PipelineGenerator:
     def _create_kedro_op(
         self, name: str, spec: ComponentSpec, op_function_parameters
     ):
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save_to_component_yaml(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-
-        operator = component(*op_function_parameters)
+        operator = PipelineTask(component_spec=spec, args=op_function_parameters)
         self._configure_resources(name, operator)
         return operator
 
