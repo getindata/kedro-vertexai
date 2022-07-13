@@ -8,10 +8,12 @@ from uuid import uuid4
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.context_helper import ContextHelper
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
-from kedro_vertexai.utils import (_generate_and_save_dynamic_config,
-                                  _load_yaml_or_empty_dict,
-                                  materialize_dynamic_configuration,
-                                  store_parameters_in_yaml)
+from kedro_vertexai.utils import (
+    _generate_and_save_dynamic_config,
+    _load_yaml_or_empty_dict,
+    materialize_dynamic_configuration,
+    store_parameters_in_yaml,
+)
 
 from .utils import test_config
 

@@ -9,9 +9,17 @@ from unittest.mock import MagicMock, patch
 import yaml
 from click.testing import CliRunner
 
-from kedro_vertexai.cli import (compile, init, initialize_job, list_pipelines,
-                                mlflow_start, run_once, schedule, ui,
-                                vertexai_group)
+from kedro_vertexai.cli import (
+    compile,
+    init,
+    initialize_job,
+    list_pipelines,
+    mlflow_start,
+    run_once,
+    schedule,
+    ui,
+    vertexai_group,
+)
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
 

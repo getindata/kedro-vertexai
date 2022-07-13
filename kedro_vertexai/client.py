@@ -12,8 +12,9 @@ from tempfile import NamedTemporaryFile
 from time import sleep
 
 from google.cloud import aiplatform
-from google.cloud.scheduler_v1.services.cloud_scheduler import \
-    CloudSchedulerClient
+from google.cloud.scheduler_v1.services.cloud_scheduler import (
+    CloudSchedulerClient,
+)
 from kfp import compiler
 from tabulate import tabulate
 

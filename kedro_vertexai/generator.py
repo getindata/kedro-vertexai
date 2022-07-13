@@ -11,12 +11,19 @@ from kedro.pipeline.node import Node
 from kfp import dsl
 from kfp.components.pipeline_task import PipelineTask
 from kfp.components.placeholders import OutputPathPlaceholder
-from kfp.components.structures import (ComponentSpec, ContainerSpec,
-                                       Implementation, InputSpec, OutputSpec)
+from kfp.components.structures import (
+    ComponentSpec,
+    ContainerSpec,
+    Implementation,
+    InputSpec,
+    OutputSpec,
+)
 
 from kedro_vertexai.config import RunConfig
-from kedro_vertexai.constants import (KEDRO_GLOBALS_PATTERN,
-                                      KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK)
+from kedro_vertexai.constants import (
+    KEDRO_GLOBALS_PATTERN,
+    KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK,
+)
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
