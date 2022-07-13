@@ -9,10 +9,8 @@ import yaml
 from kedro.framework.session import KedroSession
 
 from kedro_vertexai.config import PluginConfig, RunConfig
-from kedro_vertexai.context_helper import (
-    ContextHelper,
-    EnvTemplatedConfigLoader,
-)
+from kedro_vertexai.context_helper import (ContextHelper,
+                                           EnvTemplatedConfigLoader)
 
 from .utils import environment
 

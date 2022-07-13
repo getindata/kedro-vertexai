@@ -12,9 +12,8 @@ from tempfile import NamedTemporaryFile
 from time import sleep
 
 from google.cloud import aiplatform
-from google.cloud.scheduler_v1.services.cloud_scheduler import (
-    CloudSchedulerClient,
-)
+from google.cloud.scheduler_v1.services.cloud_scheduler import \
+    CloudSchedulerClient
 from kfp import compiler
 from tabulate import tabulate
 
@@ -32,9 +31,7 @@ class VertexAIPipelinesClient:
 
     def __init__(self, config: PluginConfig, project_name, context):
 
-        aiplatform.init(
-            project=config.project_id, location=config.region
-        )
+        aiplatform.init(project=config.project_id, location=config.region)
         self.cloud_scheduler_client = CloudSchedulerClient()
         self.location = (
             f"projects/{config.project_id}/locations/{config.region}"
@@ -54,7 +51,10 @@ class VertexAIPipelinesClient:
         self.log.debug(list_pipelines_response)
 
         headers = ["Name", "ID"]
-        data = [(pipeline.display_name, pipeline.name) for pipeline in list_pipelines_response]
+        data = [
+            (pipeline.display_name, pipeline.name)
+            for pipeline in list_pipelines_response
+        ]
 
         return tabulate(data, headers=headers)
 
@@ -88,7 +88,7 @@ class VertexAIPipelinesClient:
                 pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values=parameters or {},
                 enable_caching=False,
-                display_name=self.run_name
+                display_name=self.run_name,
             )
             pipeline_job.run(
                 service_account=self.run_config.service_account,
