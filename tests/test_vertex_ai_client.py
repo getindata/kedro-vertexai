@@ -1,9 +1,8 @@
 """Test kedro_vertexai module."""
 
 import unittest
-from tempfile import NamedTemporaryFile
 from time import sleep
-from unittest.mock import MagicMock, PropertyMock, patch
+from unittest.mock import MagicMock, patch
 
 from google.cloud.aiplatform.pipeline_jobs import PipelineJob
 

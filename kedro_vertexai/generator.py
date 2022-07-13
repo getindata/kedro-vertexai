@@ -4,10 +4,8 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from tempfile import NamedTemporaryFile
 from typing import Dict, Set
 
-import kfp
 from kedro.framework.context import KedroContext
 from kedro.pipeline.node import Node
 from kfp.components.pipeline_task import PipelineTask
