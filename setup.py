@@ -32,7 +32,7 @@ EXTRA_REQUIRE = {
         "pytest-cov>=2.8.0, <4.0.0",
         "pytest-subtests>=0.5.0, <1.0.0",
         "tox==3.25.1",
-        "pre-commit==2.9.3",
+        "pre-commit==2.20.0",
         "responses>=0.13.4",
     ],
     "docs": [
