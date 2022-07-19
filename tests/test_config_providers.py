@@ -1,5 +1,6 @@
 import unittest
 from copy import deepcopy
+import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, PropertyMock, patch
@@ -16,6 +17,19 @@ from kedro_vertexai.utils import (
 )
 
 from .utils import test_config
+
+def _disable_logging(func):
+    def wrapped(*args, **kwargs):
+        logging.disable(logging.CRITICAL)
+        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+        levels = [logger.level for logger in loggers]
+        for logger in loggers:
+            logger.setLevel(logging.CRITICAL)
+        func(*args, **kwargs)
+        for logger, state in zip(loggers, levels):
+            logger.setLevel(state)
+        logging.disable(logging.NOTSET)
+    return wrapped
 
 
 class UnitTestsDynamicConfigProvider(DynamicConfigProvider):
@@ -69,6 +83,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
             )
 
     @patch("kedro_vertexai.dynamic_config.logger.error")
+    @_disable_logging
     def test_create_provider_from_invalid_config(self, log_error):
         config = self._get_test_config_with_dynamic_provider(
             class_name="totally.not.existing.class"
@@ -114,7 +129,8 @@ class TestDynamicConfigProviders(unittest.TestCase):
                 )
 
                 patched.assert_called_once()
-
+                
+    @_disable_logging
     @patch("kedro_vertexai.utils._generate_and_save_dynamic_config")
     @patch("kedro_vertexai.utils.logger.warning")
     def test_config_materialization_skips_invalid_configs(
