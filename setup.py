@@ -20,7 +20,7 @@ INSTALL_REQUIRES = [
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
     "google-cloud-storage<3.0.0",
     "grpcio~=1.44.0",
-    "grpcio-status~=1.44.0",
+    "grpcio-status>=1.44,<1.48",
     "protobuf<=3.20.0",
 ]
 
