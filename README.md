@@ -6,8 +6,8 @@
 [![PyPI version](https://badge.fury.io/py/kedro-vertexai.svg)](https://pypi.org/project/kedro-vertexai/)
 [![Downloads](https://pepy.tech/badge/kedro-vertexai)](https://pepy.tech/project/kedro-vertexai)
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/a2ef6b63553ed42c9031/maintainability)](https://codeclimate.com/github/getindata/kedro-vertexai/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/a2ef6b63553ed42c9031/test_coverage)](https://codeclimate.com/github/getindata/kedro-vertexai/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/8ecc057c4e66eb565669/maintainability)](https://codeclimate.com/github/getindata/kedro-vertexai/maintainability)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/8ecc057c4e66eb565669/test_coverage)](https://codeclimate.com/github/getindata/kedro-vertexai/test_coverage)
 [![Documentation Status](https://readthedocs.org/projects/kedro-vertexai/badge/?version=latest)](https://kedro-vertexai.readthedocs.io/en/latest/?badge=latest)
 
 ## About
