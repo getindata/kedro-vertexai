@@ -5,7 +5,7 @@ from typing import Iterable
 from kedro.config import ConfigLoader
 from kedro.framework.hooks import hook_impl
 
-from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
+from kedro_vertexai.constants import KEDRO_CONFIG_RUN_ID, VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import EnvTemplatedConfigLoader
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import is_mlflow_enabled
@@ -19,7 +19,7 @@ class MlflowTagsHook:
         if is_mlflow_enabled():
             import mlflow
 
-            if run_id := os.getenv("KEDRO_CONFIG_RUN_ID", None):
+            if run_id := os.getenv(KEDRO_CONFIG_RUN_ID, None):
                 mlflow.set_tag(VERTEXAI_RUN_ID_TAG, run_id)
 
 
