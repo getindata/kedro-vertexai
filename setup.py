@@ -36,7 +36,7 @@ EXTRA_REQUIRE = {
         "responses>=0.13.4",
     ],
     "docs": [
-        "sphinx==5.1.0",
+        "sphinx==5.1.1",
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==1.0.0",
     ],
