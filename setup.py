@@ -15,7 +15,7 @@ INSTALL_REQUIRES = [
     "google-auth<3",
     "google-cloud-scheduler>=2.3.2",
     "google-cloud-iam",
-    "gcsfs<=2022.1,>=2021.4",
+    "gcsfs>=2021.4,<2022.8",
     "fsspec<=2022.1,>=2021.4",
     # The requirements bellow are pinned, because the build were not repeatable as of 2022-04-04 - by @marrrcin
     "google-cloud-storage<3.0.0",
