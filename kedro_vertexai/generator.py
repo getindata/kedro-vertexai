@@ -22,6 +22,7 @@ from kfp.v2 import dsl
 
 from kedro_vertexai.config import KedroVertexAIRunnerConfig, RunConfig
 from kedro_vertexai.constants import (
+    KEDRO_CONFIG_JOB_NAME,
     KEDRO_CONFIG_RUN_ID,
     KEDRO_GLOBALS_PATTERN,
     KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK,
@@ -174,6 +175,7 @@ class PipelineGenerator:
                 [
                     f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
                     f"{KEDRO_CONFIG_RUN_ID}={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
+                    f"{KEDRO_CONFIG_JOB_NAME}={dsl.PIPELINE_JOB_NAME_PLACEHOLDER}",
                     f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.json()}'",
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",

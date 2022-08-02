@@ -6,8 +6,6 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4
 
-import numpy as np
-import pandas as pd
 from kedro.io import DataCatalog, MemoryDataSet
 from kedro.pipeline import node, pipeline
 
@@ -91,11 +89,6 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
                 self.data = data
 
         for obj, comparer in [
-            (
-                pd.DataFrame(np.random.rand(1000, 3), columns=["a", "b", "c"]),
-                lambda a, b: a.equals(b),
-            ),
-            (np.random.rand(100, 100), lambda a, b: np.equal(a, b).all()),
             (
                 ["just", "a", "list"],
                 lambda a, b: all(a[i] == b[i] for i in range(len(a))),

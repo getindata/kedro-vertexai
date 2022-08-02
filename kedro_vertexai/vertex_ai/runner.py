@@ -8,7 +8,7 @@ from pluggy import PluginManager
 
 from kedro_vertexai.config import KedroVertexAIRunnerConfig
 from kedro_vertexai.constants import (
-    KEDRO_CONFIG_RUN_ID,
+    KEDRO_CONFIG_JOB_NAME,
     KEDRO_VERTEXAI_RUNNER_CONFIG,
 )
 from kedro_vertexai.vertex_ai.datasets import KedroVertexAIRunnerDataset
@@ -46,5 +46,5 @@ class VertexAIPipelinesRunner(SequentialRunner):
         return KedroVertexAIRunnerDataset(
             self.runner_config.storage_root,
             ds_name,
-            os.environ.get(KEDRO_CONFIG_RUN_ID),
+            os.environ.get(KEDRO_CONFIG_JOB_NAME),
         )
