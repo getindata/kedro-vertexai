@@ -12,6 +12,7 @@ test_config = PluginConfig.parse_obj(
             "image_pull_policy": "Always",
             "experiment_name": "Test Experiment",
             "run_name": "test run",
+            "root": "unit_tests",
             "volume": {
                 "storageclass": "default",
                 "size": "3Gi",

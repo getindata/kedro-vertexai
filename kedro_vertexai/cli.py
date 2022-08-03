@@ -7,8 +7,8 @@ import click
 from click import ClickException, Context
 
 from .client import VertexAIPipelinesClient
-from .config import PluginConfig
-from .constants import VERTEXAI_RUN_ID_TAG
+from .config import PluginConfig, RunConfig
+from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
 from .utils import materialize_dynamic_configuration, store_parameters_in_yaml
@@ -99,14 +99,19 @@ def run_once(
     """Deploy pipeline as a single run within given experiment
     Config can be specified in kubeflow.yml as well."""
     context_helper = ctx.obj["context_helper"]
-    config = context_helper.config.run_config
+    config: RunConfig = context_helper.config.run_config
     client: VertexAIPipelinesClient = context_helper.vertexai_client
 
-    client.run_once(
+    run = client.run_once(
         pipeline=pipeline,
         image=image if image else config.image,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
+    )
+
+    click.echo(
+        f"Intermediate data datasets will be stored in{os.linesep}"
+        f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
     )
 
     if wait_for_completion:

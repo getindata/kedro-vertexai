@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Add auto-dataset creation, to make intermediate dataset creation transparent to the end-user (no need to explicitly add them in the Data Catalog) (#8)
 
 ## [0.5.0] - 2022-07-13
 
