@@ -15,10 +15,10 @@ class KedroVertexAIRunnerDataset(AbstractDataSet):
         self,
         storage_root: str,
         dataset_name: str,
-        run_id: str,
+        unique_id: str,
     ):
         self.storage_root = storage_root
-        self.run_id = run_id
+        self.unique_id = unique_id
         self.dataset_name = dataset_name
         self.pickle_protocol = None if version_info[:2] > (3, 8) else 4
 
@@ -26,7 +26,7 @@ class KedroVertexAIRunnerDataset(AbstractDataSet):
     def _get_target_path(self):
         return (
             f"gs://{self.storage_root.strip('/')}/"
-            f"{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{self.run_id}/{self.dataset_name}.bin"
+            f"{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{self.unique_id}/{self.dataset_name}.bin"
         )
 
     @lru_cache()
