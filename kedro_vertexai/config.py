@@ -135,6 +135,11 @@ class RunConfig(BaseModel):
             return self.resources["__default__"].dict()
 
 
+class KedroVertexAIRunnerConfig(BaseModel):
+    # This is intentionally a separate dataclass, for future extensions
+    storage_root: str
+
+
 class PluginConfig(BaseModel):
     project_id: str
     region: str

@@ -100,6 +100,7 @@ class VertexAIPipelinesClient:
                 network=self.run_config.network.vpc,
             )
             self.log.debug("Run created %s", str(run))
+
             return run
 
     def _generate_run_name(self, config: PluginConfig):  # noqa

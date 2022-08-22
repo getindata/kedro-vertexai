@@ -7,8 +7,13 @@ import kfp
 from kedro.pipeline import Pipeline, node
 
 from kedro_vertexai.config import PluginConfig
-from kedro_vertexai.constants import KEDRO_GLOBALS_PATTERN
+from kedro_vertexai.constants import (
+    KEDRO_CONFIG_RUN_ID,
+    KEDRO_GLOBALS_PATTERN,
+    KEDRO_VERTEXAI_RUNNER_CONFIG,
+)
 from kedro_vertexai.generator import PipelineGenerator
+from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
 from tests.utils import environment
 
 
@@ -182,6 +187,32 @@ class TestGenerator(unittest.TestCase):
                 in dsl_pipeline.ops["node1"].container.args[0]
             )
 
+    def test_should_add_runner_and_runner_config(self):
+        # given
+        self.create_generator()
+        self.mock_mlflow(True)
+
+        # when
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+            )
+            with kfp.dsl.Pipeline(None) as dsl_pipeline:
+                pipeline()
+
+            # then
+            assert all(
+                check in dsl_pipeline.ops["node1"].container.args[0]
+                for check in (
+                    f"{KEDRO_CONFIG_RUN_ID}=",
+                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{{",
+                    f"--runner {VertexAIPipelinesRunner.runner_name()}",
+                )
+            )
+
     def test_should_dump_params_and_add_config_if_params_are_set(self):
         self.create_generator(
             params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
@@ -204,9 +235,9 @@ class TestGenerator(unittest.TestCase):
             )
 
             assert (
-                'kedro run -e unittests --pipeline pipeline --node "node1" --config config.yaml'
-                in dsl_pipeline.ops["node1"].container.args[0]
-            )
+                'kedro run -e unittests --pipeline pipeline --node "node1"'
+                in (args := dsl_pipeline.ops["node1"].container.args[0])
+            ) and args.endswith("--config config.yaml")
 
     def test_should_add_globals_env_if_present(self):
         with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):

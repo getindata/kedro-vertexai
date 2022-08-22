@@ -30,13 +30,13 @@ EXTRA_REQUIRE = {
     "tests": [
         "pytest>=7.0.0",
         "pytest-cov>=2.8.0, <4.0.0",
-        "pytest-subtests>=0.5.0, <1.0.0",
+        "pytest-subtests>=0.6.0, <1.0.0",
         "tox==3.25.1",
-        "pre-commit==2.9.3",
+        "pre-commit==2.20.0",
         "responses>=0.13.4",
     ],
     "docs": [
-        "sphinx==5.0.2",
+        "sphinx==5.1.0",
         "recommonmark==0.7.1",
         "sphinx_rtd_theme==1.0.0",
     ],
@@ -44,7 +44,7 @@ EXTRA_REQUIRE = {
 
 setup(
     name="kedro-vertexai",
-    version="0.5.0",
+    version="0.6.0",
     description="Kedro plugin with Vertex AI support",
     long_description=README,
     long_description_content_type="text/markdown",

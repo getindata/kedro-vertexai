@@ -101,8 +101,8 @@ kedro-vertexai
 ```
 
 ### Adjusting Data Catalog to be compatible with Vertex AI
-This change enforces raw data existence in the image. Also, one of the limitations of running the Kedro pipeline on Vertex AI (and not on local environment) is inability to use `MemoryDataSet`s, as the pipeline nodes do not share memory, so every artifact should be stored as file 
-in a location that can be accessed by the service (e.g. GCS bucket). The `spaceflights` demo configures datasets to output into local `data` folder, so let's change the behaviour by creating a temporary GCS bucket (referred to as `STAGING_BUCKET`) and modifying `conf/base/catalog.yml`:
+This change enforces raw input data existence in the image. While running locally, every intermediate dataset is stored as a `MemoryDataSet`. When running in VertexAI Pipelines, there is no shared-memory, Kedro-VertexAI plugin automatically handles intermediate dataset serialization - every intermediate dataset will be stored (as a compressed cloudpickle file) in GCS bucket specified in the `vertexai.yml` config under `run_config.root` key.
+Adjusted `catalog.yml` should look like this.
 
 ```yaml
 companies:
@@ -119,117 +119,14 @@ shuttles:
   type: pandas.ExcelDataSet
   filepath: data/01_raw/shuttles.xlsx
   layer: raw
-  load_args:
-    engine: openpyxl
-
-model_input_table:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/03_primary/model_input_table.csv
-  layer: primary
-
-### catalog entries required starter version <= 0.17.6
-preprocessed_companies:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_companies.csv
-  layer: intermediate
-
-preprocessed_shuttles:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_shuttles.csv
-  layer: intermediate
-
-X_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_train.pickle
-  layer: model_input
-
-y_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_train.pickle
-  layer: model_input
-
-X_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_test.pickle
-  layer: model_input
-
-y_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
-  layer: model_input
-
-regressor:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
-  versioned: true
-  layer: models
-
-### catalog entries required for starter version >= 0.17.7
-data_processing.preprocessed_companies:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_companies.csv
-  layer: intermediate
-
-data_processing.preprocessed_shuttles:
-  type: pandas.CSVDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/02_intermediate/preprocessed_shuttles.csv
-  layer: intermediate
-
-data_science.active_modelling_pipeline.X_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_train.pickle
-  layer: model_input
-
-data_science.active_modelling_pipeline.y_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_train.pickle
-  layer: model_input
-
-data_science.active_modelling_pipeline.X_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_test.pickle
-  layer: model_input
-
-data_science.active_modelling_pipeline.y_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
-  layer: model_input
-
-data_science.active_modelling_pipeline.regressor:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
-  versioned: true
-  layer: models
-
-data_science.candidate_modelling_pipeline.X_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_train.pickle
-  layer: model_input
-
-data_science.candidate_modelling_pipeline.y_train:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_train.pickle
-  layer: model_input
-
-data_science.candidate_modelling_pipeline.X_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/X_test.pickle
-  layer: model_input
-
-data_science.candidate_modelling_pipeline.y_test:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/05_model_input/y_test.pickle
-  layer: model_input
-
-data_science.candidate_modelling_pipeline.regressor:
-  type: pickle.PickleDataSet
-  filepath: gs://STAGING_BUCKET/${run_id}/06_models/regressor.pickle
-  versioned: true
-  layer: models
-
 ```
 
-We're investigating ways to stop enforcing explicit data catalog definitions for intermediate datasets, follow the issue here [https://github.com/getindata/kedro-vertexai/issues/8](https://github.com/getindata/kedro-vertexai/issues/8).
+All intermediate and output data will be stored in the location with the following pattern:
+```
+gs://<run_config.root from vertexai.yml/kedro-vertexai-temp/<vertex ai job name>/*.bin
+```
+
+Of course if you want to use intermediate/output data and store it a location of your choice, add it to the catalog. Be aware that you cannot use local paths - use `gs://` paths instead. 
 
 ### Disable telemetry or ensure consent
 Latest version of Kedro starters come with the `kedro-telemetry` installed, which by default prompts the user to allow or deny the data collection. Before submitting the job to Vertex AI Pipelines you have two options:
@@ -268,7 +165,7 @@ Configuration generated in /Users/getindata/vertex-ai-plugin-demo/conf/base/vert
 
 Then adjust the `conf/base/vertexai.yaml`, especially:
 * `image:` key should point to the full image name (like `remote.repo.url.com/vertex-ai-plugin-demo:latest` if you pushed the image at this name).
-* `root:` key should point to the GCS bucket that will be used internally by Vertex AI, e.g. `your_bucket_name/subfolder-for-vertexai` 
+* `root:` key should point to the GCS bucket that will be used internally by Vertex AI and the plugin itself, e.g. `your_bucket_name/subfolder-for-vertexai` 
 
 Finally, everything is set to run the pipeline on Vertex AI Pipelines. Execute `run-once` command:
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2022-08-22
+
+-   Add auto-dataset creation, to make intermediate dataset creation transparent to the end-user (no need to explicitly add them in the Data Catalog) (#8)
+
 ## [0.5.0] - 2022-07-13
 
 -   Add support for `kedro>=0.18.1,<0.19` (#36)
@@ -34,7 +38,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.6.0...HEAD
+
+[0.6.0]: https://github.com/getindata/kedro-vertexai/compare/0.5.0...0.6.0
 
 [0.5.0]: https://github.com/getindata/kedro-vertexai/compare/0.4.1...0.5.0
 

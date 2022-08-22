@@ -20,14 +20,18 @@ from kfp.components.structures import (
 )
 from kfp.v2 import dsl
 
-from kedro_vertexai.config import RunConfig
+from kedro_vertexai.config import KedroVertexAIRunnerConfig, RunConfig
 from kedro_vertexai.constants import (
+    KEDRO_CONFIG_JOB_NAME,
+    KEDRO_CONFIG_RUN_ID,
     KEDRO_GLOBALS_PATTERN,
     KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK,
+    KEDRO_VERTEXAI_RUNNER_CONFIG,
 )
 from kedro_vertexai.runtime_config import CONFIG_HOOK_DISABLED
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
+from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
 
 
 class PipelineGenerator:
@@ -163,14 +167,21 @@ class PipelineGenerator:
                 else []
             )
 
+            runner_config = KedroVertexAIRunnerConfig(
+                storage_root=self.run_config.root
+            )
+
             kedro_command = " ".join(
                 [
                     f"{KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK}={'true' if CONFIG_HOOK_DISABLED else 'false'}",
-                    f"KEDRO_CONFIG_RUN_ID={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
+                    f"{KEDRO_CONFIG_RUN_ID}={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
+                    f"{KEDRO_CONFIG_JOB_NAME}={dsl.PIPELINE_JOB_NAME_PLACEHOLDER}",
+                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.json()}'",
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
                     f'--node "{node.name}"',
+                    f"--runner {VertexAIPipelinesRunner.runner_name()}",
                     "--config config.yaml" if should_add_params else "",
                 ]
             )
