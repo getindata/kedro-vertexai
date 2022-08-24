@@ -21,9 +21,7 @@ class VertexAIPipelinesRunner(SequentialRunner):
 
     def __init__(self, is_async: bool = False):
         super().__init__(is_async)
-        self.runner_config_raw = os.environ.get(
-            KEDRO_VERTEXAI_RUNNER_CONFIG
-        ).strip("'")
+        self.runner_config_raw = os.environ.get(KEDRO_VERTEXAI_RUNNER_CONFIG).strip("'")
         self.runner_config: KedroVertexAIRunnerConfig = (
             KedroVertexAIRunnerConfig.parse_raw(self.runner_config_raw)
         )

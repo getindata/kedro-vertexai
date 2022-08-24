@@ -87,9 +87,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.vertexai_client.wait_for_completion.assert_called_with(
-            666
-        )
+        context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
@@ -252,9 +250,7 @@ class TestPluginCLI(unittest.TestCase):
             path = Path(temp_dir)
             cwd.return_value = path
             os.makedirs(path.joinpath("conf/base"))
-            result = runner.invoke(
-                init, ["test-project-id", "region"], obj=config
-            )
+            result = runner.invoke(init, ["test-project-id", "region"], obj=config)
 
             assert result.exit_code == 0, result.output
             assert result.output.startswith("Configuration generated in ")
@@ -335,7 +331,5 @@ class TestPluginCLI(unittest.TestCase):
                 cli = ["--env", cli] if cli else []
                 env = dict(KEDRO_ENV=env_var) if env_var else dict()
 
-                runner.invoke(
-                    vertexai_group, cli + ["compile", "--help"], env=env
-                )
+                runner.invoke(vertexai_group, cli + ["compile", "--help"], env=env)
                 context_helper_init.assert_called_with(None, expected)

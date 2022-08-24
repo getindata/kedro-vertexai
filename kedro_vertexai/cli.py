@@ -131,8 +131,10 @@ def run_once(
 @click.pass_context
 def ui(ctx) -> None:
     """Open VertexAI Pipelines UI in new browser tab"""
-    vertex_ai_url = "https://console.cloud.google.com/vertex-ai/pipelines?project={}".format(
-        ctx.obj["context_helper"].config.project_id
+    vertex_ai_url = (
+        "https://console.cloud.google.com/vertex-ai/pipelines?project={}".format(
+            ctx.obj["context_helper"].config.project_id
+        )
     )
     webbrowser.open_new_tab(vertex_ai_url)
 

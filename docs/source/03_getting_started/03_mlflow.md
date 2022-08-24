@@ -37,4 +37,4 @@ Finally, start the pipeline. While it executes, the new Mlflow run is started an
 
 ![Mlflow UI](mlflow_ui.png)
 
-The UI presents the pipeline stauts (in form of the icon) and latest node that was run (for failed runs in indicates at what step did the pipeline fail). Also, the `kubeflow_run_id` tag can be used to correlate Mlflow run with the Kubeflow pipeline execution.
+The UI presents the pipeline status (in form of the icon) and latest node that was run (for failed runs in indicates at what step did the pipeline fail). Also, the `kubeflow_run_id` tag can be used to correlate Mlflow run with the Kubeflow pipeline execution.

@@ -124,11 +124,7 @@ class RunConfig(BaseModel):
         if node in self.resources.keys():
             result = self.resources["__default__"].dict()
             result.update(
-                {
-                    k: v
-                    for k, v in self.resources[node].dict().items()
-                    if v is not None
-                }
+                {k: v for k, v in self.resources[node].dict().items() if v is not None}
             )
             return result
         else:

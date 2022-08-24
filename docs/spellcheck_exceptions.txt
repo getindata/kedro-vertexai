@@ -98,3 +98,12 @@ yaml
 CLI
 azureml
 Jupyter
+VertexAI
+serverless
+runtime
+reupload
+authservice
+goog
+VPC
+GCS
+dataset

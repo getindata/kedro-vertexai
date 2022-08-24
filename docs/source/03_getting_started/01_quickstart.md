@@ -18,7 +18,7 @@ created virtual environment CPython3.8.12.final.0-64 in 764ms
 $ source venv-demo/bin/activate
 ```
 
-Then, `kedro` must be present to enable cloning the starter project, along with the latest version of `kedro-kubeflow` plugina and kedro-docker (required to build docker images with the Kedro pipeline nodes):
+Then, `kedro` must be present to enable cloning the starter project, along with the latest version of `kedro-kubeflow` plugin and kedro-docker (required to build docker images with the Kedro pipeline nodes):
 
 ```
 $ pip install 'kedro>=0.18.1,<0.19.0' kedro-vertexai kedro-docker

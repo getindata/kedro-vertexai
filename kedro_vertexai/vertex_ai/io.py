@@ -44,8 +44,7 @@ def generate_outputs(node: Node, catalog):
         ]
     )
     output_placeholders = [
-        structures.OutputPathPlaceholder(output_name=o)
-        for o in data_mapping.keys()
+        structures.OutputPathPlaceholder(output_name=o) for o in data_mapping.keys()
     ]
     return output_specs, output_copy_commands, output_placeholders
 

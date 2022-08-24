@@ -67,9 +67,7 @@ class AuthHandler:
         Obtain token for DEX-protected service
         """
         if DEX_USERNAME not in os.environ or DEX_PASSWORD not in os.environ:
-            self.log.debug(
-                "Skipping DEX authentication due to missing env variables"
-            )
+            self.log.debug("Skipping DEX authentication due to missing env variables")
             return None
 
         session = requests.Session()
@@ -117,9 +115,7 @@ class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
     def generate_config(self) -> dict:
         return {
             "gcp_credentials": {
-                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_id_token(
-                    self.client_id
-                )
+                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_id_token(self.client_id)
             }
         }
 
@@ -140,9 +136,7 @@ class MLFlowGoogleIAMCredentialsProvider(DynamicConfigProvider):
 
     def generate_config(self) -> dict:
         return {
-            "gcp_credentials": {
-                "MLFLOW_TRACKING_TOKEN": self._obtain_credentials()
-            }
+            "gcp_credentials": {"MLFLOW_TRACKING_TOKEN": self._obtain_credentials()}
         }
 
     def _obtain_credentials(self):

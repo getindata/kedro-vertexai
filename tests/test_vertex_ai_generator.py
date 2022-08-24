@@ -46,13 +46,8 @@ class TestGenerator(unittest.TestCase):
                 pipeline()
 
             # then
-            assert (
-                dsl_pipeline.ops["node1"].container.image == "unittest-image"
-            )
-            assert (
-                dsl_pipeline.ops["node1"].container.image_pull_policy
-                == "Never"
-            )
+            assert dsl_pipeline.ops["node1"].container.image == "unittest-image"
+            assert dsl_pipeline.ops["node1"].container.image_pull_policy == "Never"
 
     def test_should_skip_volume_init_if_requested(self):
         # given
@@ -214,9 +209,7 @@ class TestGenerator(unittest.TestCase):
             )
 
     def test_should_dump_params_and_add_config_if_params_are_set(self):
-        self.create_generator(
-            params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]}
-        )
+        self.create_generator(params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]})
         self.mock_mlflow(False)
 
         with patch(
@@ -263,8 +256,7 @@ class TestGenerator(unittest.TestCase):
                 assert expected in dsl_pipeline.ops["node1"].container.args[0]
 
                 assert (
-                    dsl_pipeline.ops["node1"].container.args[0].count(expected)
-                    == 2
+                    dsl_pipeline.ops["node1"].container.args[0].count(expected) == 2
                 ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
     def test_should_add_host_aliases_if_requested(self):
@@ -302,9 +294,7 @@ class TestGenerator(unittest.TestCase):
                 hosts_entry_cmd
                 in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
             )
-            assert (
-                hosts_entry_cmd in dsl_pipeline.ops["node1"].container.args[0]
-            )
+            assert hosts_entry_cmd in dsl_pipeline.ops["node1"].container.args[0]
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):

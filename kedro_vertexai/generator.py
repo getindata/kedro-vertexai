@@ -81,9 +81,7 @@ class PipelineGenerator:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
-            kfp_ops = self._build_kfp_ops(
-                node_dependencies, image, pipeline, token
-            )
+            kfp_ops = self._build_kfp_ops(node_dependencies, image, pipeline, token)
             for node, dependencies in node_dependencies.items():
                 set_dependencies(node, dependencies, kfp_ops)
 
@@ -167,9 +165,7 @@ class PipelineGenerator:
                 else []
             )
 
-            runner_config = KedroVertexAIRunnerConfig(
-                storage_root=self.run_config.root
-            )
+            runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
             kedro_command = " ".join(
                 [
@@ -203,9 +199,7 @@ class PipelineGenerator:
                     container=ContainerSpec(
                         image=image,
                         command=["/bin/bash", "-c"],
-                        args=[
-                            node_command
-                        ],  # TODO: re-enable? + output_placeholders,
+                        args=[node_command],  # TODO: re-enable? + output_placeholders,
                     )
                 ),
             )
@@ -232,9 +226,7 @@ class PipelineGenerator:
             else ""
         )
 
-    def _create_kedro_op(
-        self, name: str, spec: ComponentSpec, op_function_parameters
-    ):
+    def _create_kedro_op(self, name: str, spec: ComponentSpec, op_function_parameters):
         with NamedTemporaryFile(
             mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
         ) as spec_file:
