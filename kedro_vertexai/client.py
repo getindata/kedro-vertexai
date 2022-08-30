@@ -36,14 +36,10 @@ class VertexAIPipelinesClient:
             project_id=config.project_id, region=config.region
         )
         self.cloud_scheduler_client = CloudSchedulerClient()
-        self.location = (
-            f"projects/{config.project_id}/locations/{config.region}"
-        )
+        self.location = f"projects/{config.project_id}/locations/{config.region}"
         self.run_config = config.run_config
         self.run_name = self._generate_run_name(config)
-        self.generator = PipelineGenerator(
-            config, project_name, context, self.run_name
-        )
+        self.generator = PipelineGenerator(config, project_name, context, self.run_name)
 
     def list_pipelines(self):
         """
@@ -131,9 +127,7 @@ class VertexAIPipelinesClient:
             pipeline_func=pipeline_func,
             package_path=output,
         )
-        self.log.info(
-            "Generated pipeline definition was saved to %s", str(output)
-        )
+        self.log.info("Generated pipeline definition was saved to %s", str(output))
 
     def _cleanup_old_schedule(self, pipeline_name):
         """
@@ -143,9 +137,9 @@ class VertexAIPipelinesClient:
             if "jobs/pipeline_pipeline" not in job.name:
                 continue
 
-            job_pipeline_name = json.loads(job.http_target.body)[
-                "pipelineSpec"
-            ]["pipelineInfo"]["name"]
+            job_pipeline_name = json.loads(job.http_target.body)["pipelineSpec"][
+                "pipelineInfo"
+            ]["name"]
             if job_pipeline_name == pipeline_name:
                 self.log.info(
                     "Found existing schedule for the pipeline at %s, deleting...",
@@ -230,19 +224,11 @@ class VertexAIPipelinesClient:
                 finally:
                     sleep(interval_seconds)
             else:
-                q.put(
-                    PipelineResult(
-                        is_success=False, state="Internal exception"
-                    )
-                )
+                q.put(PipelineResult(is_success=False, state="Internal exception"))
 
-        thread = threading.Thread(
-            target=monitor, daemon=True, args=(status_queue,)
-        )
+        thread = threading.Thread(target=monitor, daemon=True, args=(status_queue,))
         thread.start()
         try:
             return status_queue.get(timeout=max_timeout_seconds)
         except Empty:
-            return PipelineResult(
-                False, f"Max timeout {max_timeout_seconds}s reached"
-            )
+            return PipelineResult(False, f"Max timeout {max_timeout_seconds}s reached")

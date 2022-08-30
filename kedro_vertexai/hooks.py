@@ -35,9 +35,7 @@ if not CONFIG_HOOK_DISABLED:
 
     class KedoVertexAIConfigLoaderHook:
         @hook_impl
-        def register_config_loader(
-            self, conf_paths: Iterable[str]
-        ) -> ConfigLoader:
+        def register_config_loader(self, conf_paths: Iterable[str]) -> ConfigLoader:
             return EnvTemplatedConfigLoader(conf_paths)
 
 else:

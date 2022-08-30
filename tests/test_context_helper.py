@@ -41,9 +41,7 @@ class TestContextHelper(unittest.TestCase):
         cfg = PluginConfig(
             project_id="test-project",
             region="test-region",
-            run_config=RunConfig(
-                image="test-image", experiment_name="test-experiment"
-            ),
+            run_config=RunConfig(image="test-image", experiment_name="test-experiment"),
         )
         metadata = Mock()
         metadata.package_name = "test_package"
@@ -92,9 +90,7 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
                 tmp_config_dir = (Path(tmp_dir)) / "base"
                 tmp_config_dir.mkdir()
 
-                shutil.copy(
-                    test_config_file, tmp_config_dir / "test_config.yml"
-                )
+                shutil.copy(test_config_file, tmp_config_dir / "test_config.yml")
 
                 globals_path = tmp_config_dir / "globals.yml"
                 with globals_path.open("w") as f:
@@ -105,9 +101,6 @@ class TestEnvTemplatedConfigLoader(unittest.TestCase):
 
                 config = self.get_config(tmp_dir)
                 assert (
-                    config["run_config"]["image_pull_policy"]
-                    == "GlobalsTestPullPolicy"
+                    config["run_config"]["image_pull_policy"] == "GlobalsTestPullPolicy"
                 ), "Variable defined in globals.yml was not used in the target config"
-                assert (
-                    config["run_config"]["experiment_name"] == "[Test] local"
-                )
+                assert config["run_config"]["experiment_name"] == "[Test] local"

@@ -1,0 +1,170 @@
+name: Test
+
+on:
+  push:
+    branches: 
+      - master
+      - develop
+    paths-ignore:
+      - "docs/**"
+  pull_request:
+    branches:
+      - master
+      - develop
+    paths-ignore:
+      - "docs/**"
+jobs:
+  unit_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.8', '3.9', '3.10']
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Setup poetry
+      run: |
+        python -V
+        python -m pip install poetry
+
+    - name: Check pre-commit status
+      run: |
+        poetry install -v
+        poetry run pre-commit run --all-files
+
+    - name: Test with tox
+      run: |
+        pip install tox-pip-version tox-gh-actions
+        tox -v
+
+    - name: Store coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-${{ matrix.python-version }}
+        path: coverage.xml
+        if-no-files-found: error
+
+  sonarcloud:
+    runs-on: ubuntu-latest
+    needs: unit_tests
+    steps:
+
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - uses: actions/download-artifact@v3
+      with:
+        name: coverage-3.9
+        path: .
+
+    - name: SonarCloud Scan
+      uses: sonarsource/sonarcloud-github-action@master
+      with:
+        projectBaseDir: ${{ github.workspace }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+
+  codeql:
+    runs-on: ubuntu-latest
+    needs: unit_tests
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Initializes the CodeQL tools for scanning.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    needs: [unit_tests, sonarcloud, codeql]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup python
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: 3.8
+
+      - name: Setup virtualenv
+        run: |
+          python -V
+          python -m pip install virtualenv
+          virtualenv venv
+          source venv/bin/activate
+
+      - name: Initialize kedro spaceflights project
+        # kedro 0.18.1 is on purpose here, due to https://github.com/kedro-org/kedro-starters/issues/99
+        run: |
+          pip install . 'kedro==0.18.1'
+          kedro new --starter spaceflights --config tests/e2e/starter-config.yml --verbose
+
+      - name: Install project dependencies
+        run: |
+          cd ./spaceflights
+          echo "git+https://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
+          echo "kedro-docker" >> src/requirements.txt
+          sed -i '/kedro-telemetry/d' src/requirements.txt
+          cat src/requirements.txt
+          pip install -r src/requirements.txt
+
+      - name: Init and update configuration
+        run: |
+          cd ./spaceflights
+          kedro docker init
+          kedro vertexai init gid-ml-ops-sandbox europe-west4
+          echo "!data/01_raw" >> .dockerignore
+          mv ../tests/e2e/catalog.yml conf/base/catalog.yml
+          mv ../tests/e2e/vertexai.yml conf/base/vertexai.yml
+
+      - name: Prepare docker env
+        uses: docker/setup-buildx-action@v1
+        id: buildx
+        with:
+          install: true
+
+      - name: Build pipeline docker image
+        run: |
+          cd ./spaceflights
+          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:latest --load .
+
+      - name: Publish docker image to GCR
+        uses: mattes/gce-docker-push-action@v1
+        with:
+          creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          src: kedro-vertexai-e2e:latest
+          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
+
+      - name: Set up GCP Credentials
+        uses: google-github-actions/auth@v0.6.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          create_credentials_file: true
+          cleanup_credentials: true
+
+      - name: Run project on vertex pipeline
+        run: |
+          cd ./spaceflights
+          export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
+          kedro vertexai run-once --wait-for-completion

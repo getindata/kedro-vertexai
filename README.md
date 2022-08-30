@@ -1,13 +1,13 @@
 # Kedro Vertex AI Plugin
 
 [![Python Version](https://img.shields.io/pypi/pyversions/kedro-vertexai)](https://github.com/getindata/kedro-vertexai)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![SemVer](https://img.shields.io/badge/semver-2.0.0-green)](https://semver.org/)
 [![PyPI version](https://badge.fury.io/py/kedro-vertexai.svg)](https://pypi.org/project/kedro-vertexai/)
 [![Downloads](https://pepy.tech/badge/kedro-vertexai)](https://pepy.tech/project/kedro-vertexai)
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/a2ef6b63553ed42c9031/maintainability)](https://codeclimate.com/github/getindata/kedro-vertexai/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/a2ef6b63553ed42c9031/test_coverage)](https://codeclimate.com/github/getindata/kedro-vertexai/test_coverage)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=getindata_kedro-vertexai&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=getindata_kedro-vertexai)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=getindata_kedro-vertexai&metric=coverage)](https://sonarcloud.io/summary/new_code?id=getindata_kedro-vertexai)
 [![Documentation Status](https://readthedocs.org/projects/kedro-vertexai/badge/?version=latest)](https://kedro-vertexai.readthedocs.io/en/latest/?badge=latest)
 
 ## About

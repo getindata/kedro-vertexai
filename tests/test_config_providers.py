@@ -22,9 +22,7 @@ from .utils import test_config
 def _disable_logging(func):
     def wrapped(*args, **kwargs):
         logging.disable(logging.CRITICAL)
-        loggers = [
-            logging.getLogger(name) for name in logging.root.manager.loggerDict
-        ]
+        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
         levels = [logger.level for logger in loggers]
         for logger in loggers:
             logger.setLevel(logging.CRITICAL)
@@ -73,9 +71,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
             )
             (Path(tmp_dir) / "conf" / "base").mkdir(parents=True)
 
-            params = dict(
-                key="unit_tests_param_key", value="unit_tests_param_value"
-            )
+            params = dict(key="unit_tests_param_key", value="unit_tests_param_value")
 
             provider = UnitTestsDynamicConfigProvider(test_config, **params)
             _generate_and_save_dynamic_config(provider, context_helper)
@@ -105,9 +101,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
             config, config.run_config.dynamic_config_providers[0]
         )
 
-        assert provider is not None and isinstance(
-            provider, DynamicConfigProvider
-        )
+        assert provider is not None and isinstance(provider, DynamicConfigProvider)
 
     def test_config_materialization(self):
         token = uuid4().hex
@@ -142,9 +136,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
     ):
         context_helper: ContextHelper = MagicMock(ContextHelper)
         materialize_dynamic_configuration(
-            self._get_test_config_with_dynamic_provider(
-                "totally.not.existing.class"
-            ),
+            self._get_test_config_with_dynamic_provider("totally.not.existing.class"),
             context_helper,
         )
 
@@ -156,6 +148,4 @@ class TestDynamicConfigProviders(unittest.TestCase):
         with TemporaryDirectory() as tmp_dir:
             store_parameters_in_yaml("", tmp_dir)
             log_debug.assert_called_once()
-            assert (
-                len(list(Path(tmp_dir).glob("*"))) == 0
-            ), "No files should be saved"
+            assert len(list(Path(tmp_dir).glob("*"))) == 0, "No files should be saved"
