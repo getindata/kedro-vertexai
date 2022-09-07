@@ -1,11 +1,16 @@
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 import responses
 from google.auth.exceptions import DefaultCredentialsError
 
 from kedro_vertexai.auth.gcp import AuthHandler
+from kedro_vertexai.auth.mlflow_request_header_provider import (
+    DynamicMLFlowRequestHeaderProvider,
+    RequestHeaderProviderWithKedroContext,
+)
 
 
 class TestAuthHandler(unittest.TestCase):
@@ -117,3 +122,33 @@ class TestAuthHandler(unittest.TestCase):
             responses.calls[1].request.body
             == "login=user%40example.com&password=pa%24%24"
         )
+
+    @patch("google.cloud.iam_credentials.IAMCredentialsClient")
+    def test_can_obtain_iam_token(self, iam: MagicMock):
+        mock_token = uuid4().hex
+        return_token = MagicMock()
+        return_token.token = mock_token
+        iam.return_value.generate_id_token.return_value = return_token
+        token = AuthHandler().obtain_iam_token("test@example.com", "client_id")
+        iam.return_value.generate_id_token.assert_called_once()
+        assert token == mock_token
+
+    def test_mlflow_header_provider_is_singleton(self):
+        provider = DynamicMLFlowRequestHeaderProvider()
+        others = [DynamicMLFlowRequestHeaderProvider() for _ in range(100)]
+        assert all(provider == o for o in others)
+
+    def test_mlflow_header_provider_setup(self):
+        for in_ctx in (True, False):
+            with self.subTest(msg=f"Enabled={in_ctx}"):
+                custom_header = {"Custom": "Header"}
+                dummy_provider = MagicMock(spec=RequestHeaderProviderWithKedroContext)
+                dummy_provider.in_context = MagicMock(return_value=in_ctx)
+                dummy_provider.request_headers = MagicMock(return_value=custom_header)
+
+                provider = DynamicMLFlowRequestHeaderProvider()
+                provider.configure(dummy_provider)
+                assert provider.in_context() == in_ctx, "Value didn't passed through"
+                dummy_provider.in_context.assert_called_once()
+                if in_ctx:
+                    self.assertDictEqual(provider.request_headers(), custom_header)
