@@ -7,7 +7,11 @@ import re
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
+from cachetools import TTLCache, cached
 
+from kedro_vertexai.auth.mlflow_request_header_provider import (
+    RequestHeaderProviderWithKedroContext,
+)
 from kedro_vertexai.config import PluginConfig
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
 
@@ -67,9 +71,7 @@ class AuthHandler:
         Obtain token for DEX-protected service
         """
         if DEX_USERNAME not in os.environ or DEX_PASSWORD not in os.environ:
-            self.log.debug(
-                "Skipping DEX authentication due to missing env variables"
-            )
+            self.log.debug("Skipping DEX authentication due to missing env variables")
             return None
 
         session = requests.Session()
@@ -100,6 +102,17 @@ class AuthHandler:
         session.post(form_absolute_url, headers=headers, data=data)
         return session.cookies.get_dict()["authservice_session"]
 
+    def obtain_iam_token(self, service_account, client_id):
+        from google.cloud import iam_credentials
+
+        self.log.debug(f"Attempt to get IAM token for {service_account}")
+        client = iam_credentials.IAMCredentialsClient()
+        return client.generate_id_token(
+            name=f"projects/-/serviceAccounts/{service_account}",
+            audience=client_id,
+            include_email=True,
+        ).token
+
 
 class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
     """
@@ -117,9 +130,7 @@ class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
     def generate_config(self) -> dict:
         return {
             "gcp_credentials": {
-                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_id_token(
-                    self.client_id
-                )
+                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_id_token(self.client_id)
             }
         }
 
@@ -141,16 +152,29 @@ class MLFlowGoogleIAMCredentialsProvider(DynamicConfigProvider):
     def generate_config(self) -> dict:
         return {
             "gcp_credentials": {
-                "MLFLOW_TRACKING_TOKEN": self._obtain_credentials()
+                "MLFLOW_TRACKING_TOKEN": AuthHandler().obtain_iam_token(
+                    self.service_account, self.client_id
+                )
             }
         }
 
-    def _obtain_credentials(self):
-        from google.cloud import iam_credentials
 
-        client = iam_credentials.IAMCredentialsClient()
-        return client.generate_id_token(
-            name=f"projects/-/serviceAccounts/{self.service_account}",
-            audience=self.client_id,
-            include_email=True,
-        ).token
+class MLFlowGoogleIAMRequestHeaderProvider(RequestHeaderProviderWithKedroContext):
+    required_params = ("client_id", "service_account")
+    get_token = AuthHandler().obtain_iam_token
+
+    def in_context(self):
+        return self.params and all(p in self.params for p in self.required_params)
+
+    @cached(TTLCache(1, ttl=59 * 60))
+    def request_headers(self):
+        get_token_kwargs = {
+            k: v for k, v in self.params.items() if k in self.required_params
+        }
+        token = self.get_token(**get_token_kwargs)
+        return {"Authorization": f"Bearer {token}"}
+
+
+class MLFlowGoogleOauthRequestHeaderProvider(MLFlowGoogleIAMRequestHeaderProvider):
+    required_params = ("client_id",)
+    get_token = AuthHandler().obtain_id_token

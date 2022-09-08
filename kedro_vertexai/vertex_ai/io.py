@@ -44,8 +44,7 @@ def generate_outputs(node: Node, catalog):
         ]
     )
     output_placeholders = [
-        structures.OutputPathPlaceholder(output_name=o)
-        for o in data_mapping.keys()
+        structures.OutputPathPlaceholder(output_name=o) for o in data_mapping.keys()
     ]
     return output_specs, output_copy_commands, output_placeholders
 
@@ -53,21 +52,19 @@ def generate_outputs(node: Node, catalog):
 def generate_mlflow_inputs():
     """
     Generates inputs that are required to correctly generate mlflow specific data.
-    :return: mlflow_inputs, mlflow_tokens
+    :return: mlflow_inputs, mlflow_envs
     """
     mlflow_inputs = (
         [
-            structures.InputSpec("mlflow_tracking_token", "String"),
             structures.InputSpec("mlflow_run_id", "String"),
         ]
         if is_mlflow_enabled()
         else []
     )
-    mlflow_tokens = (
-        "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}} "
+    mlflow_envs = (
         "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
         if is_mlflow_enabled()
         else ""
     )
 
-    return mlflow_inputs, mlflow_tokens
+    return mlflow_inputs, mlflow_envs

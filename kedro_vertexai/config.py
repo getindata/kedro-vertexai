@@ -82,6 +82,11 @@ run_config:
   #      client_id: iam-client-id
 
   dynamic_config_providers: []
+
+  # Additional configuration for MLflow request header providers, e.g. to generate access tokens at runtime
+  # mlflow:
+  #   request_header_provider_params:
+  #       key: value
 """
 
 
@@ -105,6 +110,10 @@ class DynamicConfigProviderConfig(BaseModel):
     params: Optional[Dict[str, str]] = {}
 
 
+class MLFlowVertexAIConfig(BaseModel):
+    request_header_provider_params: Optional[Dict[str, str]]
+
+
 class RunConfig(BaseModel):
     image: str
     image_pull_policy: Optional[str] = "IfNotPresent"
@@ -119,16 +128,13 @@ class RunConfig(BaseModel):
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
+    mlflow: Optional[MLFlowVertexAIConfig] = None
 
     def resources_for(self, node):
         if node in self.resources.keys():
             result = self.resources["__default__"].dict()
             result.update(
-                {
-                    k: v
-                    for k, v in self.resources[node].dict().items()
-                    if v is not None
-                }
+                {k: v for k, v in self.resources[node].dict().items() if v is not None}
             )
             return result
         else:

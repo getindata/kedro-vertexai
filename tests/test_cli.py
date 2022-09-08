@@ -87,9 +87,7 @@ class TestPluginCLI(unittest.TestCase):
         )
 
         assert result.exit_code == 0
-        context_helper.vertexai_client.wait_for_completion.assert_called_with(
-            666
-        )
+        context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
@@ -252,9 +250,7 @@ class TestPluginCLI(unittest.TestCase):
             path = Path(temp_dir)
             cwd.return_value = path
             os.makedirs(path.joinpath("conf/base"))
-            result = runner.invoke(
-                init, ["test-project-id", "region"], obj=config
-            )
+            result = runner.invoke(init, ["test-project-id", "region"], obj=config)
 
             assert result.exit_code == 0, result.output
             assert result.output.startswith("Configuration generated in ")
@@ -289,8 +285,12 @@ class TestPluginCLI(unittest.TestCase):
 
     @patch("mlflow.start_run")
     @patch("mlflow.set_tag")
-    def test_mlflow_start(self, set_tag_mock, start_run_mock):
+    @patch("mlflow.get_experiment_by_name")
+    def test_mlflow_start(
+        self, get_experiment_by_name_mock, set_tag_mock, start_run_mock
+    ):
         context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.context.mlflow.tracking.experiment.name = "asd"
         config = dict(context_helper=context_helper)
         runner = CliRunner()
         start_run_mock.return_value = namedtuple("InfoObject", "info")(
@@ -305,8 +305,8 @@ class TestPluginCLI(unittest.TestCase):
                 obj=config,
             )
 
-            assert "Started run: MLFLOW_RUN_ID" in result.output
             assert result.exit_code == 0
+            assert "Started run: MLFLOW_RUN_ID" in result.output
             with open(run_id_file_path) as f:
                 assert f.read() == "MLFLOW_RUN_ID"
 
@@ -335,7 +335,5 @@ class TestPluginCLI(unittest.TestCase):
                 cli = ["--env", cli] if cli else []
                 env = dict(KEDRO_ENV=env_var) if env_var else dict()
 
-                runner.invoke(
-                    vertexai_group, cli + ["compile", "--help"], env=env
-                )
+                runner.invoke(vertexai_group, cli + ["compile", "--help"], env=env)
                 context_helper_init.assert_called_with(None, expected)

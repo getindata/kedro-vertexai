@@ -74,17 +74,15 @@ class ContextHelper(object):
     @property
     @lru_cache()
     def config(self) -> PluginConfig:
-        raw = EnvTemplatedConfigLoader(
-            self.context.config_loader.conf_source
-        ).get(self.CONFIG_FILE_PATTERN)
+        raw = EnvTemplatedConfigLoader(self.context.config_loader.conf_source).get(
+            self.CONFIG_FILE_PATTERN
+        )
         return PluginConfig.parse_obj(raw)
 
     @property
     @lru_cache()
     def vertexai_client(self) -> VertexAIPipelinesClient:
-        return VertexAIPipelinesClient(
-            self.config, self.project_name, self.context
-        )
+        return VertexAIPipelinesClient(self.config, self.project_name, self.context)
 
     @staticmethod
     def init(metadata, env):

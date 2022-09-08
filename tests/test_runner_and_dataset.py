@@ -23,13 +23,9 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
         identity = lambda x: x  # noqa
         return pipeline(
             [
-                node(
-                    identity, inputs="input_data", outputs="i2", name="node1"
-                ),
+                node(identity, inputs="input_data", outputs="i2", name="node1"),
                 node(identity, inputs="i2", outputs="i3", name="node2"),
-                node(
-                    identity, inputs="i3", outputs="output_data", name="node3"
-                ),
+                node(identity, inputs="i3", outputs="output_data", name="node3"),
             ]
         )
 
@@ -60,9 +56,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
 
     def test_custom_runner_paths(self):
         run_id = uuid4().hex
-        ds = KedroVertexAIRunnerDataset(
-            "storage_root", "unit_tests_dataset", run_id
-        )
+        ds = KedroVertexAIRunnerDataset("storage_root", "unit_tests_dataset", run_id)
         target_path = ds._get_target_path()
 
         assert (
@@ -106,9 +100,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
             ),
             (
                 SomeClass(["a", 123.0, 456, True]),
-                lambda a, b: all(
-                    a.data[i] == b.data[i] for i in range(len(a.data))
-                ),
+                lambda a, b: all(a.data[i] == b.data[i] for i in range(len(a.data))),
             ),
         ]:
             with self.subTest(object_to_save=obj, comparer=comparer):
@@ -139,9 +131,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
             catalog.add("input_data", MemoryDataSet(data=input_data))
             for node_no in range(3):
                 results = runner.run(
-                    self.dummy_pipeline().filter(
-                        node_names=[f"node{node_no + 1}"]
-                    ),
+                    self.dummy_pipeline().filter(node_names=[f"node{node_no + 1}"]),
                     catalog,
                 )
             assert results["output_data"] == input_data, "Invalid output data"

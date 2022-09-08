@@ -28,6 +28,10 @@ run_config:
     size: 3Gi
     access_modes: [ReadWriteOnce]
     keep: True
+  mlflow:
+    request_header_provider_params:
+      service_account: test@example.com
+      client_id: xyz
 """
 
 CONFIG_MINIMAL = """
@@ -47,15 +51,10 @@ class TestPluginConfig(unittest.TestCase):
         assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
-        assert (
-            cfg.run_config.service_account
-            == "test@pipelines.gserviceaccount.com"
-        )
+        assert cfg.run_config.service_account == "test@pipelines.gserviceaccount.com"
         assert cfg.run_config.network.vpc == "my-vpc"
         assert str(cfg.run_config.network.host_aliases[0].ip) == "127.0.0.1"
-        assert (
-            "myself.local" in cfg.run_config.network.host_aliases[0].hostnames
-        )
+        assert "myself.local" in cfg.run_config.network.host_aliases[0].hostnames
         assert "me.local" in cfg.run_config.network.host_aliases[0].hostnames
         assert cfg.run_config.resources_for("node1") == {
             "cpu": "500m",
@@ -133,10 +132,7 @@ class TestPluginConfig(unittest.TestCase):
             == "projects/some-project-id/global/networks/some-vpc-name"
         )
         assert str(cfg.run_config.network.host_aliases[0].ip) == "10.10.10.10"
-        assert (
-            "mlflow.internal"
-            in cfg.run_config.network.host_aliases[0].hostnames
-        )
+        assert "mlflow.internal" in cfg.run_config.network.host_aliases[0].hostnames
 
     def test_accept_default_vertex_ai_networking_config(self):
         cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))

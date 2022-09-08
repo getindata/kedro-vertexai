@@ -15,7 +15,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 import re
 
-from kedro_vertexai import version as release
+from kedro_vertexai import __version__ as release
 
 # -- Project information -----------------------------------------------------
 
@@ -25,7 +25,7 @@ author = "GetInData"
 
 # The full version, including alpha/beta/rc tags
 version = re.match(r"^([0-9]+\.[0-9]+).*", release).group(1)
-
+package = "kedro_vertexai"
 
 # -- General configuration ---------------------------------------------------
 
@@ -43,8 +43,14 @@ extensions = [
     # "sphinx.ext.ifconfig",
     # "sphinx.ext.viewcode",
     # "sphinx.ext.mathjax",
-    "recommonmark",
+    "myst_parser",
     "sphinx_rtd_theme",
+]
+
+myst_enable_extensions = [
+    "replacements",
+    "strikethrough",
+    "substitution",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

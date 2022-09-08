@@ -71,9 +71,7 @@ def _load_yaml_or_empty_dict(output_path):
     return dict_from_yaml
 
 
-def _generate_and_save_dynamic_config(
-    provider: DynamicConfigProvider, context_helper
-):
+def _generate_and_save_dynamic_config(provider: DynamicConfigProvider, context_helper):
     dynamic_config = provider.generate_config()
     target_path = (
         context_helper.context.project_path
@@ -83,7 +81,5 @@ def _generate_and_save_dynamic_config(
     )
     existing_config = _load_yaml_or_empty_dict(target_path)
     provider.merge_with_existing(existing_config, dynamic_config)
-    logger.info(
-        f"Saving dynamic config {target_path} [{type(provider).__name__}]"
-    )
+    logger.info(f"Saving dynamic config {target_path} [{type(provider).__name__}]")
     save_yaml(dynamic_config, target_path)

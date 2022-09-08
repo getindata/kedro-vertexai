@@ -1,0 +1,23 @@
+# Changes here will be overwritten by Copier
+_commit: d04eecb
+_src_path: git@github.com:getindata/python-opensource-template.git
+authors:
+- Marcin Zabłocki <marcin.zablocki@getindata.com>
+- Mateusz Pytel <mateusz.pytel@getindata.com>
+- Mariusz Strzelecki <mariusz.strzelecki@getindata.com>
+description: Kedro plugin with GCP Vertex AI support
+docs_url: https://kedro-vertexai.readthedocs.io/
+full_name: Kedro Vertex AI Plugin
+github_url: https://github.com/getindata/kedro-vertexai
+initial_version: 0.7.0
+keywords:
+- kedro-plugin
+- kedro
+- mlops
+- vertexai
+- googlecloudplatform
+- machinelearning
+maintainers:
+- GetInData MLOPS <mlops@getindata.com>
+module_name: kedro_vertexai
+short_name: kedro-vertexai

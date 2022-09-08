@@ -13,9 +13,7 @@ from kedro_vertexai.utils import strip_margin
 class TestVertexAIClient(unittest.TestCase):
     @patch("kedro_vertexai.client.CloudSchedulerClient")
     def create_client(self, cloud_scheduler_client_mock):
-        self.cloud_scheduler_client_mock = (
-            cloud_scheduler_client_mock.return_value
-        )
+        self.cloud_scheduler_client_mock = cloud_scheduler_client_mock.return_value
         config = PluginConfig.parse_obj(
             {
                 "project_id": "PROJECT_ID",
@@ -59,9 +57,7 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["network"] == "my-vpc"
 
     def test_should_list_pipelines(self):
-        with patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient:
+        with patch("kedro_vertexai.client.AIPlatformClient") as AIPlatformClient:
             ai_client = AIPlatformClient.return_value
             ai_client.list_jobs.return_value = {
                 "pipelineJobs": [
@@ -103,9 +99,7 @@ class TestVertexAIClient(unittest.TestCase):
             ai_client = AIPlatformClient.return_value
 
             client_under_test = self.create_client()
-            client_under_test.schedule(
-                MagicMock("pipeline"), None, None, "0 0 12 * *"
-            )
+            client_under_test.schedule(MagicMock("pipeline"), None, None, "0 0 12 * *")
 
             ai_client.create_schedule_from_job_spec.assert_not_called()
             args, kwargs = ai_client.create_schedule_from_job_spec.call_args
@@ -134,19 +128,13 @@ class TestVertexAIClient(unittest.TestCase):
                 },
             )
 
-        with patch(
-            "kedro_vertexai.client.PipelineGenerator"
-        ) as generator, patch(
+        with patch("kedro_vertexai.client.PipelineGenerator") as generator, patch(
             "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient, patch(
-            "kfp.v2.compiler.Compiler"
-        ):
+        ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
             # given
             ai_client = AIPlatformClient.return_value
             client_under_test = self.create_client()
-            generator.return_value.get_pipeline_name.return_value = (
-                "unittest-pipeline"
-            )
+            generator.return_value.get_pipeline_name.return_value = "unittest-pipeline"
             self.cloud_scheduler_client_mock.list_jobs.return_value = [
                 # not removed (some other job)
                 mock_job(job_name="some-job"),
@@ -163,9 +151,7 @@ class TestVertexAIClient(unittest.TestCase):
             ]
 
             # when
-            client_under_test.schedule(
-                MagicMock("pipeline"), None, None, "0 0 12 * *"
-            )
+            client_under_test.schedule(MagicMock("pipeline"), None, None, "0 0 12 * *")
 
             # then
             ai_client.create_schedule_from_job_spec.assert_called_once()
@@ -209,9 +195,7 @@ class TestVertexAIClient(unittest.TestCase):
                 # ):
                 client = self.create_client()
                 result = client.wait_for_completion(10)
-                assert (
-                    not result.is_success
-                ), "Pipeline should be determined as failed"
+                assert not result.is_success, "Pipeline should be determined as failed"
                 assert isinstance(
                     result.job_data, dict
                 ), "Field job_data should have value in finished pipelines"
@@ -225,12 +209,8 @@ class TestVertexAIClient(unittest.TestCase):
         client = self.create_client()
         result = client.wait_for_completion(3)
         assert not result.is_success, "Pipeline should be determined as failed"
-        assert (
-            result.job_data is None
-        ), "Timed-out pipelines will not have job details"
-        assert (
-            "max timeout" in result.state.lower()
-        ), "Final state seems invalid"
+        assert result.job_data is None, "Timed-out pipelines will not have job details"
+        assert "max timeout" in result.state.lower(), "Final state seems invalid"
 
     @patch("kedro_vertexai.client.AIPlatformClient")
     def test_wait_for_completion_intervals(self, ai_client):
@@ -256,15 +236,11 @@ class TestVertexAIClient(unittest.TestCase):
         ai_client.return_value.get_job.side_effect = Exception()
 
         client = self.create_client()
-        result = client.wait_for_completion(
-            5, interval_seconds=0.01, max_api_fails=7
-        )
+        result = client.wait_for_completion(5, interval_seconds=0.01, max_api_fails=7)
         assert (
             not result.is_success and result.state == "Internal exception"
         ), "When API rises many times, end status should be failed"
-        assert (
-            logger.call_count == 7
-        ), "Invalid number of logger calls on exception"
+        assert logger.call_count == 7, "Invalid number of logger calls on exception"
         assert (
             ai_client.return_value.get_job.call_count == 7
         ), "Invalid number of API calls"
