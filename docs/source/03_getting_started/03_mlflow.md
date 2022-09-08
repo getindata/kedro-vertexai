@@ -30,8 +30,8 @@ Finally, start the pipeline. While it executes, the new Mlflow run is started an
 The UI presents the pipeline status (in form of the icon) and latest node that was run (for failed runs in indicates at what step did the pipeline fail). Also, the `vertexai_run_id` and `vertexai_job_name` tags can be used to correlate Mlflow run with the Vertex AI pipeline execution.
 
 ## Authorization
-For MLflow deployments that are secured with some authorization mechanism, the requests being made need to (usually) have the `Authorization` header set. MLflow allows to plug-in custom headers via `request_header_provider` entrypoint. Our plug-in leverages this feature and exposes it in a form of a Kedro Hook.
-Right now, using this hook requires to modify your project's `settings.py` by first **disabling** _kedro-mlfow_ hooks and then re-enabling it, as our Hook needs to attach before any of the kedro-mlflow's hook attach.
+For MLflow deployments that are secured with some authorization mechanism, the requests being made need to (usually) have the `Authorization` header set. MLflow allows to plug-in custom headers via `request_header_provider` entry point. Our plug-in leverages this feature and exposes it in a form of a Kedro Hook.
+Right now, using this hook requires to modify your project's `settings.py` by first **disabling** _kedro-mlflow_ hooks and then re-enabling it, as our Hook needs to attach before any of the kedro-mlflow's hook attach.
 
 We're providing 2 implementations of the `Authorization` header provider, which obtain ID token from Google's endpoints - either OAuth or IAM. Of course, you can implement your own authorization mechanism by inheriting from the `kedro_vertexai.auth.mlflow_request_header_provider.RequestHeaderProviderWithKedroContext` class.
 
