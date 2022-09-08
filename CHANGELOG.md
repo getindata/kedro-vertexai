@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Add better MLflow authorization entrypoints (via Hooks and MLflow Request Header Provider Plugin)
 
 ## [0.6.0] - 2022-08-22
 
