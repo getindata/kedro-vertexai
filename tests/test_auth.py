@@ -1,11 +1,27 @@
 import os
 import unittest
-from unittest.mock import patch
+from io import StringIO
+from unittest.mock import MagicMock, patch
+from uuid import uuid4
 
 import responses
+import yaml
 from google.auth.exceptions import DefaultCredentialsError
+from kedro.framework.context import KedroContext
 
-from kedro_vertexai.auth.gcp import AuthHandler
+from kedro_vertexai.auth.gcp import (
+    AuthHandler,
+    MLFlowGoogleIAMRequestHeaderProvider,
+)
+from kedro_vertexai.auth.mlflow_request_header_provider import (
+    DynamicMLFlowRequestHeaderProvider,
+    RequestHeaderProviderWithKedroContext,
+    safe_import_mlflow,
+)
+from kedro_vertexai.auth.mlflow_request_header_provider_hook import (
+    MLFlowRequestHeaderProviderHook,
+)
+from tests.test_config import CONFIG_FULL
 
 
 class TestAuthHandler(unittest.TestCase):
@@ -117,3 +133,80 @@ class TestAuthHandler(unittest.TestCase):
             responses.calls[1].request.body
             == "login=user%40example.com&password=pa%24%24"
         )
+
+    @patch("google.cloud.iam_credentials.IAMCredentialsClient")
+    def test_can_obtain_iam_token(self, iam: MagicMock):
+        mock_token = uuid4().hex
+        return_token = MagicMock()
+        return_token.token = mock_token
+        iam.return_value.generate_id_token.return_value = return_token
+        token = AuthHandler().obtain_iam_token("test@example.com", "client_id")
+        iam.return_value.generate_id_token.assert_called_once()
+        assert token == mock_token
+
+    def test_mlflow_header_provider_is_singleton(self):
+        provider = DynamicMLFlowRequestHeaderProvider()
+        others = [DynamicMLFlowRequestHeaderProvider() for _ in range(100)]
+        assert all(provider == o for o in others)
+
+    def test_mlflow_header_provider_setup(self):
+        for in_ctx in (True, False):
+            with self.subTest(msg=f"Enabled={in_ctx}"):
+                custom_header = {"Custom": "Header"}
+                dummy_provider = MagicMock(spec=RequestHeaderProviderWithKedroContext)
+                dummy_provider.in_context = MagicMock(return_value=in_ctx)
+                dummy_provider.request_headers = MagicMock(return_value=custom_header)
+
+                provider = DynamicMLFlowRequestHeaderProvider()
+
+                # in_context() on uninitialized should always be false
+                assert not provider.in_context()
+
+                # request_headers() on uninitialized should be an empty dict
+                self.assertDictEqual(provider.request_headers(), {})
+
+                provider.configure(dummy_provider)
+                assert provider.in_context() == in_ctx, "Value didn't passed through"
+                dummy_provider.in_context.assert_called_once()
+                if in_ctx:
+                    self.assertDictEqual(provider.request_headers(), custom_header)
+
+                # Testing re-configure for coverage
+                provider.configure(dummy_provider)
+
+                del DynamicMLFlowRequestHeaderProvider.__instance__
+
+    def test_import_with_missing_mlflow(self):
+        def mock_import(name, *args):
+            if name == "mlflow":
+                raise ImportError("no mlfow!")
+            else:
+                return __import__(name, *args)
+
+        with patch("builtins.__import__", side_effect=mock_import):
+            mlflow, rh_class = safe_import_mlflow()
+            assert mlflow is None and rh_class is object
+
+    @patch("kedro_vertexai.auth.gcp.AuthHandler.obtain_iam_token")
+    @patch(
+        "kedro_vertexai.auth.mlflow_request_header_provider.EnvTemplatedConfigLoader",
+    )
+    def test_mlflow_header_provider_methods(self, cfg_loader, obtain_iam_token):
+        config = yaml.safe_load(StringIO(CONFIG_FULL))
+        cfg_loader.return_value.get = MagicMock(return_value=config)
+        token = uuid4().hex
+        obtain_iam_token.return_value = token
+        kedro_context = MagicMock(spec=KedroContext)
+        provider = MLFlowGoogleIAMRequestHeaderProvider(kedro_context)
+        provider.get_token = obtain_iam_token
+        assert provider.in_context()
+        headers = provider.request_headers()
+        self.assertDictEqual(headers, {"Authorization": f"Bearer {token}"})
+
+    def test_request_header_provider_hook(self):
+        provider = MagicMock(spec=RequestHeaderProviderWithKedroContext)
+        kedro_context = MagicMock(spec=KedroContext)
+        with patch("builtins.issubclass", return_value=True):
+            hook = MLFlowRequestHeaderProviderHook(provider)
+        hook.after_context_created(kedro_context)
+        provider.assert_called_once_with(kedro_context)

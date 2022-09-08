@@ -14,7 +14,6 @@ from kfp.components.structures import (
     ComponentSpec,
     ContainerImplementation,
     ContainerSpec,
-    InputSpec,
     OutputPathPlaceholder,
     OutputSpec,
 )
@@ -97,9 +96,7 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(
-        self, image, tracking_token, should_add_params
-    ) -> dsl.ContainerOp:
+    def _create_mlflow_op(self, image, should_add_params) -> dsl.ContainerOp:
 
         mlflow_command = " ".join(
             [
@@ -108,7 +105,6 @@ class PipelineGenerator:
                 "`dirname {{$.outputs.parameters['output'].output_file}}`",
                 "&&",
                 self._generate_params_command(should_add_params),
-                "MLFLOW_TRACKING_TOKEN={{$.inputs.parameters['mlflow_tracking_token']}}",
                 f"kedro vertexai -e {self.context.env} mlflow-start",
                 "--output {{$.outputs.parameters['output'].output_file}}",
                 self.run_name,
@@ -117,7 +113,7 @@ class PipelineGenerator:
 
         spec = ComponentSpec(
             name="mlflow-start-run",
-            inputs=[InputSpec("mlflow_tracking_token", "String")],
+            inputs=[],
             outputs=[OutputSpec("output", "String")],
             implementation=ContainerImplementation(
                 container=ContainerSpec(
@@ -135,7 +131,7 @@ class PipelineGenerator:
         ) as spec_file:
             spec.save(spec_file.name)
             component = kfp.components.load_component_from_file(spec_file.name)
-        return component(tracking_token)
+        return component()
 
     def _build_kfp_ops(
         self,
@@ -152,17 +148,15 @@ class PipelineGenerator:
         mlflow_enabled = is_mlflow_enabled()
         if mlflow_enabled:
             kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
-                image, tracking_token, should_add_params
+                image, should_add_params
             )
 
         for node in node_dependencies:
             name = clean_name(node.name)
 
-            mlflow_inputs, mlflow_tokens = generate_mlflow_inputs()
+            mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
             component_params = (
-                [tracking_token, kfp_ops["mlflow-start-run"].output]
-                if mlflow_enabled
-                else []
+                [kfp_ops["mlflow-start-run"].output] if mlflow_enabled else []
             )
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
@@ -186,7 +180,7 @@ class PipelineGenerator:
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
                     self._generate_params_command(should_add_params),
-                    mlflow_tokens,
+                    mlflow_envs,
                     kedro_command,
                 ]
             ).strip()
