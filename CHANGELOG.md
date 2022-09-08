@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.7.0] - 2022-09-08
+
 -   Add better MLflow authorization entrypoints (via Hooks and MLflow Request Header Provider Plugin)
 
 ## [0.6.0] - 2022-08-22
@@ -39,7 +42,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.7.0...HEAD
+
+[0.7.0]: https://github.com/getindata/kedro-vertexai/compare/0.6.0...0.7.0
 
 [0.6.0]: https://github.com/getindata/kedro-vertexai/compare/0.5.0...0.6.0
 
