@@ -28,6 +28,10 @@ run_config:
     size: 3Gi
     access_modes: [ReadWriteOnce]
     keep: True
+  mlflow:
+    request_header_provider_params:
+      service_account: test@example.com
+      client_id: xyz
 """
 
 CONFIG_MINIMAL = """

@@ -8,6 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 class DynamicConfigProvider(ABC):
+    @classmethod
+    def full_name(cls):
+        return f"{cls.__module__}.{cls.__qualname__}"
+
     @staticmethod
     def build(
         config: PluginConfig,
