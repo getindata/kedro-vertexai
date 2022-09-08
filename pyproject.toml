@@ -47,7 +47,7 @@ fsspec = "<=2022.1,>=2021.4"
 google-cloud-storage = "<3.0.0"
 grpcio = "~=1.44.0"
 grpcio-status = "~=1.44.0"
-protobuf = "<=3.20.0"
+protobuf = "<3.21.0"
 kedro-mlflow = { version = "~=0.11.1", optional = true }
 cachetools = ">=4.1,<5.0"
 
