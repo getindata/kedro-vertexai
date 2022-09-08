@@ -8,7 +8,7 @@ If you use [MLflow](https://mlflow.org/) and [kedro-mlflow](https://kedro-mlflow
 To make sure that the plugin discovery mechanism works, add `kedro-mlflow` and `kedro-vertexai` as a dependencies to `src/requirements.txt` and run:
 
 ```console
-$ pip install -r src/requriements.txt
+$ pip install -r src/requirements.txt
 $ kedro mlflow init
 ```
 
