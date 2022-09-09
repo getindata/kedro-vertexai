@@ -259,15 +259,19 @@ def init(ctx, project_id, region, with_github_actions: bool):
 @click.pass_context
 def mlflow_start(ctx, run_id: str, output: str):
     import mlflow
+    from kedro_mlflow.config.kedro_mlflow_config import KedroMlflowConfig
 
     try:
         kedro_context = ctx.obj["context_helper"].context
-        mlflow_conf = kedro_context.mlflow
+        mlflow_conf: KedroMlflowConfig = kedro_context.mlflow
     except AttributeError:
         raise ClickException("Could not read MLFlow config")
 
     run = mlflow.start_run(
-        experiment_id=mlflow_conf.experiment.experiment_id, nested=False
+        experiment_id=mlflow.get_experiment_by_name(
+            mlflow_conf.tracking.experiment.name
+        ).experiment_id,
+        nested=False,
     )
     mlflow.set_tag(VERTEXAI_RUN_ID_TAG, run_id)
     with open(output, "w") as f:

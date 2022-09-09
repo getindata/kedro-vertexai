@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-vertexai"
-version = "0.6.0"
+version = "0.7.0"
 description = "Kedro plugin with GCP Vertex AI support"
 readme = "README.md"
 authors = ['Marcin Zabłocki <marcin.zablocki@getindata.com>', 'Mateusz Pytel <mateusz.pytel@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com>']
@@ -49,6 +49,7 @@ grpcio = "~=1.44.0"
 grpcio-status = "~=1.44.0"
 protobuf = "<=3.20.0"
 kedro-mlflow = { version = "~=0.11.1", optional = true }
+cachetools = ">=4.1,<5.0"
 
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]
@@ -58,7 +59,7 @@ pytest = "<7"
 pytest-cov = ">=2.8.0, <4.0.0"
 tox = ">=3.25.1"
 pre-commit = "2.20.0"
-pytest-subtests = ">=0.6.0, <1.0.0"
+pytest-subtests = ">=0.7.0, <1.0.0"
 responses = ">=0.13.4"
 
 [tool.poetry.plugins] # Optional super table
@@ -68,3 +69,6 @@ responses = ">=0.13.4"
 [tool.poetry.plugins."kedro.hooks"]
 "vertexai_mlflow_tags_hook" = "kedro_vertexai.hooks:mlflow_tags_hook"
 "vertexai_cfg_hook" = "kedro_vertexai.hooks:env_templated_config_loader_hook"
+
+[tool.poetry.plugins."mlflow.request_header_provider"]
+"unused" = "kedro_vertexai.auth.mlflow_request_header_provider:DynamicMLFlowRequestHeaderProvider"

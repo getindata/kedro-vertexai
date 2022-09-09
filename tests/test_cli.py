@@ -285,8 +285,12 @@ class TestPluginCLI(unittest.TestCase):
 
     @patch("mlflow.start_run")
     @patch("mlflow.set_tag")
-    def test_mlflow_start(self, set_tag_mock, start_run_mock):
+    @patch("mlflow.get_experiment_by_name")
+    def test_mlflow_start(
+        self, get_experiment_by_name_mock, set_tag_mock, start_run_mock
+    ):
         context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.context.mlflow.tracking.experiment.name = "asd"
         config = dict(context_helper=context_helper)
         runner = CliRunner()
         start_run_mock.return_value = namedtuple("InfoObject", "info")(
@@ -301,8 +305,8 @@ class TestPluginCLI(unittest.TestCase):
                 obj=config,
             )
 
-            assert "Started run: MLFLOW_RUN_ID" in result.output
             assert result.exit_code == 0
+            assert "Started run: MLFLOW_RUN_ID" in result.output
             with open(run_id_file_path) as f:
                 assert f.read() == "MLFLOW_RUN_ID"
 
