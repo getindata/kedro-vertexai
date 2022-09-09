@@ -102,7 +102,7 @@ kedro-vertexai
 
 ### Adjusting Data Catalog to be compatible with Vertex AI
 This change enforces raw input data existence in the image. While running locally, every intermediate dataset is stored as a `MemoryDataSet`. When running in VertexAI Pipelines, there is no shared-memory, Kedro-VertexAI plugin automatically handles intermediate dataset serialization - every intermediate dataset will be stored (as a compressed cloudpickle file) in GCS bucket specified in the `vertexai.yml` config under `run_config.root` key.
-Adjusted `catalog.yml` should look like this.
+Adjusted `catalog.yml` should look like this (note: remove the rest of the entries which comes with the spaceflights starter - you need only `companies`,`reviews`,`shuttles`.)
 
 ```yaml
 companies:
@@ -123,7 +123,7 @@ shuttles:
 
 All intermediate and output data will be stored in the location with the following pattern:
 ```
-gs://<run_config.root from vertexai.yml/kedro-vertexai-temp/<vertex ai job name>/*.bin
+gs://<run_config.root from vertexai.yml>/kedro-vertexai-temp/<vertex ai job name>/*.bin
 ```
 
 Of course if you want to use intermediate/output data and store it a location of your choice, add it to the catalog. Be aware that you cannot use local paths - use `gs://` paths instead. 
