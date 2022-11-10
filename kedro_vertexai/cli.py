@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import webbrowser
@@ -19,6 +20,14 @@ logger = logging.getLogger(__name__)
 def format_params(params: list):
     return dict((p[: p.find(":")], p[p.find(":") + 1 :]) for p in params)
 
+def get_docker():
+    try:
+        import docker
+        return docker
+    except ImportError:
+        logger.error("You tried to use docker functions without docker api being available.\
+ To use that make sure you've installed extra docker dependency. You can do it with 'pip install kedro-vertexai[docker]'")
+        return None
 
 @click.group("VertexAI")
 def commands():
@@ -57,6 +66,7 @@ def list_pipelines(ctx):
 
 
 @vertexai_group.command()
+@click.option("--auto-build", type=bool, is_flag=True, default=False)
 @click.option(
     "-i",
     "--image",
@@ -90,6 +100,7 @@ def list_pipelines(ctx):
 @click.pass_context
 def run_once(
     ctx: Context,
+    auto_build: bool,
     image: str,
     pipeline: str,
     params: list,
@@ -101,10 +112,55 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     config: RunConfig = context_helper.config.run_config
     client: VertexAIPipelinesClient = context_helper.vertexai_client
+    image: str = image if image else config.image
 
+    reminder = not context_helper.config.no_reminder
+    if auto_build:
+        if docker := get_docker():
+            cli = docker.from_env()
+            try:
+                click.echo("Building Docker image.")
+                messages = cli.api.build(str(context_helper.context.project_path), image)
+                while True:
+                    msg = json.loads(next(messages))
+                    if "stream" in msg:
+                        click.echo(msg["stream"].strip('\n').strip('\r'))
+                    elif "status" in msg:
+                        click.echo(msg["status"] + " id:" + msg["id"])
+                    elif "error" in msg:
+                        click.echo(msg)
+                        logger.error(msg["error"].strip('\n').strip('\r'))
+                        raise docker.errors.BuildError(msg["error"], msg["errorDetail"])
+                    else:
+                        click.echo(msg)
+            except docker.errors.APIError as apierr:
+                logger.error("No Dockerfile found, did you forget 'kedro docker init'?")
+                exit()
+            except docker.errors.BuildError as e:
+                logger.error(f"Failed to build with error: {str(e)}")
+                exit()
+            except StopIteration:
+                click.echo("Docker image building has finished successfully.")
+            except Exception as e:
+                logger.error("Docker build has failed for uknown reason, please report it at github.com/getindata/kedro-vertexai/issues and try building manually.")
+                raise e
+
+            if (splits := image.split(":"))[-1] != "latest" and len(splits)>1 and reminder:
+                logger.warning(f"This operation will overwrite the target image with {splits[-1]} tag at remote location.")
+            
+            click.echo("Pushing the image...")
+            cli.api.push(image)
+            # Todo - stream messages?
+    elif reminder:
+        logger.warning("Make sure that you've built and pushed your image to run the latest version remotely.\
+ Consider using '--auto-build' parameter. Remove this reminder by specifying 'no_reminder' in project config.")
+
+    # import IPython
+    # IPython.embed()
+    # exit()
     run = client.run_once(
         pipeline=pipeline,
-        image=image if image else config.image,
+        image=image,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )

@@ -35,6 +35,7 @@ known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "py
 python = ">=3.8,<3.11"
 kedro = ">=0.18.1, <0.19.0"
 click = ">=8.0.4"
+docker = { version = "~=5.0.3", optional = true }
 kfp = ">=1.8.12,<2.0"
 tabulate = ">=0.8.7"
 semver = "~=2.10"
@@ -53,6 +54,7 @@ cachetools = ">=4.1,<5.0"
 
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]
+docker = ["docker"]
 
 [tool.poetry.dev-dependencies]
 pytest = "<=7"

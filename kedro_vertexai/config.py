@@ -87,6 +87,9 @@ run_config:
   # mlflow:
   #   request_header_provider_params:
   #       key: value
+
+  # To disable some warning messages that remind you about steps to do, uncomment the below:
+  # no_reminder: true
 """
 
 
@@ -150,6 +153,7 @@ class PluginConfig(BaseModel):
     project_id: str
     region: str
     run_config: RunConfig
+    no_reminder: Optional[bool] = False
 
     @staticmethod
     def sample_config(**kwargs):
