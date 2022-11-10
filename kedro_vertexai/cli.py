@@ -1,6 +1,6 @@
-import json
 import logging
 import os
+import subprocess
 import webbrowser
 from pathlib import Path
 
@@ -20,14 +20,6 @@ logger = logging.getLogger(__name__)
 def format_params(params: list):
     return dict((p[: p.find(":")], p[p.find(":") + 1 :]) for p in params)
 
-def get_docker():
-    try:
-        import docker
-        return docker
-    except ImportError:
-        logger.error("You tried to use docker functions without docker api being available.\
- To use that make sure you've installed extra docker dependency. You can do it with 'pip install kedro-vertexai[docker]'")
-        return None
 
 @click.group("VertexAI")
 def commands():
@@ -66,7 +58,7 @@ def list_pipelines(ctx):
 
 
 @vertexai_group.command()
-@click.option("--auto-build", type=bool, is_flag=True, default=False)
+@click.option("--auto-build", type=bool, is_flag=True, default=False, help="Specify to docker build and push before scheduling a run")
 @click.option(
     "-i",
     "--image",
@@ -116,41 +108,28 @@ def run_once(
 
     reminder = not context_helper.config.no_reminder
     if auto_build:
-        if docker := get_docker():
-            cli = docker.from_env()
-            try:
-                click.echo("Building Docker image.")
-                messages = cli.api.build(str(context_helper.context.project_path), image)
-                while True:
-                    msg = json.loads(next(messages))
-                    if "stream" in msg:
-                        click.echo(msg["stream"].strip('\n').strip('\r'))
-                    elif "status" in msg:
-                        click.echo(msg["status"] + " id:" + msg["id"])
-                    elif "error" in msg:
-                        click.echo(msg)
-                        logger.error(msg["error"].strip('\n').strip('\r'))
-                        raise docker.errors.BuildError(msg["error"], msg["errorDetail"])
-                    else:
-                        click.echo(msg)
-            except docker.errors.APIError as apierr:
-                logger.error("No Dockerfile found, did you forget 'kedro docker init'?")
+        try:
+            # Subprocess docker build
+            proc = subprocess.Popen(["docker", "build", str(context_helper.context.project_path), "-t", image])
+            if proc.wait() != 0:
+                logger.error("Build has failed, quitting.")
                 exit()
-            except docker.errors.BuildError as e:
-                logger.error(f"Failed to build with error: {str(e)}")
-                exit()
-            except StopIteration:
-                click.echo("Docker image building has finished successfully.")
-            except Exception as e:
-                logger.error("Docker build has failed for uknown reason, please report it at github.com/getindata/kedro-vertexai/issues and try building manually.")
-                raise e
 
+            # Check image version as last part after ':', assume latest if not provided
             if (splits := image.split(":"))[-1] != "latest" and len(splits)>1 and reminder:
                 logger.warning(f"This operation will overwrite the target image with {splits[-1]} tag at remote location.")
-            
-            click.echo("Pushing the image...")
-            cli.api.push(image)
-            # Todo - stream messages?
+                if not click.confirm("Continue?", default=True):
+                    exit()
+
+            # Subprocess docker push 
+            proc = subprocess.Popen(["docker", "push", image])
+            if proc.wait() != 0:
+                logger.error("Push has failed, quitting.")
+                exit()
+        except FileNotFoundError:
+            logger.error("You tried to use docker functions without docker being available.\
+ To use that make sure you've installed extra docker dependency. You can do it with 'pip install kedro-vertexai[docker]'")
+            exit()
     elif reminder:
         logger.warning("Make sure that you've built and pushed your image to run the latest version remotely.\
  Consider using '--auto-build' parameter. Remove this reminder by specifying 'no_reminder' in project config.")
@@ -166,7 +145,7 @@ def run_once(
     )
 
     click.echo(
-        f"Intermediate data datasets will be stored in{os.linesep}"
+        f"Intermediate data datasets will be stored in {os.linesep}"
         f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
     )
 
