@@ -58,7 +58,13 @@ def list_pipelines(ctx):
 
 
 @vertexai_group.command()
-@click.option("--auto-build", type=bool, is_flag=True, default=False, help="Specify to docker build and push before scheduling a run")
+@click.option(
+    "--auto-build",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Specify to docker build and push before scheduling a run",
+)
 @click.option(
     "-i",
     "--image",
@@ -106,37 +112,54 @@ def run_once(
     client: VertexAIPipelinesClient = context_helper.vertexai_client
     image: str = image if image else config.image
 
-    reminder = not context_helper.config.no_reminder
+    reminder = not config.no_reminder
     if auto_build:
         try:
             # Subprocess docker build
-            proc = subprocess.Popen(["docker", "build", str(context_helper.context.project_path), "-t", image])
+            proc = subprocess.Popen(
+                [
+                    "docker",
+                    "build",
+                    str(context_helper.context.project_path),
+                    "-t",
+                    image,
+                ]
+            )
             if proc.wait() != 0:
                 logger.error("Build has failed, quitting.")
                 exit()
 
             # Check image version as last part after ':', assume latest if not provided
-            if (splits := image.split(":"))[-1] != "latest" and len(splits)>1 and reminder:
-                logger.warning(f"This operation will overwrite the target image with {splits[-1]} tag at remote location.")
+            if (
+                (splits := image.split(":"))[-1] != "latest"
+                and len(splits) > 1
+                and reminder
+            ):
+                logger.warning(
+                    f"This operation will overwrite the target image with {splits[-1]} tag at remote location."
+                )
                 if not click.confirm("Continue?", default=True):
                     exit()
 
-            # Subprocess docker push 
+            # Subprocess docker push
             proc = subprocess.Popen(["docker", "push", image])
             if proc.wait() != 0:
                 logger.error("Push has failed, quitting.")
                 exit()
         except FileNotFoundError:
-            logger.error("You tried to use docker functions without docker being available.\
- To use that make sure you've installed extra docker dependency. You can do it with 'pip install kedro-vertexai[docker]'")
+            logger.error(
+                "You tried to use docker functions without docker being available.\
+ To use that make sure you've installed extra docker dependency.\
+ You can do it with 'pip install kedro-vertexai[docker]'"
+            )
             exit()
     elif reminder:
-        logger.warning("Make sure that you've built and pushed your image to run the latest version remotely.\
- Consider using '--auto-build' parameter. Remove this reminder by specifying 'no_reminder' in project config.")
+        logger.warning(
+            "Make sure that you've built and pushed your image to run the latest version remotely.\
+ Consider using '--auto-build' parameter. Remove this reminder by specifying 'no_reminder'\
+ to 'True' in config/base/vertexai.py"
+        )
 
-    # import IPython
-    # IPython.embed()
-    # exit()
     run = client.run_once(
         pipeline=pipeline,
         image=image,
