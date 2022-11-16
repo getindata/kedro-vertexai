@@ -88,6 +88,60 @@ class TestPluginCLI(unittest.TestCase):
 
         assert result.exit_code == 0
         context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
+    
+    @patch("subprocess.Popen")
+    def test_run_once_auto_build(self, popen):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        # Simulating no error run for Popen
+        foo = popen()
+        foo.wait.return_value = 0
+
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--auto-build"
+            ],
+            obj=config,
+        )
+
+        assert result.exit_code == 0
+        self.assertEqual(popen.call_count, 3)
+        # Proper call example args
+        # [call(),
+        # call(['docker', 'build', "<MagicMock name='mock.context.project_path' id='140492876340320'>", '-t', 'new_img']),
+        # call(['docker', 'push', 'new_img'])]
+        for p in ("docker", "build", "-t", "new_img"):
+            self.assertIn(p, popen.call_args_list[1][0][0]) 
+        for p in ("docker", "push", "new_img"):
+            self.assertIn(p, popen.call_args_list[2][0][0])
+        
+        # Testing fail during build
+        foo.wait.return_value = 1
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--auto-build"
+            ],
+            obj=config,
+        )
+        
+        self.assertEqual(result.exit_code, 0)
 
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
