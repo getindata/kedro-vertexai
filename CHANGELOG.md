@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Added --auto-build option to run-once that calls 'docker build' and 'docker push' for you before running the job on VertexAI. It introduces 'no_reminder' option to disable some warnings
+
 ## [0.7.0] - 2022-09-08
 
 -   Add better MLflow authorization entrypoints (via Hooks and MLflow Request Header Provider Plugin)
