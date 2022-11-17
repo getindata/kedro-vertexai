@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -95,7 +96,9 @@ def docker_build(path: str, image: str):
             path,
             "-t",
             image,
-        ]
+        ],
+        stdout=sys.stdout,
+        stderr=subprocess.STDOUT,
     ).returncode
     if rv:
         logger.error("Docker build has failed.")
@@ -110,6 +113,8 @@ def docker_push(image: str, no_confirm: bool = False):
     if not no_confirm and not confirm("Continue?", default=True):
         exit(1)
 
-    rv = subprocess.run(["docker", "push", image]).returncode
+    rv = subprocess.run(
+        ["docker", "push", image], stdout=sys.stdout, stderr=subprocess.STDOUT
+    ).returncode
     if rv:
         logger.error("Docker push has failed.")
