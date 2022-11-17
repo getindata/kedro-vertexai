@@ -87,9 +87,6 @@ run_config:
   # mlflow:
   #   request_header_provider_params:
   #       key: value
-
-  # To disable some warning messages that remind you about steps to do, uncomment the below:
-  # no_reminder: true
 """
 
 

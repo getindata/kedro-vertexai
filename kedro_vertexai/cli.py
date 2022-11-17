@@ -1,6 +1,5 @@
 import logging
 import os
-import subprocess
 import webbrowser
 from pathlib import Path
 
@@ -12,7 +11,12 @@ from .config import PluginConfig, RunConfig
 from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
-from .utils import materialize_dynamic_configuration, store_parameters_in_yaml
+from .utils import (
+    docker_build,
+    docker_push,
+    materialize_dynamic_configuration,
+    store_parameters_in_yaml,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +67,14 @@ def list_pipelines(ctx):
     type=bool,
     is_flag=True,
     default=False,
-    help="Specify to docker build and push before scheduling a run",
+    help="Specify to docker build and push before scheduling a run.",
+)
+@click.option(
+    "--yes-confirm",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Auto answer yes confirm prompts.",
 )
 @click.option(
     "-i",
@@ -99,6 +110,7 @@ def list_pipelines(ctx):
 def run_once(
     ctx: Context,
     auto_build: bool,
+    yes_confirm: bool,
     image: str,
     pipeline: str,
     params: list,
@@ -112,52 +124,15 @@ def run_once(
     client: VertexAIPipelinesClient = context_helper.vertexai_client
     image: str = image if image else config.image
 
-    reminder = not config.no_reminder
     if auto_build:
-        try:
-            # Subprocess docker build
-            proc = subprocess.Popen(
-                [
-                    "docker",
-                    "build",
-                    str(context_helper.context.project_path),
-                    "-t",
-                    image,
-                ]
-            )
-            if proc.wait() != 0:
-                logger.error("Build has failed, quitting.")
-                exit()
-
-            # Check image version as last part after ':', assume latest if not provided
-            if (
-                (splits := image.split(":"))[-1] != "latest"
-                and len(splits) > 1
-                and reminder
-            ):
-                logger.warning(
-                    f"This operation will overwrite the target image with {splits[-1]} tag at remote location."
-                )
-                if not click.confirm("Continue?", default=True):
-                    exit()
-
-            # Subprocess docker push
-            proc = subprocess.Popen(["docker", "push", image])
-            if proc.wait() != 0:
-                logger.error("Push has failed, quitting.")
-                exit()
-        except FileNotFoundError:
-            logger.error(
-                "You tried to use docker functions without docker being available.\
- To use that make sure you've installed extra docker dependency.\
- You can do it with 'pip install kedro-vertexai[docker]'"
-            )
-            exit()
-    elif reminder:
+        if (rv := docker_build(str(context_helper.context.project_path), image)) != 0:
+            exit(rv)
+        if (rv := docker_push(image, yes_confirm)) != 0:
+            exit(rv)
+    else:
         logger.warning(
             "Make sure that you've built and pushed your image to run the latest version remotely.\
- Consider using '--auto-build' parameter. Remove this reminder by specifying 'no_reminder'\
- to 'True' in config/base/vertexai.py"
+ Consider using '--auto-build' parameter."
         )
 
     run = client.run_once(
