@@ -132,17 +132,18 @@ class RunConfig(BaseModel):
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
 
-    def resources_for(self, node: str, tags: Optional[set] = set()):
+    def resources_for(self, node: str, tags: Optional[set] = None):
         default_config = self.resources["__default__"].dict()
         return self._config_for(node, tags, self.resources, default_config)
 
-    def node_selectors_for(self, node: str, tags: Optional[set] = set()):
+    def node_selectors_for(self, node: str, tags: Optional[set] = None):
         return self._config_for(node, tags, self.node_selectors)
 
     @staticmethod
     def _config_for(
         node: str, tags: set, params: dict, default_config: Optional[dict] = None
     ):
+        tags = tags or set()
         names = [*tags, node]
         filled_names = [x for x in names if x in params.keys()]
         results = default_config or {}
