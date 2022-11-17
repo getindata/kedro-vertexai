@@ -132,18 +132,20 @@ class RunConfig(BaseModel):
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
 
-    def resources_for(self, node: str, tags: set = set()):
-        result = self.resources["__default__"].dict()
-        return self._create_config(node, tags, self.resources, result)
+    def resources_for(self, node: str, tags: Optional[set] = set()):
+        default_config = self.resources["__default__"].dict()
+        return self._config_for(node, tags, self.resources, default_config)
 
-    def node_selectors_for(self, node: str, tags: set = set()):
-        result = {}
-        return self._create_config(node, tags, self.node_selectors, result)
+    def node_selectors_for(self, node: str, tags: Optional[set] = set()):
+        return self._config_for(node, tags, self.node_selectors)
 
     @staticmethod
-    def _create_config(node: str, tags: set, params: dict, result: dict):
+    def _config_for(
+        node: str, tags: set, params: dict, default_config: Optional[dict] = None
+    ):
         names = [*tags, node]
         filled_names = [x for x in names if x in params.keys()]
+        results = default_config or {}
         if filled_names:
             for name in filled_names:
                 configs = (
@@ -151,8 +153,8 @@ class RunConfig(BaseModel):
                     if isinstance(params[name], dict)
                     else params[name].dict()
                 )
-                result.update({k: v for k, v in configs.items() if v is not None})
-        return result
+                results.update({k: v for k, v in configs.items() if v is not None})
+        return results
 
 
 class KedroVertexAIRunnerConfig(BaseModel):
