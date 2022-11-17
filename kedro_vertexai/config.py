@@ -123,7 +123,6 @@ class RunConfig(BaseModel):
     scheduled_run_name: Optional[str]
     service_account: Optional[str]
     network: Optional[NetworkConfig] = NetworkConfig()
-    no_reminder: Optional[bool]
     ttl: int = 3600 * 24 * 7
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
