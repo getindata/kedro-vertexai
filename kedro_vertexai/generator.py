@@ -153,6 +153,7 @@ class PipelineGenerator:
 
         for node in node_dependencies:
             name = clean_name(node.name)
+            tags = node.tags
 
             mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
             component_params = (
@@ -197,7 +198,7 @@ class PipelineGenerator:
                     )
                 ),
             )
-            kfp_ops[name] = self._create_kedro_op(name, spec, component_params)
+            kfp_ops[name] = self._create_kedro_op(name, tags, spec, component_params)
 
         return kfp_ops
 
@@ -220,7 +221,9 @@ class PipelineGenerator:
             else ""
         )
 
-    def _create_kedro_op(self, name: str, spec: ComponentSpec, op_function_parameters):
+    def _create_kedro_op(
+        self, name: str, tags: set, spec: ComponentSpec, op_function_parameters
+    ):
         with NamedTemporaryFile(
             mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
         ) as spec_file:
@@ -228,14 +231,19 @@ class PipelineGenerator:
             component = kfp.components.load_component_from_file(spec_file.name)
 
         operator = component(*op_function_parameters)
-        self._configure_resources(name, operator)
+        self._configure_resources(name, tags, operator)
         return operator
 
-    def _configure_resources(self, name: str, operator):
-        resources = self.run_config.resources_for(name)
+    def _configure_resources(self, name: str, tags: set, operator):
+        resources = self.run_config.resources_for(name, tags)
+        node_selectors = self.run_config.node_selectors_for(name, tags)
         if "cpu" in resources and resources["cpu"]:
             operator.set_cpu_limit(resources["cpu"])
             operator.set_cpu_request(resources["cpu"])
+        if "gpu" in resources and resources["gpu"]:
+            operator.set_gpu_limit(resources["gpu"])
         if "memory" in resources and resources["memory"]:
             operator.set_memory_limit(resources["memory"])
             operator.set_memory_request(resources["memory"])
+        for constraint, value in node_selectors.items():
+            operator.add_node_selector_constraint(constraint, value)

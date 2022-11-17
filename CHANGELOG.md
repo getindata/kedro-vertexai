@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Added support for configuration of resources and node selectors with node tags
+- Added support for gpu configuration on Vertex AI (by adding `node_selectors` section and `gpu` entry in `vertexai.yml` configuration file)
+
 ## [0.7.0] - 2022-09-08
 
 -   Add better MLflow authorization entrypoints (via Hooks and MLflow Request Header Provider Plugin)

@@ -42,7 +42,7 @@ run_config:
     data_import_step:
       memory: 2Gi
 
-    # Training nodes can utilize more than one CPU if the algoritm
+    # Training nodes can utilize more than one CPU if the algorithm
     # supports it
     model_training:
       cpu: 8
@@ -50,12 +50,30 @@ run_config:
 
     # GPU-capable nodes can request 1 GPU slot
     tensorflow_step:
-      nvidia.com/gpu: 1
+      gpu: 1
+
+    # Resources can be also configured via nodes tag
+    # (if there is node name and tag configuration for the same
+    # resource, tag configuration is overwritten with node one)
+    gpu_node_tag:
+      gpu: 2
 
     # Default settings for the nodes
     __default__:
       cpu: 200m
       memory: 64Mi
+
+  # Optional section allowing to configure node selectors constraints
+  # like gpu accelerator for nodes with gpu resources.
+  # (Note that not all accelerators are available in all
+  # regions - https://cloud.google.com/compute/docs/gpus/gpu-regions-zones)
+  # and not for all machines and resources configurations - 
+  # https://cloud.google.com/vertex-ai/docs/training/configure-compute#specifying_gpus
+  node_selectors:
+    gpu_node_tag:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_T4
+    tensorflow_step:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_K80
       
   # Optional section allowing to generate config files at runtime,
   # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml
