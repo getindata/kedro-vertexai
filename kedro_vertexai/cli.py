@@ -70,7 +70,7 @@ def list_pipelines(ctx):
     help="Specify to docker build and push before scheduling a run.",
 )
 @click.option(
-    "--yes-confirm",
+    "--yes",
     type=bool,
     is_flag=True,
     default=False,
@@ -110,7 +110,7 @@ def list_pipelines(ctx):
 def run_once(
     ctx: Context,
     auto_build: bool,
-    yes_confirm: bool,
+    yes: bool,
     image: str,
     pipeline: str,
     params: list,
@@ -127,7 +127,7 @@ def run_once(
     if auto_build:
         if (rv := docker_build(str(context_helper.context.project_path), image)) != 0:
             exit(rv)
-        if (rv := docker_push(image, yes_confirm)) != 0:
+        if (rv := docker_push(image, yes)) != 0:
             exit(rv)
     else:
         logger.warning(
