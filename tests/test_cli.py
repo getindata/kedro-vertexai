@@ -110,7 +110,7 @@ class TestPluginCLI(unittest.TestCase):
                 "--param",
                 "key1:some value",
                 "--auto-build",
-                "--yes-confirm",
+                "--yes",
             ],
             obj=config,
         )
@@ -138,7 +138,7 @@ class TestPluginCLI(unittest.TestCase):
                 "--param",
                 "key1:some value",
                 "--auto-build",
-                "--yes-confirm",
+                "--yes",
             ],
             obj=config,
         )
