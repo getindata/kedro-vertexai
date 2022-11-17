@@ -11,7 +11,12 @@ from .config import PluginConfig, RunConfig
 from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .data_models import PipelineResult
-from .utils import materialize_dynamic_configuration, store_parameters_in_yaml
+from .utils import (
+    docker_build,
+    docker_push,
+    materialize_dynamic_configuration,
+    store_parameters_in_yaml,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +63,20 @@ def list_pipelines(ctx):
 
 @vertexai_group.command()
 @click.option(
+    "--auto-build",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Specify to docker build and push before scheduling a run.",
+)
+@click.option(
+    "--yes",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Auto answer yes confirm prompts.",
+)
+@click.option(
     "-i",
     "--image",
     type=str,
@@ -90,6 +109,8 @@ def list_pipelines(ctx):
 @click.pass_context
 def run_once(
     ctx: Context,
+    auto_build: bool,
+    yes: bool,
     image: str,
     pipeline: str,
     params: list,
@@ -101,16 +122,28 @@ def run_once(
     context_helper = ctx.obj["context_helper"]
     config: RunConfig = context_helper.config.run_config
     client: VertexAIPipelinesClient = context_helper.vertexai_client
+    image: str = image if image else config.image
+
+    if auto_build:
+        if (rv := docker_build(str(context_helper.context.project_path), image)) != 0:
+            exit(rv)
+        if (rv := docker_push(image, yes)) != 0:
+            exit(rv)
+    else:
+        logger.warning(
+            "Make sure that you've built and pushed your image to run the latest version remotely.\
+ Consider using '--auto-build' parameter."
+        )
 
     run = client.run_once(
         pipeline=pipeline,
-        image=image if image else config.image,
+        image=image,
         image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
 
     click.echo(
-        f"Intermediate data datasets will be stored in{os.linesep}"
+        f"Intermediate data datasets will be stored in {os.linesep}"
         f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
     )
 
