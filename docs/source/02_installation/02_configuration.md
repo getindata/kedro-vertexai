@@ -39,23 +39,42 @@ run_config:
   resources:
 
     # For nodes that require more RAM you can increase the "memory"
-    data_import_step:
+    data-import-node:
       memory: 2Gi
 
-    # Training nodes can utilize more than one CPU if the algoritm
+    # Training nodes can utilize more than one CPU if the algorithm
     # supports it
-    model_training:
+    model-training-node:
       cpu: 8
-      memory: 1Gi
+      memory: 60Gi
 
     # GPU-capable nodes can request 1 GPU slot
-    tensorflow_step:
-      nvidia.com/gpu: 1
+    tensorflow-node:
+      gpu: 1
+
+    # Resources can be also configured via nodes tag
+    # (if there is node name and tag configuration for the same
+    # resource, tag configuration is overwritten with node one)
+    gpu_node_tag:
+      cpu: 1
+      gpu: 2
 
     # Default settings for the nodes
     __default__:
       cpu: 200m
       memory: 64Mi
+
+  # Optional section allowing to configure node selectors constraints
+  # like gpu accelerator for nodes with gpu resources.
+  # (Note that not all accelerators are available in all
+  # regions - https://cloud.google.com/compute/docs/gpus/gpu-regions-zones)
+  # and not for all machines and resources configurations - 
+  # https://cloud.google.com/vertex-ai/docs/training/configure-compute#specifying_gpus
+  node_selectors:
+    gpu_node_tag:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_T4
+    tensorflow-step:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_K80
       
   # Optional section allowing to generate config files at runtime,
   # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml
@@ -140,3 +159,28 @@ def generate_config(self) -> dict:
 First one - `target_config_file` should return the name of the configuration file to be generated (e.g. `credentials.yml`) and the `generate_config` should return a dictionary, which will be then serialized into the target file as YAML. If the target file already exists during the invocation, it will be merged (see method `kedro_vertexai.dynamic_config.DynamicConfigProvider.merge_with_existing` ) with the existing one and then saved again.
 Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible. 
 
+## Resources configuration
+
+Optional `resources` and `node_selectors` sections enable adjustment of the resources reservations and limits for the
+selected `Kedro` nodes. Settings for individual nodes, we can define in two ways - using the name of the node or
+its [tag](https://kedro.readthedocs.io/en/stable/nodes_and_pipelines/nodes.html#how-to-tag-a-node) (if there is node name and tag configuration for the same resource, tag configuration is overwritten with
+node one). For example, with the `vertexai.yaml` configuration file shown at the beginning of the chapter and the `Kedro`
+pipeline containing such a node:
+```python
+def create_pipeline(**kwargs):
+    return Pipeline(
+        [
+            node(
+                func=train_model,
+                inputs=["X_train", "y_train"],
+                outputs="regressor",
+                name="model_training_node",
+                tags="gpu_node_tag",
+            ),
+        ]
+    )
+```
+
+we expect this particular node to run with two `NVIDIA_TESLA_T4` GPUs, eight CPUs, and memory allocated according to
+the specified `60Gi` limit. (Note that not all accelerators are available in all [regions](https://cloud.google.com/compute/docs/gpus/gpu-regions-zones) and not for all [machines and
+resources configurations](https://cloud.google.com/vertex-ai/docs/training/configure-compute#specifying_gpus))

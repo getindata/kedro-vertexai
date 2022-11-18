@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+- Added support for configuration of resources and node selectors with [Kedro node tags](https://kedro.readthedocs.io/en/stable/nodes_and_pipelines/nodes.html#how-to-tag-a-node)
+- Added support for gpu configuration on Vertex AI (by adding `node_selectors` section and `gpu` resources entry in `vertexai.yml` configuration file)
 - Added --auto-build option to run-once that calls 'docker build' and 'docker push' for you before running the job on VertexAI. It introduces '--yes' option to disable confirmation prompt
+
 ## [0.7.0] - 2022-09-08
 
 -   Add better MLflow authorization entrypoints (via Hooks and MLflow Request Header Provider Plugin)

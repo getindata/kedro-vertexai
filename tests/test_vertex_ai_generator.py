@@ -102,8 +102,11 @@ class TestGenerator(unittest.TestCase):
             config={
                 "resources": {
                     "__default__": {"cpu": "100m"},
-                    "node1": {"cpu": "400m", "memory": "64Gi"},
-                }
+                    "node1": {"cpu": "400m", "gpu": "1", "memory": "64Gi"},
+                },
+                "node_selectors": {
+                    "node1": {"cloud.google.com/gke-accelerator": "NVIDIA_TESLA_K80"},
+                },
             }
         )
 
@@ -120,11 +123,21 @@ class TestGenerator(unittest.TestCase):
 
             # then
             node1_spec = dsl_pipeline.ops["node1"].container.resources
+            node1_selector = dsl_pipeline.ops["node1"].node_selector
             node2_spec = dsl_pipeline.ops["node2"].container.resources
-            assert node1_spec.limits == {"cpu": "400m", "memory": "64Gi"}
+            node2_selector = dsl_pipeline.ops["node2"].node_selector
+            assert node1_spec.limits == {
+                "cpu": "400m",
+                "nvidia.com/gpu": "1",
+                "memory": "64Gi",
+            }
             assert node1_spec.requests == {"cpu": "400m", "memory": "64Gi"}
+            assert node1_selector == {
+                "cloud.google.com/gke-accelerator": "NVIDIA_TESLA_K80"
+            }
             assert node2_spec.limits == {"cpu": "100m"}
             assert node2_spec.requests == {"cpu": "100m"}
+            assert node2_selector == {}
 
     def test_should_set_description(self):
         # given

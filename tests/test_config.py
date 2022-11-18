@@ -58,6 +58,7 @@ class TestPluginConfig(unittest.TestCase):
         assert "me.local" in cfg.run_config.network.host_aliases[0].hostnames
         assert cfg.run_config.resources_for("node1") == {
             "cpu": "500m",
+            "gpu": None,
             "memory": "1024Mi",
         }
         assert cfg.run_config.ttl == 300
@@ -76,12 +77,19 @@ class TestPluginConfig(unittest.TestCase):
         cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
         assert cfg.run_config.resources_for("node2") == {
             "cpu": "500m",
+            "gpu": None,
             "memory": "1024Mi",
         }
         assert cfg.run_config.resources_for("node3") == {
             "cpu": "500m",
+            "gpu": None,
             "memory": "1024Mi",
         }
+
+    def test_node_selectors_default_only(self):
+        cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
+        assert cfg.run_config.node_selectors_for("node2") == {}
+        assert cfg.run_config.node_selectors_for("node3") == {}
 
     def test_resources_no_default(self):
         obj = yaml.safe_load(CONFIG_MINIMAL)
@@ -91,6 +99,7 @@ class TestPluginConfig(unittest.TestCase):
         cfg = PluginConfig.parse_obj(obj)
         assert cfg.run_config.resources_for("node2") == {
             "cpu": None,
+            "gpu": None,
             "memory": None,
         }
 
@@ -107,11 +116,71 @@ class TestPluginConfig(unittest.TestCase):
         cfg = PluginConfig.parse_obj(obj)
         assert cfg.run_config.resources_for("node2") == {
             "cpu": "100m",
+            "gpu": None,
             "memory": "64Mi",
         }
         assert cfg.run_config.resources_for("node3") == {
             "cpu": "200m",
+            "gpu": None,
             "memory": "64Mi",
+        }
+
+    def test_resources_default_and_tag_specific(self):
+        obj = yaml.safe_load(CONFIG_MINIMAL)
+        obj["run_config"].update(
+            {
+                "resources": {
+                    "__default__": {"cpu": "200m", "memory": "64Mi"},
+                    "tag1": {"cpu": "100m", "gpu": "2"},
+                }
+            }
+        )
+        cfg = PluginConfig.parse_obj(obj)
+        assert cfg.run_config.resources_for("node2", {"tag1"}) == {
+            "cpu": "100m",
+            "gpu": "2",
+            "memory": "64Mi",
+        }
+        assert cfg.run_config.resources_for("node3") == {
+            "cpu": "200m",
+            "gpu": None,
+            "memory": "64Mi",
+        }
+
+    def test_resources_node_and_tag_specific(self):
+        obj = yaml.safe_load(CONFIG_MINIMAL)
+        obj["run_config"].update(
+            {
+                "resources": {
+                    "__default__": {"cpu": "200m", "memory": "64Mi"},
+                    "node2": {"cpu": "300m"},
+                    "tag1": {"cpu": "100m", "gpu": "2"},
+                }
+            }
+        )
+        cfg = PluginConfig.parse_obj(obj)
+        assert cfg.run_config.resources_for("node2", {"tag1"}) == {
+            "cpu": "300m",
+            "gpu": "2",
+            "memory": "64Mi",
+        }
+
+    def test_node_selectors_node_and_tag_specific(self):
+        obj = yaml.safe_load(CONFIG_MINIMAL)
+        obj["run_config"].update(
+            {
+                "node_selectors": {
+                    "node2": {"cloud.google.com/gke-accelerator": "NVIDIA_TESLA_K80"},
+                    "tag1": {"cloud.google.com/gke-accelerator": "NVIDIA_TESLA_T4"},
+                }
+            }
+        )
+        cfg = PluginConfig.parse_obj(obj)
+        assert cfg.run_config.node_selectors_for("node2", {"tag1"}) == {
+            "cloud.google.com/gke-accelerator": "NVIDIA_TESLA_K80",
+        }
+        assert cfg.run_config.node_selectors_for("node3", {"tag1"}) == {
+            "cloud.google.com/gke-accelerator": "NVIDIA_TESLA_T4",
         }
 
     def test_parse_network_config(self):

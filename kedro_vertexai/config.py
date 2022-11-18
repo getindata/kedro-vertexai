@@ -97,6 +97,7 @@ class HostAliasConfig(BaseModel):
 
 class ResourcesConfig(BaseModel):
     cpu: Optional[str]
+    gpu: Optional[str]
     memory: Optional[str]
 
 
@@ -127,18 +128,34 @@ class RunConfig(BaseModel):
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
+    node_selectors: Optional[Dict[str, Dict[str, str]]] = {}
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
 
-    def resources_for(self, node):
-        if node in self.resources.keys():
-            result = self.resources["__default__"].dict()
-            result.update(
-                {k: v for k, v in self.resources[node].dict().items() if v is not None}
-            )
-            return result
-        else:
-            return self.resources["__default__"].dict()
+    def resources_for(self, node: str, tags: Optional[set] = None):
+        default_config = self.resources["__default__"].dict()
+        return self._config_for(node, tags, self.resources, default_config)
+
+    def node_selectors_for(self, node: str, tags: Optional[set] = None):
+        return self._config_for(node, tags, self.node_selectors)
+
+    @staticmethod
+    def _config_for(
+        node: str, tags: set, params: dict, default_config: Optional[dict] = None
+    ):
+        tags = tags or set()
+        names = [*tags, node]
+        filled_names = [x for x in names if x in params.keys()]
+        results = default_config or {}
+        if filled_names:
+            for name in filled_names:
+                configs = (
+                    params[name]
+                    if isinstance(params[name], dict)
+                    else params[name].dict()
+                )
+                results.update({k: v for k, v in configs.items() if v is not None})
+        return results
 
 
 class KedroVertexAIRunnerConfig(BaseModel):
