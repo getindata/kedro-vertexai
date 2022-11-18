@@ -1,9 +1,12 @@
 import json
 import logging
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
+from click import confirm
 from kedro.framework.project import settings
 
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
@@ -83,3 +86,35 @@ def _generate_and_save_dynamic_config(provider: DynamicConfigProvider, context_h
     provider.merge_with_existing(existing_config, dynamic_config)
     logger.info(f"Saving dynamic config {target_path} [{type(provider).__name__}]")
     save_yaml(dynamic_config, target_path)
+
+
+def docker_build(path: str, image: str):
+    rv = subprocess.run(
+        [
+            "docker",
+            "build",
+            path,
+            "-t",
+            image,
+        ],
+        stdout=sys.stdout,
+        stderr=subprocess.STDOUT,
+    ).returncode
+    if rv:
+        logger.error("Docker build has failed.")
+    return rv
+
+
+def docker_push(image: str, no_confirm: bool = False):
+    if (splits := image.split(":"))[-1] != "latest" and len(splits) > 1:
+        logger.warning(
+            f"This operation will overwrite the target image with {splits[-1]} tag at remote location."
+        )
+    if not no_confirm and not confirm("Continue?", default=True):
+        exit(1)
+
+    rv = subprocess.run(
+        ["docker", "push", image], stdout=sys.stdout, stderr=subprocess.STDOUT
+    ).returncode
+    if rv:
+        logger.error("Docker push has failed.")
