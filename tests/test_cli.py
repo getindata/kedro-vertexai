@@ -89,6 +89,62 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
+    @patch("subprocess.run")
+    def test_run_once_auto_build(self, subp_run):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        # Simulating no error run for Popen
+        foo = subp_run()
+        foo.returncode = 0
+
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--auto-build",
+                "--yes",
+            ],
+            obj=config,
+        )
+
+        self.assertEqual(subp_run.call_count, 3)
+        for p in ("docker", "build", "-t", "new_img"):
+            self.assertIn(p, subp_run.call_args_list[1][0][0])
+        for p in ("docker", "push", "new_img"):
+            self.assertIn(p, subp_run.call_args_list[2][0][0])
+        self.assertEqual(result.exit_code, 0)
+        # Proper call example args
+        # [call(),
+        # call(['docker','build',"<MagicMock name='mock.context.project_path' id='...'>",'-t','new_img']),
+        # call(['docker','push','new_img'])]
+
+        # Testing fail during build
+        foo.returncode = 1
+        result = runner.invoke(
+            run_once,
+            [
+                "-i",
+                "new_img",
+                "-p",
+                "new_pipe",
+                "--param",
+                "key1:some value",
+                "--auto-build",
+                "--yes",
+            ],
+            obj=config,
+        )
+
+        self.assertNotEqual(result.exit_code, 0)
+
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
         context_helper = MagicMock(ContextHelper)
