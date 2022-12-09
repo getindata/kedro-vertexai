@@ -58,18 +58,23 @@ run_config:
 
     # For nodes that require more RAM you can increase the "memory"
     data_import_step:
-      memory: 2Gi
+      memory: 4Gi
 
     # Training nodes can utilize more than one CPU if the algoritm
     # supports it
     model_training:
       cpu: 8
-      memory: 1Gi
+      memory: 8Gi
+      gpu: 1
 
     # Default settings for the nodes
     __default__:
-      cpu: 200m
-      memory: 64Mi
+      cpu: 1000m
+      memory: 2048Mi
+
+  node_selectors:
+    model_training:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_T4
 
   # Optional section allowing to generate config files at runtime,
   # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml

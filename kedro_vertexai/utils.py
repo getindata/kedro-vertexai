@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import yaml
-from click import confirm
 from kedro.framework.project import settings
 
 from kedro_vertexai.dynamic_config import DynamicConfigProvider
@@ -88,7 +87,7 @@ def _generate_and_save_dynamic_config(provider: DynamicConfigProvider, context_h
     save_yaml(dynamic_config, target_path)
 
 
-def docker_build(path: str, image: str):
+def docker_build(path: str, image: str) -> int:
     rv = subprocess.run(
         [
             "docker",
@@ -105,16 +104,10 @@ def docker_build(path: str, image: str):
     return rv
 
 
-def docker_push(image: str, no_confirm: bool = False):
-    if (splits := image.split(":"))[-1] != "latest" and len(splits) > 1:
-        logger.warning(
-            f"This operation will overwrite the target image with {splits[-1]} tag at remote location."
-        )
-    if not no_confirm and not confirm("Continue?", default=True):
-        exit(1)
-
+def docker_push(image: str) -> int:
     rv = subprocess.run(
         ["docker", "push", image], stdout=sys.stdout, stderr=subprocess.STDOUT
     ).returncode
     if rv:
         logger.error("Docker push has failed.")
+    return rv

@@ -4,7 +4,7 @@ import webbrowser
 from pathlib import Path
 
 import click
-from click import ClickException, Context
+from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
 from .config import PluginConfig, RunConfig
@@ -125,9 +125,17 @@ def run_once(
     image: str = image if image else config.image
 
     if auto_build:
+        if (splits := image.split(":"))[-1] != "latest" and len(splits) > 1:
+            logger.warning(
+                f"This operation will overwrite the target image with {splits[-1]} tag at remote location."
+            )
+
+        if not yes and not confirm("Continue?", default=True):
+            exit(1)
+
         if (rv := docker_build(str(context_helper.context.project_path), image)) != 0:
             exit(rv)
-        if (rv := docker_push(image, yes)) != 0:
+        if (rv := docker_push(image)) != 0:
             exit(rv)
     else:
         logger.warning(
