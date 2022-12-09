@@ -2,9 +2,10 @@ import json
 import os
 import unittest
 from collections import namedtuple
+from itertools import product
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import yaml
 from click.testing import CliRunner
@@ -22,6 +23,7 @@ from kedro_vertexai.cli import (
 )
 from kedro_vertexai.constants import VERTEXAI_RUN_ID_TAG
 from kedro_vertexai.context_helper import ContextHelper
+from kedro_vertexai.utils import docker_build, docker_push
 
 from .utils import test_config
 
@@ -88,6 +90,62 @@ class TestPluginCLI(unittest.TestCase):
 
         assert result.exit_code == 0
         context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
+
+    def test_docker_build(self):
+        for exit_code in range(10):
+            with self.subTest(exit_code=exit_code):
+                with patch(
+                    "subprocess.run", return_value=Mock(returncode=exit_code)
+                ) as subprocess_run:
+                    result = docker_build(".", "my_image:latest")
+                    self.assertEqual(exit_code, result)
+                    subprocess_run.assert_called_once()
+
+    def test_docker_push(self):
+        for exit_code in range(10):
+            with self.subTest(exit_code=exit_code):
+                with patch(
+                    "subprocess.run", return_value=Mock(returncode=exit_code)
+                ) as subprocess_run:
+                    result = docker_push("my_image:latest")
+                    self.assertEqual(exit_code, result)
+                    subprocess_run.assert_called_once()
+
+    def test_run_once_auto_build(self):
+        context_helper: ContextHelper = MagicMock(ContextHelper)
+        context_helper.config = test_config
+        config = dict(context_helper=context_helper)
+        runner = CliRunner()
+
+        for build_exit_code, push_exit_code in product(range(10), range(10)):
+            with self.subTest(
+                build_exit_code=build_exit_code, push_exit_code=push_exit_code
+            ):
+                with patch(
+                    "kedro_vertexai.cli.docker_build", return_value=build_exit_code
+                ), patch("kedro_vertexai.cli.docker_push", return_value=push_exit_code):
+                    result = runner.invoke(
+                        run_once,
+                        [
+                            "-i",
+                            "new_img",
+                            "-p",
+                            "new_pipe",
+                            "--param",
+                            "key1:some value",
+                            "--auto-build",
+                            "--yes",
+                        ],
+                        obj=config,
+                    )
+
+                    expected_exit_code = (
+                        build_exit_code if build_exit_code != 0 else push_exit_code
+                    )
+                    self.assertEqual(result.exit_code, expected_exit_code)
+
+                    if expected_exit_code == 0:
+                        context_helper.vertexai_client.run_once.assert_called_once()
 
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):

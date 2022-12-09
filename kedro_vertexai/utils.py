@@ -1,6 +1,8 @@
 import json
 import logging
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import yaml
@@ -83,3 +85,29 @@ def _generate_and_save_dynamic_config(provider: DynamicConfigProvider, context_h
     provider.merge_with_existing(existing_config, dynamic_config)
     logger.info(f"Saving dynamic config {target_path} [{type(provider).__name__}]")
     save_yaml(dynamic_config, target_path)
+
+
+def docker_build(path: str, image: str) -> int:
+    rv = subprocess.run(
+        [
+            "docker",
+            "build",
+            path,
+            "-t",
+            image,
+        ],
+        stdout=sys.stdout,
+        stderr=subprocess.STDOUT,
+    ).returncode
+    if rv:
+        logger.error("Docker build has failed.")
+    return rv
+
+
+def docker_push(image: str) -> int:
+    rv = subprocess.run(
+        ["docker", "push", image], stdout=sys.stdout, stderr=subprocess.STDOUT
+    ).returncode
+    if rv:
+        logger.error("Docker push has failed.")
+    return rv

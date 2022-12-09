@@ -58,18 +58,23 @@ run_config:
 
     # For nodes that require more RAM you can increase the "memory"
     data_import_step:
-      memory: 2Gi
+      memory: 4Gi
 
     # Training nodes can utilize more than one CPU if the algoritm
     # supports it
     model_training:
       cpu: 8
-      memory: 1Gi
+      memory: 8Gi
+      gpu: 1
 
     # Default settings for the nodes
     __default__:
-      cpu: 200m
-      memory: 64Mi
+      cpu: 1000m
+      memory: 2048Mi
+
+  node_selectors:
+    model_training:
+      cloud.google.com/gke-accelerator: NVIDIA_TESLA_T4
 
   # Optional section allowing to generate config files at runtime,
   # useful e.g. when you need to obtain credentials dynamically and store them in credentials.yaml
@@ -97,6 +102,7 @@ class HostAliasConfig(BaseModel):
 
 class ResourcesConfig(BaseModel):
     cpu: Optional[str]
+    gpu: Optional[str]
     memory: Optional[str]
 
 
@@ -127,18 +133,34 @@ class RunConfig(BaseModel):
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
         __default__=ResourcesConfig(cpu="500m", memory="1024Mi")
     )
+    node_selectors: Optional[Dict[str, Dict[str, str]]] = {}
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
 
-    def resources_for(self, node):
-        if node in self.resources.keys():
-            result = self.resources["__default__"].dict()
-            result.update(
-                {k: v for k, v in self.resources[node].dict().items() if v is not None}
-            )
-            return result
-        else:
-            return self.resources["__default__"].dict()
+    def resources_for(self, node: str, tags: Optional[set] = None):
+        default_config = self.resources["__default__"].dict()
+        return self._config_for(node, tags, self.resources, default_config)
+
+    def node_selectors_for(self, node: str, tags: Optional[set] = None):
+        return self._config_for(node, tags, self.node_selectors)
+
+    @staticmethod
+    def _config_for(
+        node: str, tags: set, params: dict, default_config: Optional[dict] = None
+    ):
+        tags = tags or set()
+        names = [*tags, node]
+        filled_names = [x for x in names if x in params.keys()]
+        results = default_config or {}
+        if filled_names:
+            for name in filled_names:
+                configs = (
+                    params[name]
+                    if isinstance(params[name], dict)
+                    else params[name].dict()
+                )
+                results.update({k: v for k, v in configs.items() if v is not None})
+        return results
 
 
 class KedroVertexAIRunnerConfig(BaseModel):
