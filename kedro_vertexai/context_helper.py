@@ -1,5 +1,5 @@
 import os
-from functools import lru_cache
+from functools import cached_property
 from typing import Any, Dict
 
 from kedro.config import TemplatedConfigLoader
@@ -60,27 +60,25 @@ class ContextHelper(object):
     def project_name(self):
         return self._metadata.project_name
 
-    @property
-    @lru_cache()
+    @cached_property
     def session(self):
         from kedro.framework.session import KedroSession
 
         return KedroSession.create(self._metadata.package_name, env=self._env)
 
-    @property
+    @cached_property
     def context(self):
+        assert self.session is not None, "Session not initialized"
         return self.session.load_context()
 
-    @property
-    @lru_cache()
+    @cached_property
     def config(self) -> PluginConfig:
         raw = EnvTemplatedConfigLoader(self.context.config_loader.conf_source).get(
             self.CONFIG_FILE_PATTERN
         )
         return PluginConfig.parse_obj(raw)
 
-    @property
-    @lru_cache()
+    @cached_property
     def vertexai_client(self) -> VertexAIPipelinesClient:
         return VertexAIPipelinesClient(self.config, self.project_name, self.context)
 
