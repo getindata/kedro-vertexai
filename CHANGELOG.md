@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2022-12-30
+
+-   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading
+
 ## [0.8.0] - 2022-12-09
 
 -   Added support for configuration of resources and node selectors with [Kedro node tags](https://kedro.readthedocs.io/en/stable/nodes_and_pipelines/nodes.html#how-to-tag-a-node)
@@ -48,7 +52,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.8.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.8.1...HEAD
+
+[0.8.1]: https://github.com/getindata/kedro-vertexai/compare/0.8.0...0.8.1
 
 [0.8.0]: https://github.com/getindata/kedro-vertexai/compare/0.7.0...0.8.0
 
