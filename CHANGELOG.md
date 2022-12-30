@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+-   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading
 
 ## [0.8.0] - 2022-12-09
 
