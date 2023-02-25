@@ -114,7 +114,7 @@ class AuthHandler:
         ).token
 
 
-class MLFlowGoogleOAuthCredentialsProvider(DynamicConfigProvider):
+class MLFlowGoogleOAuthCredentialsProvider(RequestHeaderProviderWithKedroContext):
     """
     Uses Google OAuth to generate MLFLOW_TRACKING_TOKEN
     """
