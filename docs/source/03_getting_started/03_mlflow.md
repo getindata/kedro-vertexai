@@ -61,9 +61,9 @@ In the `setting.py`:
 ```python
 DISABLE_HOOKS_FOR_PLUGINS = ("kedro-mlflow",)
 from kedro_vertexai.auth.mlflow_request_header_provider_hook import MLFlowRequestHeaderProviderHook
-from kedro_vertexai.auth.gcp import MLFlowGoogleOAuthCredentialsProvider
+from kedro_vertexai.auth.gcp import MLFlowGoogleOauthRequestHeaderProvider
 from kedro_mlflow.framework.hooks import MlflowHook
-HOOKS = (MlflowHook(), MLFlowRequestHeaderProviderHook(MLFlowGoogleOAuthCredentialsProvider), )
+HOOKS = (MlflowHook(), MLFlowRequestHeaderProviderHook(MLFlowGoogleOauthRequestHeaderProvider), )
 ```
 
 In the `vertexai.yml`
