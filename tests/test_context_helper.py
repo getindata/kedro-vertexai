@@ -45,12 +45,9 @@ class TestContextHelper(unittest.TestCase):
         )
         metadata = Mock()
         metadata.package_name = "test_package"
-        context = MagicMock()
-        context.config_loader.return_value.get.return_value = ["one", "two"]
-        with patch.object(KedroSession, "create", context), patch(
-            "kedro_vertexai.context_helper.EnvTemplatedConfigLoader"
-        ) as config_loader:
-            config_loader.return_value.get.return_value = cfg.dict()
+        session = MagicMock()
+        session.load_context().config_loader.get.return_value = cfg.dict()
+        with patch.object(KedroSession, "create", return_value=session):
             helper = ContextHelper.init(metadata, "test")
             assert helper.config == cfg
 

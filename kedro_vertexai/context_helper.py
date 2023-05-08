@@ -1,8 +1,15 @@
 import os
+import warnings
 from functools import cached_property
 from typing import Any, Dict
 
-from kedro.config import TemplatedConfigLoader
+from kedro.config import (
+    AbstractConfigLoader,
+    ConfigLoader,
+    MissingConfigException,
+    TemplatedConfigLoader,
+)
+from omegaconf import DictConfig, OmegaConf
 
 from kedro_vertexai.client import VertexAIPipelinesClient
 
@@ -25,8 +32,13 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
         runtime_params: Dict[str, Any] = None,
         *,
         base_env: str = "base",
-        default_run_env: str = "local"
+        default_run_env: str = "local",
     ):
+        warnings.warn(
+            "EnvTemplatedConfigLoader is deprecated and will be removed in future releases, "
+            "use kedro.config.omegaconf_config.OmegaConfigLoader instead.",
+            DeprecationWarning,
+        )
         super().__init__(
             conf_source,
             env=env,
@@ -51,6 +63,7 @@ class EnvTemplatedConfigLoader(TemplatedConfigLoader):
 class ContextHelper(object):
 
     CONFIG_FILE_PATTERN = "vertexai*"
+    CONFIG_KEY = "vertexai"
 
     def __init__(self, metadata, env):
         self._metadata = metadata
@@ -71,12 +84,53 @@ class ContextHelper(object):
         assert self.session is not None, "Session not initialized"
         return self.session.load_context()
 
+    def _ensure_obj_is_dict(self, obj):
+        if isinstance(obj, DictConfig):
+            obj = OmegaConf.to_container(obj)
+        elif isinstance(obj, dict) and any(
+            isinstance(v, DictConfig) for v in obj.values()
+        ):
+            obj = {
+                k: (OmegaConf.to_container(v) if isinstance(v, DictConfig) else v)
+                for k, v in obj.items()
+            }
+        return obj
+
     @cached_property
     def config(self) -> PluginConfig:
-        raw = EnvTemplatedConfigLoader(self.context.config_loader.conf_source).get(
-            self.CONFIG_FILE_PATTERN
-        )
-        return PluginConfig.parse_obj(raw)
+        cl: AbstractConfigLoader = self.context.config_loader
+        try:
+            obj = self.context.config_loader.get(self.CONFIG_FILE_PATTERN)
+        except:  # noqa
+            obj = None
+
+        if obj is None:
+            try:
+                obj = self._ensure_obj_is_dict(
+                    self.context.config_loader[self.CONFIG_KEY]
+                )
+            except (KeyError, MissingConfigException):
+                obj = None
+
+        if obj is None:
+            if not isinstance(cl, ConfigLoader):
+                raise ValueError(
+                    f"You're using a custom config loader: {cl.__class__.__qualname__}{os.linesep}"
+                    f"you need to add the {self.CONFIG_KEY} config to it.{os.linesep}"
+                    f"Make sure you add {self.CONFIG_FILE_PATTERN} to config_pattern in CONFIG_LOADER_ARGS "
+                    f"in the settings.py file.{os.linesep}"
+                    """Example:
+CONFIG_LOADER_ARGS = {
+    # other args
+    "config_patterns": {"vertexai": ["vertexai*"]}
+}
+                    """.strip()
+                )
+            else:
+                raise ValueError(
+                    "Missing vertexai.yml files in configuration. Make sure that you configure your project first"
+                )
+        return PluginConfig.parse_obj(obj)
 
     @cached_property
     def vertexai_client(self) -> VertexAIPipelinesClient:
