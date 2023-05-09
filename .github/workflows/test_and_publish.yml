@@ -136,7 +136,7 @@ jobs:
         working-directory: ./spaceflights
         run: |
           kedro docker init
-          sed -i 's/\(COPY src\/requirements.txt.*\)$/\1\nCOPY kedro-azureml.tar.gz ./g' Dockerfile
+          sed -i 's/\(COPY src\/requirements.txt.*\)$/\1\nCOPY kedro-vertexai.tar.gz ./g' Dockerfile
           echo "!data/01_raw" >> .dockerignore
           kedro vertexai init gid-ml-ops-sandbox europe-west4
           mv ../tests/e2e/catalog.yml conf/base/catalog.yml
