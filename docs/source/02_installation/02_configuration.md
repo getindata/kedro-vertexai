@@ -90,9 +90,32 @@ run_config:
 ```
 
 ## Dynamic configuration support
+The plugin relies on the project configuration and uses the same config loader that your project uses.
+For some cases, you need to modify the `settings.py` to work with our plugin. Follow the instructions below.
 
-`kedro-vertexai` contains hook that enables [TemplatedConfigLoader](https://kedro.readthedocs.io/en/stable/kedro.config.TemplatedConfigLoader.html).
-It allows passing environment variables to configuration files. It reads all environment variables following `KEDRO_CONFIG_<NAME>` pattern, which you 
+Every Kedro Vertex AI job gets injected with two environment variables:
+* `KEDRO_CONFIG_JOB_NAME` - contains name of the job from Vertex AI
+* `KEDRO_CONFIG_RUN_ID` - contains unique run identifier from Vertex AI
+
+You can consume them as you like or use them within config loaders.
+
+### Using `OmegaConfigLoader`
+
+`kedro-vertexai` supports `OmegaConfigLoader`. In order to configure it, update the `settings.py` file in your Kedro project as follows:
+
+```python
+from kedro.config import OmegaConfigLoader
+CONFIG_LOADER_CLASS = OmegaConfigLoader
+CONFIG_LOADER_ARGS = {
+    # other args
+    "config_patterns": {"vertexai": ["vertexai*"]}
+}
+```
+
+Follow Kedro's official documentation, to see how to add templating, custom resolvers etc. (https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader)[https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader]
+
+### Using `TemplatedConfigLoader`
+`TemplatedConfigLoader` allows passing environment variables to configuration files. It reads all environment variables following `KEDRO_CONFIG_<NAME>` pattern, which you 
 can later inject in configuration file using `${name}` syntax. 
 
 This feature is especially useful for keeping the executions of the pipelines isolated and traceable by dynamically setting output paths for intermediate data in the **Data Catalog**, e.g.
@@ -111,20 +134,6 @@ train_y:
 
 In this case, the `${run_id}` placeholder will be substituted by the unique run identifier from Vertex AI Pipelines.
 
-There are two special variables `KEDRO_CONFIG_COMMIT_ID`, `KEDRO_CONFIG_BRANCH_NAME` with support specifying default when variable is not set, 
-e.g. `${commit_id|dirty}`   
-
-### Disabling dynamic configuration hook
-In current Kedro versions (`<=0.18`) [only single configuration hook can be attached](https://github.com/kedro-org/kedro/blob/0.17.7/kedro/framework/hooks/specs.py#L304), which means if your project had a custom one, this plug-in will most likely overwrite it. You can disable this plugin's configuration hook by setting environment variable `KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK` to `true`, e.g.:
-```bash
-export KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK=true
-```
-Once set, the plugin will provide a clear warning with a reminder:
-```
-KEDRO_VERTEXAI_DISABLE_CONFIG_HOOK environment variable is set and EnvTemplatedConfigLoader will not be used which means formatted config values like ${run_id} will not be substituted at runtime
-```
-
-To make plugin-compatible custom config loader you can extend the class `kedro_vertexai.context_helper.EnvTemplatedConfigLoader` and register your own hook.
 
 ### Dynamic config providers
 When running the job in VertexAI it's possible to generate new configuration files **at runtime** if that's required, one example could be generating Kedro credentials on a Vertex AI's node level (the opposite would be supplying the credentials when starting the job).
@@ -134,9 +143,11 @@ Example:
 run_config:
   # ... 
   dynamic_config_providers:
-    - cls: kedro_vertexai.auth.gcp.MLFlowGoogleOAuthCredentialsProvider
+    - cls: <fully qualified class name inheriting from kedro_vertexai.dynamic_config.DynamicConfigProvider>
       params:
-        client_id: iam-client-id
+        # ... params passed to the constructor of the class
+        abc: value1
+        xyz: value2
 ```
 
 The `cls` fields should contain a fully qualified reference to a class implementing abstract `kedro_vertexai.dynamic_config.DynamicConfigProvider`. All `params` will be passed as `kwargs` to the class's constructor.
@@ -157,7 +168,7 @@ def generate_config(self) -> dict:
 ```
 
 First one - `target_config_file` should return the name of the configuration file to be generated (e.g. `credentials.yml`) and the `generate_config` should return a dictionary, which will be then serialized into the target file as YAML. If the target file already exists during the invocation, it will be merged (see method `kedro_vertexai.dynamic_config.DynamicConfigProvider.merge_with_existing` ) with the existing one and then saved again.
-Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible. 
+Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible.
 
 ## Resources configuration
 

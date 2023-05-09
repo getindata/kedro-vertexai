@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 -   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading
+-   Upgrade dependencies to support `kedro>=0.18.8`
+-   Add support for `OmegaConfigLoader`
+-   Upgrade misc. dependencies
+-   Remove deprecated `KedoVertexAIConfigLoaderHook`
+-   ⚠️ Change default behaviour of config loader in the plugin to rely on project's one instead of `EnvTemplatedConfigLoader`
+-   [Docs 📝] Update documentation
 
 ## [0.8.1] - 2022-12-30
 
