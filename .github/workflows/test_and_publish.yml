@@ -154,7 +154,7 @@ jobs:
         with:
           creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           src: kedro-vertexai-e2e:latest
-          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
+          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:latest
 
       - name: Set up GCP Credentials
         uses: google-github-actions/auth@v0.6.0

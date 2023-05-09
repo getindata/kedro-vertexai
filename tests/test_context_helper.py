@@ -51,6 +51,34 @@ class TestContextHelper(unittest.TestCase):
             helper = ContextHelper.init(metadata, "test")
             assert helper.config == cfg
 
+    def test_config_with_omegaconf(self):
+        from kedro.config import OmegaConfigLoader
+
+        with TemporaryDirectory() as tmp_dir_raw:
+            tmp_dir = Path(tmp_dir_raw)
+            (tmp_dir / "conf" / "base").mkdir(parents=True, exist_ok=False)
+            (conf_dir := tmp_dir / "conf" / "local").mkdir(parents=True, exist_ok=False)
+            cfg = PluginConfig(
+                project_id="test-project",
+                region="test-region",
+                run_config=RunConfig(
+                    image="test-image", experiment_name="test-experiment"
+                ),
+            )
+            (conf_dir / "vertexai.yml").write_text(yaml.dump(cfg.dict()))
+
+            metadata = Mock()
+            metadata.package_name = "test_package"
+            session = MagicMock()
+            session.load_context().config_loader = OmegaConfigLoader(
+                str(tmp_dir / "conf"),
+                config_patterns={"vertexai": ["vertexai*"]},
+                default_run_env="local",
+            )
+            with patch.object(KedroSession, "create", return_value=session):
+                helper = ContextHelper.init(metadata, "test")
+                assert helper.config == cfg
+
 
 class TestEnvTemplatedConfigLoader(unittest.TestCase):
     @property
