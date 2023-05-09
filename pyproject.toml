@@ -68,7 +68,6 @@ responses = ">=0.13.4"
 
 [tool.poetry.plugins."kedro.hooks"]
 "vertexai_mlflow_tags_hook" = "kedro_vertexai.hooks:mlflow_tags_hook"
-"vertexai_cfg_hook" = "kedro_vertexai.hooks:env_templated_config_loader_hook"
 
 [tool.poetry.plugins."mlflow.request_header_provider"]
 "unused" = "kedro_vertexai.auth.mlflow_request_header_provider:DynamicMLFlowRequestHeaderProvider"

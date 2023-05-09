@@ -8,6 +8,7 @@
 -   Remove deprecated `KedoVertexAIConfigLoaderHook`
 -   ⚠️ Change default behaviour of config loader in the plugin to rely on project's one instead of `EnvTemplatedConfigLoader`
 -   [Docs 📝] Update documentation
+-   Improve E2E tests config
 
 ## [0.8.1] - 2022-12-30
 
