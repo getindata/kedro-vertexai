@@ -79,6 +79,37 @@ class TestContextHelper(unittest.TestCase):
                 helper = ContextHelper.init(metadata, "test")
                 assert helper.config == cfg
 
+    @unittest.expectedFailure
+    def test_config_empty(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        session = MagicMock()
+        session.load_context().config_loader.get.return_value = None
+        with patch.object(KedroSession, "create", return_value=session):
+            helper = ContextHelper.init(metadata, "test")
+            _ = helper.config
+
+    @unittest.expectedFailure
+    def test_config_raises(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        session = MagicMock()
+        session.load_context().config_loader.get.side_effect = ValueError()
+        with patch.object(KedroSession, "create", return_value=session):
+            helper = ContextHelper.init(metadata, "test")
+            _ = helper.config
+
+    @unittest.expectedFailure
+    def test_config_invalid(self):
+        metadata = Mock()
+        metadata.package_name = "test_package"
+        session = MagicMock()
+        session.load_context().config_loader.get.return_value = None
+        session.load_context().config_loader.__getitem__.side_effect = KeyError()
+        with patch.object(KedroSession, "create", return_value=session):
+            helper = ContextHelper.init(metadata, "test")
+            _ = helper.config
+
 
 class TestEnvTemplatedConfigLoader(unittest.TestCase):
     @property
