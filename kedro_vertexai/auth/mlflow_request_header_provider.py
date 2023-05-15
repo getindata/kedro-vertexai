@@ -1,14 +1,8 @@
 import logging
 from abc import ABC
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from kedro.framework.context import KedroContext
-
-from kedro_vertexai.config import PluginConfig
-from kedro_vertexai.context_helper import (
-    ContextHelper,
-    EnvTemplatedConfigLoader,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +23,9 @@ mlflow, RequestHeaderProvider = safe_import_mlflow()
 
 
 class RequestHeaderProviderWithKedroContext(RequestHeaderProvider, ABC):
-    def __init__(self, kedro_context: KedroContext):
+    def __init__(self, kedro_context: KedroContext, **kwargs):
         self.kedro_context = kedro_context
-        raw = EnvTemplatedConfigLoader(kedro_context.config_loader.conf_source).get(
-            ContextHelper.CONFIG_FILE_PATTERN
-        )
-        self.plugin_config: PluginConfig = PluginConfig.parse_obj(raw)
-        self.params: Optional[
-            Dict[str, str]
-        ] = self.plugin_config.run_config.mlflow.request_header_provider_params
+        self.params: Optional[Dict[str, Any]] = kwargs
 
 
 class DynamicMLFlowRequestHeaderProvider(RequestHeaderProvider):

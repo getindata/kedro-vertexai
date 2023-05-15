@@ -141,7 +141,7 @@ The usage of `${run_id}` is described in section [Dynamic configuration support]
 Execute:
 
 ```console
-kedro docker build --build-arg BASE_IMAGE=python:3.8-buster
+kedro docker build --docker-args "--build-arg BASE_IMAGE=python:3.8-buster"
 ```
 
 When execution finishes, your docker image is ready. If you don't use local cluster, you should push the image to the remote repository:

@@ -111,3 +111,5 @@ IAM
 mlflow's
 CPUs
 GPUs
+Kedro's
+resolvers

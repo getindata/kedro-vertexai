@@ -2,7 +2,7 @@ project_id: gid-ml-ops-sandbox
 region: europe-west4
 run_config:
   # Name of the image to run as the pipeline steps
-  image: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${commit_id|latest}
+  image: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:latest
 
   # Pull policy to be used for the steps. Use Always if you push the images
   # on the same tag, or Never if you use only local images
