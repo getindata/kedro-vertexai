@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.9.0] - 2023-05-15
+
 -   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading
 -   Upgrade dependencies to support `kedro>=0.18.8`
 -   Add support for `OmegaConfigLoader`
@@ -60,7 +63,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.8.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.9.0...HEAD
+
+[0.9.0]: https://github.com/getindata/kedro-vertexai/compare/0.8.1...0.9.0
 
 [0.8.1]: https://github.com/getindata/kedro-vertexai/compare/0.8.0...0.8.1
 

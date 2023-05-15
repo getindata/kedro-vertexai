@@ -9,7 +9,7 @@ description: Kedro plugin with GCP Vertex AI support
 docs_url: https://kedro-vertexai.readthedocs.io/
 full_name: Kedro Vertex AI Plugin
 github_url: https://github.com/getindata/kedro-vertexai
-initial_version: 0.8.1
+initial_version: 0.9.0
 keywords:
 - kedro-plugin
 - kedro
