@@ -107,34 +107,38 @@ jobs:
         with:
           python-version: 3.8
 
-      - name: Setup virtualenv
+      - name: Setup poetry
         run: |
           python -V
-          python -m pip install virtualenv
-          virtualenv venv
-          source venv/bin/activate
+          python -m pip install poetry
+
+      - name: Build the package
+        run: |
+          poetry build -f sdist
 
       - name: Initialize kedro spaceflights project
         # kedro 0.18.1 is on purpose here, due to https://github.com/kedro-org/kedro-starters/issues/99
         run: |
-          pip install . 'kedro==0.18.1'
+          pip install $(find "./dist" -name "*.tar.gz")
           kedro new --starter spaceflights --config tests/e2e/starter-config.yml --verbose
 
       - name: Install project dependencies
+        working-directory: ./spaceflights
         run: |
-          cd ./spaceflights
-          echo "git+https://github.com/getindata/kedro-vertexai.git@$GITHUB_SHA" >> src/requirements.txt
-          echo "kedro-docker" >> src/requirements.txt
+          find "../dist" -name "*.tar.gz" | xargs -I@ cp @ kedro-vertexai.tar.gz
+          echo -e "\n./kedro-vertexai.tar.gz\n" >> src/requirements.txt
+          echo -e "kedro-docker\n" >> src/requirements.txt
           sed -i '/kedro-telemetry/d' src/requirements.txt
-          cat src/requirements.txt
+          echo $(cat src/requirements.txt)
           pip install -r src/requirements.txt
 
       - name: Init and update configuration
+        working-directory: ./spaceflights
         run: |
-          cd ./spaceflights
           kedro docker init
-          kedro vertexai init gid-ml-ops-sandbox europe-west4
+          sed -i 's/\(COPY src\/requirements.txt.*\)$/\1\nCOPY kedro-vertexai.tar.gz ./g' Dockerfile
           echo "!data/01_raw" >> .dockerignore
+          kedro vertexai init gid-ml-ops-sandbox europe-west4
           mv ../tests/e2e/catalog.yml conf/base/catalog.yml
           mv ../tests/e2e/vertexai.yml conf/base/vertexai.yml
 
@@ -154,7 +158,7 @@ jobs:
         with:
           creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           src: kedro-vertexai-e2e:latest
-          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ github.sha }}
+          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:latest
 
       - name: Set up GCP Credentials
         uses: google-github-actions/auth@v0.6.0

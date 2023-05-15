@@ -1,11 +1,9 @@
 import os
 import unittest
-from io import StringIO
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import responses
-import yaml
 from google.auth.exceptions import DefaultCredentialsError
 from kedro.framework.context import KedroContext
 
@@ -21,7 +19,6 @@ from kedro_vertexai.auth.mlflow_request_header_provider import (
 from kedro_vertexai.auth.mlflow_request_header_provider_hook import (
     MLFlowRequestHeaderProviderHook,
 )
-from tests.test_config import CONFIG_FULL
 
 
 class TestAuthHandler(unittest.TestCase):
@@ -188,16 +185,13 @@ class TestAuthHandler(unittest.TestCase):
             assert mlflow is None and rh_class is object
 
     @patch("kedro_vertexai.auth.gcp.AuthHandler.obtain_iam_token")
-    @patch(
-        "kedro_vertexai.auth.mlflow_request_header_provider.EnvTemplatedConfigLoader",
-    )
-    def test_mlflow_header_provider_methods(self, cfg_loader, obtain_iam_token):
-        config = yaml.safe_load(StringIO(CONFIG_FULL))
-        cfg_loader.return_value.get = MagicMock(return_value=config)
+    def test_mlflow_header_provider_methods(self, obtain_iam_token):
         token = uuid4().hex
         obtain_iam_token.return_value = token
         kedro_context = MagicMock(spec=KedroContext)
-        provider = MLFlowGoogleIAMRequestHeaderProvider(kedro_context)
+        provider = MLFlowGoogleIAMRequestHeaderProvider(
+            kedro_context, client_id="client_id_123", service_account="test@example.com"
+        )
         provider.get_token = obtain_iam_token
         assert provider.in_context()
         headers = provider.request_headers()
