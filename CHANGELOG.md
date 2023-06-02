@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-  Updated dependencies of kedro to `0.18.9`, mlflow to `2.3.2` and others
+
 ## [0.9.0] - 2023-05-15
 
 -   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading
