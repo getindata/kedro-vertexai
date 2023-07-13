@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- Upgrade dependencies to support `grpcio>=1.53` to resolve [GHSA-6628-q6j9-w8vg](https://github.com/advisories/GHSA-6628-q6j9-w8vg).
+-  Updated dependencies of kedro to `0.18.9`, mlflow to `2.3.2` and others
+-  Upgrade dependencies to support `grpcio>=1.53` to resolve [GHSA-6628-q6j9-w8vg](https://github.com/advisories/GHSA-6628-q6j9-w8vg).
 
 ## [0.9.0] - 2023-05-15
 
