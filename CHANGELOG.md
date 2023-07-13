@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Upgrade dependencies to support `grpcio>=1.53` to resolve [GHSA-6628-q6j9-w8vg](https://github.com/advisories/GHSA-6628-q6j9-w8vg).
+
 ## [0.9.0] - 2023-05-15
 
 -   Add cache to Kedro's context in the `ContextHelper` class to prevent re-loading

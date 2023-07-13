@@ -1424,19 +1424,19 @@ protobuf = ["grpcio-tools (>=1.56.0)"]
 
 [[package]]
 name = "grpcio-status"
-version = "1.48.2"
+version = "1.44.0"
 description = "Status proto mapping for gRPC"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "grpcio-status-1.48.2.tar.gz", hash = "sha256:53695f45da07437b7c344ee4ef60d370fd2850179f5a28bb26d8e2aa1102ec11"},
-    {file = "grpcio_status-1.48.2-py3-none-any.whl", hash = "sha256:2c33bbdbe20188b2953f46f31af669263b6ee2a9b2d38fa0d36ee091532e21bf"},
+    {file = "grpcio-status-1.44.0.tar.gz", hash = "sha256:ac613ab7a45380cbfa3e529022d0b37317d858f172ba6e65c188aa7355539398"},
+    {file = "grpcio_status-1.44.0-py3-none-any.whl", hash = "sha256:caf831c1fdcafeb3f48f7f2500e6ffb0c755120354a302f8695b698b0a2faace"},
 ]
 
 [package.dependencies]
 googleapis-common-protos = ">=1.5.5"
-grpcio = ">=1.48.2"
-protobuf = ">=3.12.0"
+grpcio = ">=1.44.0"
+protobuf = ">=3.6.0"
 
 [[package]]
 name = "gunicorn"
@@ -3976,4 +3976,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "a7f340535e7c257919b42f6dcae92aefcd7bd6bbe8cc5dab69cc45f793840d73"
+content-hash = "61ee22804cd1ef80a5ebecac04f1757f490c48c4d6840689bf0e4416837c5ef0"
