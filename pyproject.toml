@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-vertexai"
-version = "0.9.0"
+version = "0.9.1"
 description = "Kedro plugin with GCP Vertex AI support"
 readme = "README.md"
 authors = ['Marcin Zabłocki <marcin.zablocki@getindata.com>', 'Mateusz Pytel <mateusz.pytel@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com>']
@@ -37,27 +37,27 @@ kedro = ">=0.18.8,<0.19.0"
 click = ">=8.0.4"
 kfp = ">=1.8.12,<2.0"
 tabulate = ">=0.8.7"
-semver = "~=2.10"
-pydantic = "~=1.9.0"
+semver = ">=2.10,<4.0.0"
+pydantic = ">=1.9.0,<2.0.0"
 google-auth = "<3"
 google-cloud-scheduler = ">=2.3.2"
 google-cloud-iam = "<3"
 gcsfs = ">=2022.1"
 fsspec = ">=2022.1"
 google-cloud-storage = "<3.0.0"
-grpcio = "~=1.44.0"
-grpcio-status = "~=1.44.0"
-protobuf = "<=3.20.0"
+grpcio = ">=1.4.0,<2.0.0"
+grpcio-status = ">=1.4.0,<2.0.0"
+protobuf = ">=3.18.0,<21.0"
 kedro-mlflow = {version = ">=0.11.8,<0.12.0", optional = true}
-cachetools = ">=5.3,<6.0"
+cachetools = ">=3.0,<6.0"
 
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]
 
 [tool.poetry.dev-dependencies]
-pytest = "<=7"
+pytest = "<=8"
 pytest-cov = ">=2.8.0, <4.0.0"
-tox = ">=3.25.1"
+tox = ">=3.25.1,<4.0.0"
 pre-commit = "2.20.0"
 pytest-subtests = ">=0.8.0, <1.0.0"
 responses = ">=0.13.4"
