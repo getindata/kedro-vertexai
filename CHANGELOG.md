@@ -2,8 +2,10 @@
 
 ## [Unreleased]
 
--  Updated dependencies of kedro to `0.18.9`, mlflow to `2.3.2` and others
--  Upgrade dependencies to support `grpcio>=1.53` to resolve [GHSA-6628-q6j9-w8vg](https://github.com/advisories/GHSA-6628-q6j9-w8vg).
+## [0.9.1] - 2023-08-16
+
+-   Updated dependencies of kedro to `0.18.9`, mlflow to `2.3.2` and others
+-   Upgrade dependencies to support `grpcio>=1.53` to resolve [GHSA-6628-q6j9-w8vg](https://github.com/advisories/GHSA-6628-q6j9-w8vg).
 
 ## [0.9.0] - 2023-05-15
 
@@ -66,7 +68,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.9.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.9.1...HEAD
+
+[0.9.1]: https://github.com/getindata/kedro-vertexai/compare/0.9.0...0.9.1
 
 [0.9.0]: https://github.com/getindata/kedro-vertexai/compare/0.8.1...0.9.0
 
