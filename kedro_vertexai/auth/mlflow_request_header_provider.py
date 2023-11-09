@@ -1,5 +1,5 @@
 import logging
-from abc import ABC
+from abc import ABCMeta
 from typing import Any, Dict, Optional
 
 from kedro.framework.context import KedroContext
@@ -22,7 +22,7 @@ def safe_import_mlflow():
 mlflow, RequestHeaderProvider = safe_import_mlflow()
 
 
-class RequestHeaderProviderWithKedroContext(RequestHeaderProvider, ABC):
+class RequestHeaderProviderWithKedroContext(RequestHeaderProvider, metaclass=ABCMeta):
     def __init__(self, kedro_context: KedroContext, **kwargs):
         self.kedro_context = kedro_context
         self.params: Optional[Dict[str, Any]] = kwargs
