@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Updated dependencies and tested for kedro `0.18.14`
+
 ## [0.9.1] - 2023-08-16
 
 -   Updated dependencies of kedro to `0.18.8`, mlflow to `2.3.2` and others
