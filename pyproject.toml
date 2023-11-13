@@ -32,10 +32,10 @@ exclude_lines = [
 known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "pydantic","semver","setuptools"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = ">=3.8,<3.11" # waiting for newest kedro-mlflow to bump to <3.12
 kedro = ">=0.18.8,<0.19.0"
 click = ">=8.0.4"
-kfp = ">=1.8.12,<2.0"
+kfp = ">=1.8.21,<2.0"
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 pydantic = ">=1.9.0,<2.0.0"

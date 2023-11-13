@@ -21,10 +21,10 @@ jobs:
         python-version: [ '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
     - name: Setup python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v4.7.1
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -55,7 +55,7 @@ jobs:
     needs: unit_tests
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
@@ -100,10 +100,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [unit_tests, sonarcloud]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4.7.1
         with:
           python-version: 3.8
 
@@ -143,7 +143,7 @@ jobs:
           mv ../tests/e2e/vertexai.yml conf/base/vertexai.yml
 
       - name: Prepare docker env
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
         id: buildx
         with:
           install: true
@@ -161,7 +161,7 @@ jobs:
           dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:latest
 
       - name: Set up GCP Credentials
-        uses: google-github-actions/auth@v0.6.0
+        uses: google-github-actions/auth@v1.1.1
         with:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           create_credentials_file: true
@@ -180,11 +180,11 @@ jobs:
       PYTHON_PACKAGE: kedro_vertexai
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # necessary to enable merging, all the history is needed
       - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4.7.1
         with:
           python-version: "3.8"
       - name: Build package dist from source # A better way will be : https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/ but pep 517 is still marked as experimental

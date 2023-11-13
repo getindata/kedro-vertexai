@@ -69,15 +69,16 @@ class TestContextHelper(unittest.TestCase):
 
             metadata = Mock()
             metadata.package_name = "test_package"
-            session = MagicMock()
-            session.load_context().config_loader = OmegaConfigLoader(
-                str(tmp_dir / "conf"),
-                config_patterns={"vertexai": ["vertexai*"]},
-                default_run_env="local",
-            )
-            with patch.object(KedroSession, "create", return_value=session):
-                helper = ContextHelper.init(metadata, "test")
-                assert helper.config == cfg
+            for config_pattern in [{}, {"vertexai": ["vertexai*"]}]:
+                session = MagicMock()
+                session.load_context().config_loader = OmegaConfigLoader(
+                    str(tmp_dir / "conf"),
+                    config_patterns=config_pattern,
+                    default_run_env="local",
+                )
+                with patch.object(KedroSession, "create", return_value=session):
+                    helper = ContextHelper.init(metadata, "test")
+                    assert helper.config == cfg
 
     @unittest.expectedFailure
     def test_config_empty(self):

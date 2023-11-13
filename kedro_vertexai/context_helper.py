@@ -17,6 +17,7 @@ from .config import PluginConfig
 from .constants import KEDRO_GLOBALS_PATTERN
 
 
+# FIXME: remove once updated to 0.19
 class EnvTemplatedConfigLoader(TemplatedConfigLoader):
     """Config loader that can substitute $(commit_id) and $(branch_name)
     placeholders with information taken from env variables."""
@@ -100,19 +101,19 @@ class ContextHelper(object):
     def config(self) -> PluginConfig:
         cl: AbstractConfigLoader = self.context.config_loader
         try:
-            obj = self.context.config_loader.get(self.CONFIG_FILE_PATTERN)
-        except:  # noqa
-            obj = None
-
-        if obj is None:
-            try:
-                obj = self._ensure_obj_is_dict(
-                    self.context.config_loader[self.CONFIG_KEY]
+            if self.CONFIG_KEY not in cl.config_patterns.keys():
+                cl.config_patterns.update(
+                    {
+                        self.CONFIG_KEY: [
+                            self.CONFIG_FILE_PATTERN,
+                            f"{self.CONFIG_FILE_PATTERN}/**",
+                        ]
+                    }
                 )
-            except (KeyError, MissingConfigException):
-                obj = None
-
-        if obj is None:
+            vertex_conf = self._ensure_obj_is_dict(
+                self.context.config_loader.get(self.CONFIG_KEY)
+            )
+        except MissingConfigException:
             if not isinstance(cl, ConfigLoader):
                 raise ValueError(
                     f"You're using a custom config loader: {cl.__class__.__qualname__}{os.linesep}"
@@ -130,7 +131,7 @@ CONFIG_LOADER_ARGS = {
                 raise ValueError(
                     "Missing vertexai.yml files in configuration. Make sure that you configure your project first"
                 )
-        return PluginConfig.parse_obj(obj)
+        return PluginConfig.parse_obj(vertex_conf)
 
     @cached_property
     def vertexai_client(self) -> VertexAIPipelinesClient:
