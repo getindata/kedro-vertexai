@@ -38,6 +38,7 @@ click = ">=8.0.4"
 kfp = ">=1.8.21,<2.0"
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
+pyarrow = ">=14.0.1" # Stating explicitly for dependency dependency due to critical vulnerability
 pydantic = ">=1.9.0,<2.0.0"
 google-auth = "<3"
 google-cloud-scheduler = ">=2.3.2"

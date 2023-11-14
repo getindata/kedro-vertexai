@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Added explicite pyarrow dependency to avoid critical vulnerability
 -   Updated dependencies and tested for kedro `0.18.14`
 
 ## [0.9.1] - 2023-08-16
