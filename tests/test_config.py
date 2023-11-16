@@ -15,6 +15,8 @@ run_config:
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
   service_account: test@pipelines.gserviceaccount.com
+  grouping:
+    tag_prefix: "group:"
   ttl: 300
   network:
     vpc: my-vpc

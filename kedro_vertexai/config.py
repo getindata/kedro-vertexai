@@ -31,6 +31,9 @@ run_config:
   # Optional pipeline description
   # description: "Very Important Pipeline"
 
+  # Optional config for node execution grouping based on tags. Specifying tag prefix enables this feature
+  # grouping_tag_prefix: "group:"
+
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
   ttl: 604800
@@ -52,7 +55,8 @@ run_config:
   # on_exit_pipeline: notify_via_slack
 
   # Optional section allowing adjustment of the resources, reservations and limits
-  # for the nodes. When not provided they're set to 500m cpu and 1024Mi memory.
+  # for the nodes. You can specify node names or tags to select which nodes the requirements
+  # apply to (also in node selectors). When not provided they're set to 500m cpu and 1024Mi memory.
   # If you don't want to specify pipeline resources set both to None in __default__.
   resources:
 
@@ -127,6 +131,7 @@ class RunConfig(BaseModel):
     description: Optional[str]
     experiment_name: str
     scheduled_run_name: Optional[str]
+    grouping_tag_prefix: Optional[str]
     service_account: Optional[str]
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
@@ -152,14 +157,11 @@ class RunConfig(BaseModel):
         names = [*tags, node]
         filled_names = [x for x in names if x in params.keys()]
         results = default_config or {}
-        if filled_names:
-            for name in filled_names:
-                configs = (
-                    params[name]
-                    if isinstance(params[name], dict)
-                    else params[name].dict()
-                )
-                results.update({k: v for k, v in configs.items() if v is not None})
+        for name in filled_names:
+            configs = (
+                params[name] if isinstance(params[name], dict) else params[name].dict()
+            )
+            results.update({k: v for k, v in configs.items() if v is not None})
         return results
 
 
