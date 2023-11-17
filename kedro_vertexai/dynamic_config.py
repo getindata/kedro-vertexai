@@ -1,8 +1,11 @@
 import logging
 from abc import ABC, abstractmethod
-from importlib import import_module
 
-from kedro_vertexai.config import DynamicConfigProviderConfig, PluginConfig
+from kedro_vertexai.config import (
+    DynamicConfigProviderConfig,
+    PluginConfig,
+    dynamic_load_class,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,18 +20,9 @@ class DynamicConfigProvider(ABC):
         config: PluginConfig,
         provider_config: DynamicConfigProviderConfig,
     ) -> "DynamicConfigProvider":
-        module_name, class_name = provider_config.cls.rsplit(".", 1)
-        logger.info(f"Initializing {class_name}")
-
-        try:
-            cls = getattr(import_module(module_name), class_name)
-            return cls(config, **provider_config.params)
-        except:  # noqa: E722
-            logger.error(
-                f"Could not load dynamic config loader class {provider_config.cls}, "
-                f"make sure it's accessible from the current Python interpreter",
-                exc_info=True,
-            )
+        return dynamic_load_class(
+            provider_config.cls, args=[config], kwargs=provider_config.params
+        )
 
     def __init__(self, config: PluginConfig, **kwargs):
         self.config = config

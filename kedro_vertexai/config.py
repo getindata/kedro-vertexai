@@ -1,7 +1,9 @@
+import logging
 import os
+from importlib import import_module
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.networks import IPvAnyAddress
 
 DEFAULT_CONFIG_TEMPLATE = """
@@ -32,7 +34,11 @@ run_config:
   # description: "Very Important Pipeline"
 
   # Optional config for node execution grouping based on tags. Specifying tag prefix enables this feature
-  # grouping_tag_prefix: "group:"
+  grouping:
+    cls: kedro_vertexai.grouping.IdentityNodeGrouper
+    # cls: kedro_vertexai.grouping.TagNodeGrouper
+    # params:
+        # tag_prefix: "group:"
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
@@ -99,6 +105,55 @@ run_config:
 """
 
 
+logger = logging.getLogger(__name__)
+
+
+# the only place to put it to avoid circular dependencies
+def dynamic_load_class(
+    load_class, args: Optional[list] = None, kwargs: Optional[dict] = None
+):
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+    try:
+        module_name, class_name = load_class.rsplit(".", 1)
+        logger.info(f"Initializing {class_name}")
+        cls = getattr(import_module(module_name), class_name)
+        return cls(*args, **kwargs)
+    except:  # noqa: E722
+        logger.error(
+            f"Could not dynamically load class {load_class} with it init params, "
+            f"make sure it's valid and accessible from the current Python interpreter",
+            exc_info=True,
+        )
+
+
+class GroupingConfig(BaseModel):
+    cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
+    params: Optional[dict] = {}
+
+    @validator("cls")
+    def class_valid(cls, v, values, **kwargs):
+        c = dynamic_load_class(v)
+        if c is None:
+            raise ValueError(f"Could not validate grouping class {v} with its params.")
+        try:
+            if "params" in values:
+                c(**values["params"])
+        except:  # noqa: E722
+            raise ValueError(f"Invalid parameters for grouping class {v}.")
+        return v
+
+    # @computed_field
+    # @cached_property
+    # def used_provider(self):
+    #     load_class = dynamic_load_class(self.cls)
+    #     # fail gracefully here if wrong params are provided here?
+    #     self._grouping_object = load_class(**self.params)
+    #     return self._grouping_object
+
+
 class HostAliasConfig(BaseModel):
     ip: IPvAnyAddress
     hostnames: List[str]
@@ -131,7 +186,7 @@ class RunConfig(BaseModel):
     description: Optional[str]
     experiment_name: str
     scheduled_run_name: Optional[str]
-    grouping_tag_prefix: Optional[str]
+    grouping: Optional[GroupingConfig] = GroupingConfig()
     service_account: Optional[str]
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
