@@ -4,14 +4,11 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from abc import ABC
-from dataclasses import dataclass, field
 from tempfile import NamedTemporaryFile
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List
 
 import kfp
 from kedro.framework.context import KedroContext
-from kedro.pipeline.node import Node
 from kfp.components.structures import (
     ComponentSpec,
     ContainerImplementation,
@@ -20,9 +17,12 @@ from kfp.components.structures import (
     OutputSpec,
 )
 from kfp.v2 import dsl
-from toposort import CircularDependencyError, toposort
 
-from kedro_vertexai.config import KedroVertexAIRunnerConfig, RunConfig
+from kedro_vertexai.config import (
+    KedroVertexAIRunnerConfig,
+    RunConfig,
+    dynamic_load_class,
+)
 from kedro_vertexai.constants import (
     KEDRO_CONFIG_JOB_NAME,
     KEDRO_CONFIG_RUN_ID,
@@ -32,160 +32,6 @@ from kedro_vertexai.constants import (
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
-
-TagsDict = Dict[str, Set[str]]
-
-
-@dataclass
-class Grouping:
-    nodes_mapping: Dict[str, Set[Node]] = field(default_factory=dict)
-    dependencies: Dict[str, Set[str]] = field(default_factory=dict)
-    # tags: TagsDict = field(default_factory=dict)
-
-    # not sure if this is good idea to hook it to initialization, but for our limited
-    # usage it should be fine
-    def __post_init__(self):
-        self.validate()
-
-    def validate(self):
-        try:
-            [_ for _ in toposort(self.dependencies)]
-        except CircularDependencyError as e:
-            raise GroupingException(
-                "Grouping has failed because of cyclic depedency after merging nodes. "
-                f"Check your group settings. {str(e)}"
-            )
-        # visited_nodes = set()
-        # # This representation is not optimal, but does not need to be as these DAGs are small graphs
-        # def find_cycle(node : str, dfs_visit_history : set) -> Optional[str]:
-        #     visited_nodes.add(node)
-        #     dfs_visit_history.add(node)
-        #     if node in self.dependencies:
-        #         for child in self.dependencies[node]:
-        #             if child == node:
-        #                 return node
-        #             if child not in dfs_visit_history:
-        #                 ret = find_cycle(child, dfs_visit_history)
-        #                 if ret is not None:
-        #                     return ret
-        #             else:
-        #                 return child
-        #     dfs_visit_history.remove(node)
-        #     return None
-        # history = set()
-
-        # start_node = "__start__"
-        # while start_node in self.dependencies:
-        #     start_node = "_" + start_node + "_"
-        # # Adding artificial node that points to all non terminating nodes
-        # self.dependencies[start_node] = { node for node in self.dependencies.keys() }
-
-        # # Alternative solution - try to build a new superficial graph and use kedro to validate it
-        # result, cycle = find_cycle(start_node, history), history
-        # if result:
-        #     raise GroupingException(f"Invalid grouping detected that creates a cycle in its grouping"
-        # " tags regarding nodes: {str(cycle)}")
-
-
-class GroupingException(Exception):
-    ...
-
-
-class NodeGrouper(ABC):
-    """Abstract base class for node grouping functions: grouping and validating the grouping
-    The main argument to base grouping on is node_dependencies from kedro.pipeline.Pipeline
-    For each node it tells which set of nodes are parents of them, based on nodes outputs
-    """
-
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
-        ...
-
-    def _get_tagging(
-        self, node_dependencies: Dict[Node, Set[Node]]
-    ) -> Tuple[Dict[str, Set[str]], TagsDict]:
-        tagging = dict()
-        # TODO make sure that node.name s are unique within pipeline
-        for node in node_dependencies:
-            tagging[node.name] = node.tags
-        return tagging
-
-
-class IdentityNodeGrouper(NodeGrouper):
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
-        return Grouping(
-            nodes_mapping={k.name: {k} for k in node_dependencies.keys()},
-            dependencies={k.name: v for k, v in node_dependencies.items()},
-        )
-
-
-class TagNodeGrouper(NodeGrouper):
-    def __init__(self, grouping_prefix="group:") -> None:
-        self.tag_prefix = grouping_prefix
-
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
-        group_mapping = {k.name: {k} for k in node_dependencies.keys()}
-        group_belonging = {k.name: k.name for k in node_dependencies.keys()}
-        node_names = [k for k in group_mapping.keys()]
-        node_tagging = self._get_tagging(node_dependencies)
-
-        # iterating over copy as we will modify group_mapping to reflect new state
-        for name in node_names:
-            node_tags = node_tagging[name]
-            grouping_tags = [
-                t for t in filter(lambda x: x.startswith(self.tag_prefix), node_tags)
-            ]
-            if len(grouping_tags) > 1:
-                raise GroupingException(
-                    f"Inconsistent tagging for grouping, multiple tags with grouping prefix found in node {name}"
-                )
-            # 1 or 0 loop
-            for tag in grouping_tags:
-                group_name = tag.removeprefix(self.tag_prefix)
-                if group_name not in group_mapping:
-                    group_mapping[group_name] = set()
-                group_mapping[group_name].union(group_mapping[name])
-                del group_mapping[name]
-                group_belonging[name] = group_name
-
-        group_dependencies: Dict[str, Set[str]] = dict()
-        for child, parents in node_dependencies:
-            group_name = group_belonging[child.name]
-            # deduplication after gropuing thanks to sets and dicts properties
-            if group_name not in group_dependencies:
-                group_dependencies[group_name] = set()
-            for parent in parents:
-                group_dependencies[group_name].add(group_belonging[parent.name])
-
-        return Grouping(
-            nodes_mapping=group_mapping,
-            dependencies=group_dependencies,
-        )
-
-        # # Dict of groups and nodes they consist of
-        # tag_groups = defaultdict(set)
-        # for node_name, tagset in node_tagging.items():
-        #     for tag in tagset:
-        #         if tag.startswith(self.tag_prefix):
-        #             group_name = tag.removeprefix(self.tag_prefix)
-        #             tag_groups[group_name].add(node_name)
-        #             if group_translator[node_name] != node_name and group_translator[node_name] != group_name:
-        #                 raise GroupingException(f"Inconsistent tagging for grouping, multiple tags with grouping"
-        # " prefix found in node {node_name}")
-        #             group_translator[node_name] = group_name
-
-        # group_dependencies = {}
-        # for child, parents in deps.items():
-        #     if group_translator[child] not in group_dependencies:
-        #         group_dependencies[group_translator[child]] = set()
-        #     this_group_deps = group_dependencies[group_translator[child]]
-        #     for parent in parents:
-        #         # deduplication after grouping
-        #         if group_translator[parent] != group_translator[child]:
-        #             this_group_deps.add(group_translator[parent])
-
-        # # Updating node tag dictionary with group tags
-        # node_tagging.update({ group : set([tag for node in tag_groups[group] for tag in node_tagging[node]])
-        #   for group in tag_groups})
 
 
 class PipelineGenerator:
@@ -203,6 +49,9 @@ class PipelineGenerator:
         self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
+        self.grouping = dynamic_load_class(
+            self.run_config.grouping.cls, kwargs=self.run_config.grouping.params
+        )
 
     def get_pipeline_name(self):
         """
@@ -235,6 +84,7 @@ class PipelineGenerator:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
+
             kfp_ops = self._build_kfp_ops(node_dependencies, image, pipeline, token)
             for node, dependencies in node_dependencies.items():
                 set_dependencies(node, dependencies, kfp_ops)
