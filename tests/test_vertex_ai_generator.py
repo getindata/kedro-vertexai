@@ -191,7 +191,7 @@ class TestGenerator(unittest.TestCase):
                 in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
             )
             assert (
-                'kedro run -e unittests --pipeline pipeline --node "node1"'
+                'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in dsl_pipeline.ops["node1"].container.args[0]
             )
 
@@ -241,7 +241,7 @@ class TestGenerator(unittest.TestCase):
             )
 
             assert (
-                'kedro run -e unittests --pipeline pipeline --node "node1"'
+                'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in (args := dsl_pipeline.ops["node1"].container.args[0])
             ) and args.endswith("--config config.yaml")
 
