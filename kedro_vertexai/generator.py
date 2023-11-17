@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-from typing import Dict, List
+from typing import Dict
 
 import kfp
 from kedro.framework.context import KedroContext
@@ -29,6 +29,7 @@ from kedro_vertexai.constants import (
     KEDRO_GLOBALS_PATTERN,
     KEDRO_VERTEXAI_RUNNER_CONFIG,
 )
+from kedro_vertexai.grouping import Grouping, NodeGrouper
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
@@ -49,7 +50,7 @@ class PipelineGenerator:
         self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
-        self.grouping = dynamic_load_class(
+        self.grouping: NodeGrouper = dynamic_load_class(
             self.run_config.grouping.cls, kwargs=self.run_config.grouping.params
         )
 
@@ -70,10 +71,10 @@ class PipelineGenerator:
         :return: kfp pipeline function
         """
 
-        def set_dependencies(node, dependencies, kfp_ops):
-            for dependency in dependencies:
-                name = clean_name(node.name)
-                dependency_name = clean_name(dependency.name)
+        def set_dependencies(node_name, dependencies, kfp_ops):
+            for dependency_group in dependencies:
+                name = clean_name(node_name)
+                dependency_name = clean_name(dependency_group)
                 kfp_ops[name].after(kfp_ops[dependency_name])
 
         @dsl.pipeline(
@@ -84,10 +85,11 @@ class PipelineGenerator:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
+            grouping = self.grouping.group(node_dependencies)
 
-            kfp_ops = self._build_kfp_ops(node_dependencies, image, pipeline, token)
-            for node, dependencies in node_dependencies.items():
-                set_dependencies(node, dependencies, kfp_ops)
+            kfp_ops = self._build_kfp_ops(grouping, image, pipeline, token)
+            for group_name, dependencies in grouping.dependencies.items():
+                set_dependencies(group_name, dependencies, kfp_ops)
 
             for operator in kfp_ops.values():
                 operator.container.set_image_pull_policy(image_pull_policy)
@@ -140,7 +142,7 @@ class PipelineGenerator:
 
     def _build_kfp_ops(
         self,
-        node_dependencies: Dict[str, List[str]],
+        node_grouping: Grouping,
         image,
         pipeline,
         tracking_token=None,
@@ -156,9 +158,9 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
-        for node in node_dependencies:
-            name = clean_name(node.name)
-            tags = node.tags
+        for group_name, nodes_group in node_grouping.nodes_mapping.items():
+            name = clean_name(group_name)
+            tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
             mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
             component_params = (
@@ -175,7 +177,7 @@ class PipelineGenerator:
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
-                    f'--node "{node.name}"',
+                    f'--nodes "{",".join([n.name for n in nodes_group])}"',
                     f"--runner {VertexAIPipelinesRunner.runner_name()}",
                     "--config config.yaml" if should_add_params else "",
                 ]

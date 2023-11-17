@@ -59,7 +59,10 @@ class IdentityNodeGrouper(NodeGrouper):
     def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
         return Grouping(
             nodes_mapping={k.name: {k} for k in node_dependencies.keys()},
-            dependencies={k.name: v for k, v in node_dependencies.items()},
+            dependencies={
+                k.name: {dep.name for dep in deps}
+                for k, deps in node_dependencies.items()
+            },
         )
 
 
