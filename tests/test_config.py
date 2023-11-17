@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import yaml
 from pydantic import ValidationError
@@ -75,7 +76,7 @@ run_config:
         assert isinstance(c_obj, TagNodeGrouper)
         assert c_obj.tag_prefix == "group:"
 
-    @unittest.mock.patch("kedro_vertexai.config.logger.error")
+    @patch("kedro_vertexai.config.logger.error")
     def test_grouping_config_error(self, log_error):
         cfg_tag_group = """
 project_id: some-project
