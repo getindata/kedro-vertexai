@@ -94,18 +94,21 @@ class TagNodeGrouper(NodeGrouper):
                 group_name = tag.removeprefix(self.tag_prefix)
                 if group_name not in group_mapping:
                     group_mapping[group_name] = set()
-                group_mapping[group_name].union(group_mapping[name])
+                group_mapping[group_name] = group_mapping[group_name].union(
+                    group_mapping[name]
+                )
                 del group_mapping[name]
                 group_belonging[name] = group_name
 
         group_dependencies: Dict[str, Set[str]] = dict()
-        for child, parents in node_dependencies:
+        for child, parents in node_dependencies.items():
             group_name = group_belonging[child.name]
             # deduplication after gropuing thanks to sets and dicts properties
             if group_name not in group_dependencies:
                 group_dependencies[group_name] = set()
             for parent in parents:
-                group_dependencies[group_name].add(group_belonging[parent.name])
+                if group_belonging[parent.name] != group_name:
+                    group_dependencies[group_name].add(group_belonging[parent.name])
 
         return Grouping(
             nodes_mapping=group_mapping,
