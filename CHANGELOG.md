@@ -4,6 +4,7 @@
 
 -   Added explicite pyarrow dependency to avoid critical vulnerability
 -   Updated dependencies and tested for kedro `0.18.14`
+-  Feature: added option to group kedro some nodes together at execution in single vertex process to allow better optimization - less steps, delays at running images for vertex nodes and less wasted time of data serialization thanks to possibility to use InMemoryDataset at grouped nodes
 
 ## [0.9.1] - 2023-08-16
 
