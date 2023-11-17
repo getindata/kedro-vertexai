@@ -91,7 +91,7 @@ class TagNodeGrouper(NodeGrouper):
                 )
             # 1 or 0 loop
             for tag in grouping_tags:
-                group_name = tag.removeprefix(self.tag_prefix)
+                group_name = tag[len(self.tag_prefix) :]
                 if group_name not in group_mapping:
                     group_mapping[group_name] = set()
                 group_mapping[group_name] = group_mapping[group_name].union(
