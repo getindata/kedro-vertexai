@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict
 
-from kedro.io import AbstractDataSet, DataCatalog
+from kedro.io import AbstractDataset, DataCatalog
 from kedro.pipeline import Pipeline
 from kedro.runner import SequentialRunner
 from pluggy import PluginManager
@@ -40,7 +40,7 @@ class VertexAIPipelinesRunner(SequentialRunner):
 
         return super().run(pipeline, catalog, hook_manager, session_id)
 
-    def create_default_data_set(self, ds_name: str) -> AbstractDataSet:
+    def create_default_data_set(self, ds_name: str) -> AbstractDataset:
         return KedroVertexAIRunnerDataset(
             self.runner_config.storage_root,
             ds_name,

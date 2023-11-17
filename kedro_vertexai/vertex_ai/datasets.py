@@ -5,12 +5,12 @@ from typing import Any, Dict
 
 import cloudpickle
 import fsspec
-from kedro.io import AbstractDataSet
+from kedro.io import AbstractDataset
 
 from kedro_vertexai.constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME
 
 
-class KedroVertexAIRunnerDataset(AbstractDataSet):
+class KedroVertexAIRunnerDataset(AbstractDataset):
     def __init__(
         self,
         storage_root: str,
