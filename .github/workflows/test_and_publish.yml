@@ -36,7 +36,7 @@ jobs:
     - name: Check pre-commit status
       run: |
         poetry install -v
-        poetry run pre-commit run --all-files
+        poetry run pre-commit run --all-files -c .github/pre-commit-config.yaml
 
     - name: Test with tox
       run: |
