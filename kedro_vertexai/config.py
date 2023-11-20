@@ -111,9 +111,7 @@ logger = logging.getLogger(__name__)
 
 
 # the only place to put it to avoid circular dependencies
-def dynamic_load_class(
-    load_class, args: Optional[list] = None, kwargs: Optional[dict] = None
-):
+def dynamic_load_class(load_class, *args, **kwargs):
     if args is None:
         args = []
     if kwargs is None:
@@ -121,11 +119,11 @@ def dynamic_load_class(
     try:
         module_name, class_name = load_class.rsplit(".", 1)
         logger.info(f"Initializing {class_name}")
-        cls = getattr(import_module(module_name), class_name)
-        return cls(*args, **kwargs)
+        class_load = getattr(import_module(module_name), class_name)
+        return class_load(*args, **kwargs)
     except:  # noqa: E722
         logger.error(
-            f"Could not dynamically load class {load_class} with it init params, "
+            f"Could not dynamically load class {load_class} with its init params, "
             f"make sure it's valid and accessible from the current Python interpreter",
             exc_info=True,
         )
@@ -137,12 +135,15 @@ class GroupingConfig(BaseModel):
 
     @validator("cls")
     def class_valid(cls, v, values, **kwargs):
-        c = dynamic_load_class(v)
-        if c is None:
-            raise ValueError(f"Could not validate grouping class {v} with its params.")
         try:
             if "params" in values:
-                c(**values["params"])
+                c = dynamic_load_class(v, None, None, **values["params"])
+            else:
+                c = dynamic_load_class(v, None, None)
+            if c is None:
+                raise ValueError(
+                    f"Could not validate grouping class {v} with its params."
+                )
         except:  # noqa: E722
             raise ValueError(f"Invalid parameters for grouping class {v}.")
         return v

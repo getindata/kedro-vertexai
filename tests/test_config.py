@@ -54,7 +54,7 @@ class TestPluginConfig(unittest.TestCase):
         assert (
             cfg.run_config.grouping.cls == "kedro_vertexai.grouping.IdentityNodeGrouper"
         )
-        c_obj = dynamic_load_class(cfg.run_config.grouping.cls)
+        c_obj = dynamic_load_class(cfg.run_config.grouping.cls, None, None)
         assert isinstance(c_obj, IdentityNodeGrouper)
 
         cfg_tag_group = """
@@ -71,7 +71,7 @@ run_config:
         cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
         assert cfg.run_config.grouping is not None
         c_obj = dynamic_load_class(
-            cfg.run_config.grouping.cls, kwargs=cfg.run_config.grouping.params
+            cfg.run_config.grouping.cls, None, None, **cfg.run_config.grouping.params
         )
         assert isinstance(c_obj, TagNodeGrouper)
         assert c_obj.tag_prefix == "group:"
@@ -91,7 +91,7 @@ run_config:
 """
         cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
         c = dynamic_load_class(
-            cfg.run_config.grouping.cls, kwargs=cfg.run_config.grouping.params
+            cfg.run_config.grouping.cls, **cfg.run_config.grouping.params
         )
         assert c is None
         log_error.assert_called_once()

@@ -51,7 +51,10 @@ class PipelineGenerator:
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
         self.grouping: NodeGrouper = dynamic_load_class(
-            self.run_config.grouping.cls, kwargs=self.run_config.grouping.params
+            self.run_config.grouping.cls,
+            context,
+            self.run_config,
+            **self.run_config.grouping.params,
         )
 
     def get_pipeline_name(self):

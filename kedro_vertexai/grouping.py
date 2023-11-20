@@ -2,8 +2,11 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Dict, Set
 
+from kedro.framework.context import KedroContext
 from kedro.pipeline.node import Node
 from toposort import CircularDependencyError, toposort
+
+from kedro_vertexai.config import RunConfig
 
 TagsDict = Dict[str, Set[str]]
 PipelineDependenciesDict = Dict[Node, Set[Node]]
@@ -40,6 +43,10 @@ class NodeGrouper(ABC):
     For each node it tells which set of nodes are parents of them, based on nodes outputs
     """
 
+    def __init__(self, kedro_context: KedroContext, run_config: RunConfig):
+        self.context = kedro_context
+        self.run_config = run_config
+
     def group(self, node_dependencies: PipelineDependenciesDict) -> Grouping:
         raise NotImplementedError
 
@@ -69,7 +76,10 @@ class TagNodeGrouper(NodeGrouper):
     """Grouping class that uses special tag prefix convention to aggregate
     nodes together. Only one such tag is allowed per node."""
 
-    def __init__(self, tag_prefix="group:") -> None:
+    def __init__(
+        self, kedro_context: KedroContext, run_config: RunConfig, tag_prefix="group:"
+    ) -> None:
+        super().__init__(kedro_context, run_config)
         self.tag_prefix = tag_prefix
 
     def group(self, node_dependencies: PipelineDependenciesDict) -> Grouping:
