@@ -33,7 +33,9 @@ run_config:
   # Optional pipeline description
   # description: "Very Important Pipeline"
 
-  # Optional config for node execution grouping based on tags. Specifying tag prefix enables this feature
+  # Optional config for node execution grouping. - 2 classes are provided:
+  # - default no-grouping option IdentityNodeGrouper
+  # - tag based grouping with TagNodeGrouper
   grouping:
     cls: kedro_vertexai.grouping.IdentityNodeGrouper
     # cls: kedro_vertexai.grouping.TagNodeGrouper

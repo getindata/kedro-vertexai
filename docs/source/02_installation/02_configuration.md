@@ -26,7 +26,9 @@ run_config:
   # Optional pipeline description
   #description: "Very Important Pipeline"
 
-  # Optional config for node execution grouping based on tags. Specifying tag prefix enables this feature
+  # Optional config for node execution grouping. - 2 classes are provided:
+  # - default no-grouping option IdentityNodeGrouper
+  # - tag based grouping with TagNodeGrouper
   grouping:
     cls: kedro_vertexai.grouping.IdentityNodeGrouper
     # cls: kedro_vertexai.grouping.TagNodeGrouper
@@ -182,9 +184,9 @@ Note that the `generate_config` has access to an initialized plugin config via `
 
 ## Grouping feature
 
-Optional `grouping` section allows to enable grouping feature that aggregates many kedro nodes execution to single VertexAI node. Using it gives you freedom to subdivide kedro pipelines to as many steps as logically makes sense and still have advantages of in memory data transmission via data catalog. It also saves you a lot of time on delays of docker container running at Vertex nodes which can take around 2 minutes for each node.
+Optional `grouping` section enables grouping feature that aggregates many Kedro nodes execution to single VertexAI node(s). Using it allows you to freely subdivide Kedro pipelines to as many steps as logically makes sense while keeping advantages of in memory data transmission possibilities. It also saves you a lot of time avoiding delays of docker container starting at Vertex nodes which can amount to about 2 minutes for each VertexAI node.
 
-API allows implementation of your own aggregation method. You can provide aggregating class and its init params `kwargs` dictionary of arguments. Default class is `IdentitiyNodeGrouper` which "groups" each node into separate group, effectively being transparent operation that does not change anything. Class that implements grouping by provided tag prefix is called `TagNodeGrouper`. The default prefix is `"group:"`. It uses what follows after tag the prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
+API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group:"`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
 ```yaml
   grouping:
     cls: kedro_vertexai.grouping.TagNodeGrouper
@@ -192,10 +194,20 @@ API allows implementation of your own aggregation method. You can provide aggreg
         tag_prefix: "group:"
 ```
 
-This grouping class is used at pipeline translation generator. It implements interface of `NodeGrouper` class with `group` function, that accepts `pipeline.node_dependencies` and returns `Grouping`. `Grouping` is a `dataclass` with two dictionaries:
+The above configuration will result in the following result in this sample pipeline:
+```python
+Pipeline([
+  node(some_operation, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
+  node(some_operation, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
+  node(some_operation, "C", "D", name="node3", tags=["baz"]),
+])
+```
+The result will be 2 VertexAI nodes for this pipeline, first with name `nodegroup` that will run `node1` and `node2` Kedro nodes inside and provide output `C` and second VertexAI node: `node3`. Additional MLflow node can be present if `kedro-mlflow` is used. Right now it is not possible to group it. If you feel you need that functionality search for/create an issue on [github page of the plugin](https://github.com/getindata/kedro-vertexai/issues).
+
+This grouping class is used during pipeline translation at plugin pipeline generator. It implements interface of `NodeGrouper` class with `group` function, that accepts `pipeline.node_dependencies` and returns `Grouping`. `Grouping` is a `dataclass` with two dictionaries:
 - `node_mapping` - which defines names of groups and says which sets of nodes are part of a given group
 - `dependencies` - which defines child-parent relation of all groups in `node_mapping`.
-`Grouping` class also validates its dependencies upon creation to check whether grouping is valid - does not introduce a cycle after inconsistent grouping.
+`Grouping` class also validates dependencies upon creation to check whether the grouping is valid. That means it does not introduce a cycle in dependencies graph.
 
 
 ## Resources configuration

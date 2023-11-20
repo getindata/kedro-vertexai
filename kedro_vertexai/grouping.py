@@ -1,18 +1,19 @@
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Dict, Set, Tuple
+from typing import Dict, Set
 
 from kedro.pipeline.node import Node
 from toposort import CircularDependencyError, toposort
 
 TagsDict = Dict[str, Set[str]]
+PipelineDependenciesDict = Dict[Node, Set[Node]]
+GroupDependenciesDict = Dict[str, Set[str]]
 
 
 @dataclass
 class Grouping:
     nodes_mapping: Dict[str, Set[Node]] = field(default_factory=dict)
-    dependencies: Dict[str, Set[str]] = field(default_factory=dict)
-    # tags: TagsDict = field(default_factory=dict)
+    dependencies: GroupDependenciesDict = field(default_factory=dict)
 
     # not sure if this is good idea to hook it to initialization, but for our limited
     # usage it should be fine
@@ -39,12 +40,10 @@ class NodeGrouper(ABC):
     For each node it tells which set of nodes are parents of them, based on nodes outputs
     """
 
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
+    def group(self, node_dependencies: PipelineDependenciesDict) -> Grouping:
         raise NotImplementedError
 
-    def _get_tagging(
-        self, node_dependencies: Dict[Node, Set[Node]]
-    ) -> Tuple[Dict[str, Set[str]], TagsDict]:
+    def _get_tagging(self, node_dependencies: PipelineDependenciesDict) -> TagsDict:
         tagging = dict()
         # TODO make sure that node.name s are unique within pipeline
         for node in node_dependencies:
@@ -56,7 +55,7 @@ class IdentityNodeGrouper(NodeGrouper):
     """Default class for grouping which puts each node into its own group,
     effectively not grouping anything at all."""
 
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
+    def group(self, node_dependencies: PipelineDependenciesDict) -> Grouping:
         return Grouping(
             nodes_mapping={k.name: {k} for k in node_dependencies.keys()},
             dependencies={
@@ -73,7 +72,7 @@ class TagNodeGrouper(NodeGrouper):
     def __init__(self, tag_prefix="group:") -> None:
         self.tag_prefix = tag_prefix
 
-    def group(self, node_dependencies: Dict[Node, Set[Node]]) -> Grouping:
+    def group(self, node_dependencies: PipelineDependenciesDict) -> Grouping:
         group_mapping = {k.name: {k} for k in node_dependencies.keys()}
         group_belonging = {k.name: k.name for k in node_dependencies.keys()}
         node_names = [k for k in group_mapping.keys()]
@@ -100,7 +99,7 @@ class TagNodeGrouper(NodeGrouper):
                 del group_mapping[name]
                 group_belonging[name] = group_name
 
-        group_dependencies: Dict[str, Set[str]] = dict()
+        group_dependencies: GroupDependenciesDict = dict()
         for child, parents in node_dependencies.items():
             group_name = group_belonging[child.name]
             # deduplication after gropuing thanks to sets and dicts properties
