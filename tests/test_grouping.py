@@ -1,4 +1,4 @@
-"""Test generator"""
+"""Test grouping"""
 
 import unittest
 

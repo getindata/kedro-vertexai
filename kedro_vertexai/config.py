@@ -123,17 +123,18 @@ def dynamic_load_class(load_class):
             f"make sure it's valid and accessible from the current Python interpreter",
             exc_info=True,
         )
+    return None
 
 
 def dynamic_init_class(load_class, *args, **kwargs):
-    if load_class is None:
-        return None
     if args is None:
         args = []
     if kwargs is None:
         kwargs = {}
     try:
         loaded_class = dynamic_load_class(load_class)
+        if loaded_class is None:
+            return None
         return loaded_class(*args, **kwargs)
     except:  # noqa: E722
         logger.error(
