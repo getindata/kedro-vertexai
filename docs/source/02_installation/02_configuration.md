@@ -181,6 +181,10 @@ def generate_config(self) -> dict:
 First one - `target_config_file` should return the name of the configuration file to be generated (e.g. `credentials.yml`) and the `generate_config` should return a dictionary, which will be then serialized into the target file as YAML. If the target file already exists during the invocation, it will be merged (see method `kedro_vertexai.dynamic_config.DynamicConfigProvider.merge_with_existing` ) with the existing one and then saved again.
 Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible.
 
+````note
+Make sure that all nodes in pipeline have names and their names are unique within the pipeline when using this feature.
+````
+
 
 ## Grouping feature
 
