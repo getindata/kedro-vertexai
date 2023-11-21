@@ -21,7 +21,7 @@ from kfp.v2 import dsl
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
     RunConfig,
-    dynamic_load_class,
+    dynamic_init_class,
 )
 from kedro_vertexai.constants import (
     KEDRO_CONFIG_JOB_NAME,
@@ -50,10 +50,9 @@ class PipelineGenerator:
         self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
         self.catalog = context.config_loader.get("catalog*")
-        self.grouping: NodeGrouper = dynamic_load_class(
+        self.grouping: NodeGrouper = dynamic_init_class(
             self.run_config.grouping.cls,
             context,
-            self.run_config,
             **self.run_config.grouping.params,
         )
 

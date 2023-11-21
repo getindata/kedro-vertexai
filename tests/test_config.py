@@ -4,7 +4,7 @@ from unittest.mock import patch
 import yaml
 from pydantic import ValidationError
 
-from kedro_vertexai.config import PluginConfig, dynamic_load_class
+from kedro_vertexai.config import PluginConfig, dynamic_init_class
 from kedro_vertexai.grouping import IdentityNodeGrouper, TagNodeGrouper
 
 CONFIG_FULL = """
@@ -54,7 +54,7 @@ class TestPluginConfig(unittest.TestCase):
         assert (
             cfg.run_config.grouping.cls == "kedro_vertexai.grouping.IdentityNodeGrouper"
         )
-        c_obj = dynamic_load_class(cfg.run_config.grouping.cls, None, None)
+        c_obj = dynamic_init_class(cfg.run_config.grouping.cls, None)
         assert isinstance(c_obj, IdentityNodeGrouper)
 
         cfg_tag_group = """
@@ -70,8 +70,8 @@ run_config:
 """
         cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
         assert cfg.run_config.grouping is not None
-        c_obj = dynamic_load_class(
-            cfg.run_config.grouping.cls, None, None, **cfg.run_config.grouping.params
+        c_obj = dynamic_init_class(
+            cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
         )
         assert isinstance(c_obj, TagNodeGrouper)
         assert c_obj.tag_prefix == "group:"
@@ -90,8 +90,8 @@ run_config:
             foo: "bar:"
 """
         cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
-        c = dynamic_load_class(
-            cfg.run_config.grouping.cls, **cfg.run_config.grouping.params
+        c = dynamic_init_class(
+            cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
         )
         assert c is None
         log_error.assert_called_once()

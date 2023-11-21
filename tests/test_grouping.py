@@ -71,7 +71,7 @@ class TestGenerator(unittest.TestCase):
     def test_identity_grouping(self):
         # given
         deps = self.create_pipeline_deps()
-        grouper = IdentityNodeGrouper(None, None)
+        grouper = IdentityNodeGrouper(None)
         # when
         group = grouper.group(deps)
         for name in self.node_names:
@@ -91,7 +91,7 @@ class TestGenerator(unittest.TestCase):
         deps = self.create_pipeline_deps()
         for prefix in self.legal_groups:
             with self.subTest(msg=f"test_{prefix}", group_prefix=prefix):
-                grouper = TagNodeGrouper(None, None, prefix + ":")
+                grouper = TagNodeGrouper(None, prefix + ":")
                 # when
                 group = grouper.group(deps)
                 # assert
@@ -116,7 +116,7 @@ class TestGenerator(unittest.TestCase):
         deps = self.create_pipeline_deps()
         for prefix in self.illegal_groups:
             with self.subTest(msg=f"test_{prefix}", group_prefix=prefix):
-                grouper = TagNodeGrouper(None, None, prefix + ":")
+                grouper = TagNodeGrouper(None, prefix + ":")
                 # when
                 with self.assertRaises(GroupingException):
                     grouper.group(deps)

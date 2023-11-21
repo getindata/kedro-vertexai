@@ -1,6 +1,7 @@
 import logging
 import os
 from importlib import import_module
+from inspect import signature
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, validator
@@ -110,21 +111,34 @@ run_config:
 logger = logging.getLogger(__name__)
 
 
-# the only place to put it to avoid circular dependencies
-def dynamic_load_class(load_class, *args, **kwargs):
+def dynamic_load_class(load_class):
+    try:
+        module_name, class_name = load_class.rsplit(".", 1)
+        logger.info(f"Initializing {class_name}")
+        class_load = getattr(import_module(module_name), class_name)
+        return class_load
+    except:  # noqa: E722
+        logger.error(
+            f"Could not dynamically load class {load_class}, "
+            f"make sure it's valid and accessible from the current Python interpreter",
+            exc_info=True,
+        )
+
+
+def dynamic_init_class(load_class, *args, **kwargs):
+    if load_class is None:
+        return None
     if args is None:
         args = []
     if kwargs is None:
         kwargs = {}
     try:
-        module_name, class_name = load_class.rsplit(".", 1)
-        logger.info(f"Initializing {class_name}")
-        class_load = getattr(import_module(module_name), class_name)
-        return class_load(*args, **kwargs)
+        loaded_class = dynamic_load_class(load_class)
+        return loaded_class(*args, **kwargs)
     except:  # noqa: E722
         logger.error(
-            f"Could not dynamically load class {load_class} with its init params, "
-            f"make sure it's valid and accessible from the current Python interpreter",
+            f"Could not dynamically init class {load_class} with its init params, "
+            f"make sure the configured params match the ",
             exc_info=True,
         )
 
@@ -136,16 +150,16 @@ class GroupingConfig(BaseModel):
     @validator("cls")
     def class_valid(cls, v, values, **kwargs):
         try:
+            grouper_class = dynamic_load_class(v)
+            class_sig = signature(grouper_class)
             if "params" in values:
-                c = dynamic_load_class(v, None, None, **values["params"])
+                class_sig.bind(None, **values["params"])
             else:
-                c = dynamic_load_class(v, None, None)
-            if c is None:
-                raise ValueError(
-                    f"Could not validate grouping class {v} with its params."
-                )
+                class_sig.bind(None)
         except:  # noqa: E722
-            raise ValueError(f"Invalid parameters for grouping class {v}.")
+            raise ValueError(
+                f"Invalid parameters for grouping class {v}, validation failed."
+            )
         return v
 
     # @computed_field
