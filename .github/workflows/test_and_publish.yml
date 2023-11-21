@@ -160,7 +160,7 @@ jobs:
         run: |
           cd ./spaceflights
           docker pull gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} || true
-          docker build --build-arg BASE_IMAGE=python:3.10-buster --tag kedro-vertexai-e2e:${{ matrix.e2e_case }} --load --cache-from=gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} .
+          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:${{ matrix.e2e_case }} --load --cache-from=gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} .
 
       - name: Publish docker image to GCR
         uses: mattes/gce-docker-push-action@v1
