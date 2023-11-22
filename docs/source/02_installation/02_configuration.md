@@ -209,9 +209,20 @@ This grouping class is used during pipeline translation at plugin pipeline gener
 - `dependencies` - which defines child-parent relation of all groups in `node_mapping`.
 `Grouping` class also validates dependencies upon creation to check whether the grouping is valid. That means it does not introduce a cycle in dependencies graph.
 
-````{note}
-Make sure that all nodes in pipeline have names and their names are unique within the pipeline when using this feature.
+````{warning}
+Make sure that all nodes in pipeline have names and their names are unique within the pipeline when using this feature, as grouping class and VertexAI nodes naming depend on it.
 ````
+
+### Example
+
+Here you can see how standard spaceflights changes after enabling the grouping feature configured with `TagNodeGrouper`, when using the following tagging (view from kedro viz):
+
+![Vertex AI Pipeline](grouped_kedro_viz.png)
+
+We get the following result:
+
+![Vertex AI Pipeline](grouping_visualisation.png)
+
 
 ## Resources configuration
 
