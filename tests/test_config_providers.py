@@ -1,3 +1,5 @@
+"""Test Dynamic Config Providers"""
+
 import logging
 import unittest
 from copy import deepcopy
@@ -89,7 +91,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
                 {"unit_tests_param_key": "unit_tests_param_value"},
             )
 
-    @patch("kedro_vertexai.dynamic_config.logger.error")
+    @patch("kedro_vertexai.config.logger.error")
     @_disable_logging
     def test_create_provider_from_invalid_config(self, log_error):
         config = self._get_test_config_with_dynamic_provider(

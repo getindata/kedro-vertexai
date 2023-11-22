@@ -26,6 +26,15 @@ run_config:
   # Optional pipeline description
   #description: "Very Important Pipeline"
 
+  # Optional config for node execution grouping. - 2 classes are provided:
+  # - default no-grouping option IdentityNodeGrouper
+  # - tag based grouping with TagNodeGrouper
+  grouping:
+    cls: kedro_vertexai.grouping.IdentityNodeGrouper
+    # cls: kedro_vertexai.grouping.TagNodeGrouper
+    # params:
+        # tag_prefix: "group:"
+
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
   ttl: 604800
@@ -34,8 +43,10 @@ run_config:
   # pipeline status. Used to send notifications or raise the alerts
   # on_exit_pipeline: notify_via_slack
 
-  # Optional section allowing adjustment of the resources
-  # reservations and limits for the nodes
+  # Optional section allowing adjustment of the resources, reservations and limits
+  # for the nodes. You can specify node names or tags to select which nodes the requirements
+  # apply to (also in node selectors). When not provided they're set to 500m cpu and 1024Mi memory.
+  # If you don't want to specify pipeline resources set both to None in __default__.
   resources:
 
     # For nodes that require more RAM you can increase the "memory"
@@ -169,6 +180,49 @@ def generate_config(self) -> dict:
 
 First one - `target_config_file` should return the name of the configuration file to be generated (e.g. `credentials.yml`) and the `generate_config` should return a dictionary, which will be then serialized into the target file as YAML. If the target file already exists during the invocation, it will be merged (see method `kedro_vertexai.dynamic_config.DynamicConfigProvider.merge_with_existing` ) with the existing one and then saved again.
 Note that the `generate_config` has access to an initialized plugin config via `self.config` property, so any values from the `vertexai.yml` configuration is accessible.
+
+
+## Grouping feature
+
+Optional `grouping` section enables grouping feature that aggregates many Kedro nodes execution to single VertexAI node(s). Using it allows you to freely subdivide Kedro pipelines to as many steps as logically makes sense while keeping advantages of in memory data transmission possibilities. It also saves you a lot of time avoiding delays of docker container starting at Vertex nodes which can amount to about 2 minutes for each VertexAI node.
+
+API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group:"`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
+```yaml
+  grouping:
+    cls: kedro_vertexai.grouping.TagNodeGrouper
+    params:
+        tag_prefix: "group:"
+```
+
+The above configuration will result in the following result in this sample pipeline:
+```python
+Pipeline([
+  node(some_operation, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
+  node(some_operation, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
+  node(some_operation, "C", "D", name="node3", tags=["baz"]),
+])
+```
+The result will be 2 VertexAI nodes for this pipeline, first with name `nodegroup` that will run `node1` and `node2` Kedro nodes inside and provide output `C` and second VertexAI node: `node3`. Additional MLflow node can be present if `kedro-mlflow` is used. Right now it is not possible to group it. If you feel you need that functionality search for/create an issue on [github page of the plugin](https://github.com/getindata/kedro-vertexai/issues).
+
+This grouping class is used during pipeline translation at plugin pipeline generator. It implements interface of `NodeGrouper` class with `group` function, that accepts `pipeline.node_dependencies` and returns `Grouping`. `Grouping` is a `dataclass` with two dictionaries:
+- `node_mapping` - which defines names of groups and says which sets of nodes are part of a given group
+- `dependencies` - which defines child-parent relation of all groups in `node_mapping`.
+`Grouping` class also validates dependencies upon creation to check whether the grouping is valid. That means it does not introduce a cycle in dependencies graph.
+
+````{warning}
+Make sure that all nodes in pipeline have names and their names are unique within the pipeline when using this feature, as grouping class and VertexAI nodes naming depend on it.
+````
+
+### Example
+
+Here you can see how standard spaceflights changes after enabling the grouping feature configured with `TagNodeGrouper`, when using the following tagging (view from kedro viz):
+
+![Vertex AI Pipeline](grouped_kedro_viz.png)
+
+We get the following result:
+
+![Vertex AI Pipeline](grouping_visualisation.png)
+
 
 ## Resources configuration
 
