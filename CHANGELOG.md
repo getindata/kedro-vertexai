@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2023-11-22
+
+-   Added explicite pyarrow dependency to avoid critical vulnerability
+-   Updated dependencies and tested for kedro `0.18.14`
+-   [Feature 🚀] Node grouping: added option to group multiple Kedro nodes together at execution in single Vertex AI process to allow better optimization - less steps, shorter delays while running Vertex AI nodes and less wasted time of data serialization thanks to possibility to use the MemoryDataset
+
 ## [0.9.1] - 2023-08-16
 
 -   Updated dependencies of kedro to `0.18.8`, mlflow to `2.3.2` and others
@@ -68,7 +74,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.9.1...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.10.0...HEAD
+
+[0.10.0]: https://github.com/getindata/kedro-vertexai/compare/0.9.1...0.10.0
 
 [0.9.1]: https://github.com/getindata/kedro-vertexai/compare/0.9.0...0.9.1
 

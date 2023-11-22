@@ -21,10 +21,10 @@ jobs:
         python-version: [ '3.8', '3.9', '3.10']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     
     - name: Setup python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2.2.1
+      uses: actions/setup-python@v4.7.1
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -36,7 +36,7 @@ jobs:
     - name: Check pre-commit status
       run: |
         poetry install -v
-        poetry run pre-commit run --all-files
+        poetry run pre-commit run --all-files -c .github/pre-commit-config.yaml
 
     - name: Test with tox
       run: |
@@ -55,7 +55,7 @@ jobs:
     needs: unit_tests
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
@@ -98,12 +98,16 @@ jobs:
 
   e2e_tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [unit_tests, sonarcloud]
+    strategy:
+      matrix:
+        e2e_case: ["standard", "grouping"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4.7.1
         with:
           python-version: 3.8
 
@@ -120,7 +124,7 @@ jobs:
         # kedro 0.18.1 is on purpose here, due to https://github.com/kedro-org/kedro-starters/issues/99
         run: |
           pip install $(find "./dist" -name "*.tar.gz")
-          kedro new --starter spaceflights --config tests/e2e/starter-config.yml --verbose
+          kedro new --starter spaceflights --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
 
       - name: Install project dependencies
         working-directory: ./spaceflights
@@ -139,11 +143,16 @@ jobs:
           sed -i 's/\(COPY src\/requirements.txt.*\)$/\1\nCOPY kedro-vertexai.tar.gz ./g' Dockerfile
           echo "!data/01_raw" >> .dockerignore
           kedro vertexai init gid-ml-ops-sandbox europe-west4
-          mv ../tests/e2e/catalog.yml conf/base/catalog.yml
-          mv ../tests/e2e/vertexai.yml conf/base/vertexai.yml
+          cp ../tests/e2e/${{ matrix.e2e_case }}/catalog.yml conf/base/catalog.yml
+          cp ../tests/e2e/${{ matrix.e2e_case }}/vertexai.yml conf/base/vertexai.yml
+          # Introducing tagging to pipelines
+          if [[ "${{ matrix.e2e_case }}" == "grouping" ]]; then
+            mv ../tests/e2e/${{ matrix.e2e_case }}/pipeline_data_processing.py src/spaceflights/pipelines/data_processing/pipeline.py
+            mv ../tests/e2e/${{ matrix.e2e_case }}/pipeline_data_science.py src/spaceflights/pipelines/data_science/pipeline.py
+          fi
 
       - name: Prepare docker env
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
         id: buildx
         with:
           install: true
@@ -151,17 +160,18 @@ jobs:
       - name: Build pipeline docker image
         run: |
           cd ./spaceflights
-          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:latest --load .
+          docker pull gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} || true
+          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:${{ matrix.e2e_case }} --load --cache-from=gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} .
 
       - name: Publish docker image to GCR
         uses: mattes/gce-docker-push-action@v1
         with:
           creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          src: kedro-vertexai-e2e:latest
-          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:latest
+          src: kedro-vertexai-e2e:${{ matrix.e2e_case }}
+          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }}
 
       - name: Set up GCP Credentials
-        uses: google-github-actions/auth@v0.6.0
+        uses: google-github-actions/auth@v1.1.1
         with:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
           create_credentials_file: true
@@ -172,6 +182,7 @@ jobs:
           cd ./spaceflights
           export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
           kedro vertexai run-once --wait-for-completion
+
   publish:
     if: github.event.pull_request == null && github.ref == 'refs/heads/master'
     needs: [ e2e_tests, codeql ]
@@ -180,11 +191,11 @@ jobs:
       PYTHON_PACKAGE: kedro_vertexai
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # necessary to enable merging, all the history is needed
       - name: Set up Python 3.8
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4.7.1
         with:
           python-version: "3.8"
       - name: Build package dist from source # A better way will be : https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/ but pep 517 is still marked as experimental

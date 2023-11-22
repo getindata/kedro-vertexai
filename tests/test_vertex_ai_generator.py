@@ -1,6 +1,7 @@
 """Test generator"""
 
 import unittest
+from copy import deepcopy
 from unittest.mock import MagicMock, patch
 
 import kfp
@@ -25,10 +26,54 @@ class TestGenerator(unittest.TestCase):
     def create_pipeline(self):
         return Pipeline(
             [
-                node(identity, "A", "B", name="node1"),
-                node(identity, "B", "C", name="node2"),
+                node(identity, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
+                node(identity, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
             ]
         )
+
+    def test_should_group_when_enabled(self):
+        # given
+        expected1 = {"cpu": "100m"}
+        expected2 = {"cpu": "400m", "memory": "64Gi"}
+        base = {
+            "grouping": {"cls": "kedro_vertexai.grouping.TagNodeGrouper"},
+            "resources": {"__default__": expected1},
+        }
+        tags = ["node1", "nodegroup", "foo", "bar", "group:nodegroup"]
+
+        configs = []
+        for tag in tags:
+            testcfg = deepcopy(base)
+            testcfg["resources"][tag] = expected2
+            configs.append(testcfg)
+
+        expected = [expected1] + 4 * [expected2]
+        for cfg, exp in zip(configs, expected):
+            with self.subTest(
+                msg=str(next(key for key in cfg["resources"] if key != "__default__"))
+            ):
+                self.create_generator(config=cfg)
+                # when
+                with patch(
+                    "kedro.framework.project.pipelines",
+                    new=self.pipelines_under_test,
+                ):
+                    pipeline = self.generator_under_test.generate_pipeline(
+                        "pipeline", "unittest-image", "Never", "MLFLOW_TRACKING_TOKEN"
+                    )
+                    with kfp.dsl.Pipeline(None) as dsl_pipeline:
+                        pipeline()
+
+                    # then
+                    assert (
+                        '--nodes "node1,node2"'
+                        in dsl_pipeline.ops["nodegroup"].container.args[0]
+                        or '--nodes "node2,node1"'
+                        in dsl_pipeline.ops["nodegroup"].container.args[0]
+                    )
+                    self.assertDictEqual(
+                        dsl_pipeline.ops["nodegroup"].container.resources.requests, exp
+                    )
 
     def test_support_modification_of_pull_policy(self):
         # given
@@ -191,7 +236,7 @@ class TestGenerator(unittest.TestCase):
                 in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
             )
             assert (
-                'kedro run -e unittests --pipeline pipeline --node "node1"'
+                'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in dsl_pipeline.ops["node1"].container.args[0]
             )
 
@@ -241,7 +286,7 @@ class TestGenerator(unittest.TestCase):
             )
 
             assert (
-                'kedro run -e unittests --pipeline pipeline --node "node1"'
+                'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in (args := dsl_pipeline.ops["node1"].container.args[0])
             ) and args.endswith("--config config.yaml")
 
@@ -338,14 +383,7 @@ class TestGenerator(unittest.TestCase):
             },
         )
 
-        self.pipelines_under_test = {
-            "pipeline": Pipeline(
-                [
-                    node(identity, "A", "B", name="node1"),
-                    node(identity, "B", "C", name="node2"),
-                ]
-            )
-        }
+        self.pipelines_under_test = {"pipeline": self.create_pipeline()}
 
         config_with_defaults = {
             "image": "test",

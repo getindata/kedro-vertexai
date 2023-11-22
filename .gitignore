@@ -174,3 +174,8 @@ terraform/terraform.tfstate
 .idea
 conf/azure/credentials.yml
 
+# pyspelling
+dictionary.dic
+
+# vs code
+.vscode

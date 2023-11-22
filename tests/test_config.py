@@ -1,9 +1,11 @@
 import unittest
+from unittest.mock import patch
 
 import yaml
 from pydantic import ValidationError
 
-from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.config import PluginConfig, dynamic_init_class
+from kedro_vertexai.grouping import IdentityNodeGrouper, TagNodeGrouper
 
 CONFIG_FULL = """
 project_id: test-project-id
@@ -15,6 +17,8 @@ run_config:
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
   service_account: test@pipelines.gserviceaccount.com
+  grouping:
+    cls: kedro_vertexai.grouping.IdentityNodeGrouper
   ttl: 300
   network:
     vpc: my-vpc
@@ -44,6 +48,54 @@ run_config:
 
 
 class TestPluginConfig(unittest.TestCase):
+    def test_grouping_config(self):
+        cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
+        assert cfg.run_config.grouping is not None
+        assert (
+            cfg.run_config.grouping.cls == "kedro_vertexai.grouping.IdentityNodeGrouper"
+        )
+        c_obj = dynamic_init_class(cfg.run_config.grouping.cls, None)
+        assert isinstance(c_obj, IdentityNodeGrouper)
+
+        cfg_tag_group = """
+project_id: some-project
+region: some-region
+run_config:
+    image: test
+    experiment_name: test
+    grouping:
+        cls: "kedro_vertexai.grouping.TagNodeGrouper"
+        params:
+            tag_prefix: "group:"
+"""
+        cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
+        assert cfg.run_config.grouping is not None
+        c_obj = dynamic_init_class(
+            cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
+        )
+        assert isinstance(c_obj, TagNodeGrouper)
+        assert c_obj.tag_prefix == "group:"
+
+    @patch("kedro_vertexai.config.logger.error")
+    def test_grouping_config_error(self, log_error):
+        cfg_tag_group = """
+project_id: some-project
+region: some-region
+run_config:
+    image: test
+    experiment_name: test
+    grouping:
+        cls: "kedro_vertexai.grouping.TagNodeGrouper"
+        params:
+            foo: "bar:"
+"""
+        cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
+        c = dynamic_init_class(
+            cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
+        )
+        assert c is None
+        log_error.assert_called_once()
+
     def test_plugin_config(self):
         obj = yaml.safe_load(CONFIG_FULL)
         cfg = PluginConfig.parse_obj(obj)

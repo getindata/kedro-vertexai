@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-vertexai"
-version = "0.9.1"
+version = "0.10.0"
 description = "Kedro plugin with GCP Vertex AI support"
 readme = "README.md"
 authors = ['Marcin Zabłocki <marcin.zablocki@getindata.com>', 'Mateusz Pytel <mateusz.pytel@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com>']
@@ -32,13 +32,15 @@ exclude_lines = [
 known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "pydantic","semver","setuptools"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = ">=3.8,<3.11" # so far blocked by kedro-mlflow at 0.11.10
 kedro = ">=0.18.8,<0.19.0"
 click = ">=8.0.4"
-kfp = ">=1.8.12,<2.0"
+kfp = ">=1.8.21,<2.0"
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
-pydantic = ">=1.9.0,<2.0.0"
+toposort = ">1.0,<2.0"
+pyarrow = ">=14.0.1" # Stating explicitly for sub-dependency due to critical vulnerability
+pydantic = ">=1.9.0,<2.0.0" # so far blocked by kedro-mlflow at 0.11.10
 google-auth = "<3"
 google-cloud-scheduler = ">=2.3.2"
 google-cloud-iam = "<3"

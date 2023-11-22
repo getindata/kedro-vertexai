@@ -1,7 +1,10 @@
+import logging
 import os
+from importlib import import_module
+from inspect import signature
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.networks import IPvAnyAddress
 
 DEFAULT_CONFIG_TEMPLATE = """
@@ -31,6 +34,15 @@ run_config:
   # Optional pipeline description
   # description: "Very Important Pipeline"
 
+  # Optional config for node execution grouping. - 2 classes are provided:
+  # - default no-grouping option IdentityNodeGrouper
+  # - tag based grouping with TagNodeGrouper
+  grouping:
+    cls: kedro_vertexai.grouping.IdentityNodeGrouper
+    # cls: kedro_vertexai.grouping.TagNodeGrouper
+    # params:
+        # tag_prefix: "group:"
+
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
   ttl: 604800
@@ -52,7 +64,8 @@ run_config:
   # on_exit_pipeline: notify_via_slack
 
   # Optional section allowing adjustment of the resources, reservations and limits
-  # for the nodes. When not provided they're set to 500m cpu and 1024Mi memory.
+  # for the nodes. You can specify node names or tags to select which nodes the requirements
+  # apply to (also in node selectors). When not provided they're set to 500m cpu and 1024Mi memory.
   # If you don't want to specify pipeline resources set both to None in __default__.
   resources:
 
@@ -95,6 +108,70 @@ run_config:
 """
 
 
+logger = logging.getLogger(__name__)
+
+
+def dynamic_load_class(load_class):
+    try:
+        module_name, class_name = load_class.rsplit(".", 1)
+        logger.info(f"Initializing {class_name}")
+        class_load = getattr(import_module(module_name), class_name)
+        return class_load
+    except:  # noqa: E722
+        logger.error(
+            f"Could not dynamically load class {load_class}, "
+            f"make sure it's valid and accessible from the current Python interpreter",
+            exc_info=True,
+        )
+    return None
+
+
+def dynamic_init_class(load_class, *args, **kwargs):
+    if args is None:
+        args = []
+    if kwargs is None:
+        kwargs = {}
+    try:
+        loaded_class = dynamic_load_class(load_class)
+        if loaded_class is None:
+            return None
+        return loaded_class(*args, **kwargs)
+    except:  # noqa: E722
+        logger.error(
+            f"Could not dynamically init class {load_class} with its init params, "
+            f"make sure the configured params match the ",
+            exc_info=True,
+        )
+
+
+class GroupingConfig(BaseModel):
+    cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
+    params: Optional[dict] = {}
+
+    @validator("cls")
+    def class_valid(cls, v, values, **kwargs):
+        try:
+            grouper_class = dynamic_load_class(v)
+            class_sig = signature(grouper_class)
+            if "params" in values:
+                class_sig.bind(None, **values["params"])
+            else:
+                class_sig.bind(None)
+        except:  # noqa: E722
+            raise ValueError(
+                f"Invalid parameters for grouping class {v}, validation failed."
+            )
+        return v
+
+    # @computed_field
+    # @cached_property
+    # def used_provider(self):
+    #     load_class = dynamic_load_class(self.cls)
+    #     # fail gracefully here if wrong params are provided here?
+    #     self._grouping_object = load_class(**self.params)
+    #     return self._grouping_object
+
+
 class HostAliasConfig(BaseModel):
     ip: IPvAnyAddress
     hostnames: List[str]
@@ -127,6 +204,7 @@ class RunConfig(BaseModel):
     description: Optional[str]
     experiment_name: str
     scheduled_run_name: Optional[str]
+    grouping: Optional[GroupingConfig] = GroupingConfig()
     service_account: Optional[str]
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
@@ -152,14 +230,11 @@ class RunConfig(BaseModel):
         names = [*tags, node]
         filled_names = [x for x in names if x in params.keys()]
         results = default_config or {}
-        if filled_names:
-            for name in filled_names:
-                configs = (
-                    params[name]
-                    if isinstance(params[name], dict)
-                    else params[name].dict()
-                )
-                results.update({k: v for k, v in configs.items() if v is not None})
+        for name in filled_names:
+            configs = (
+                params[name] if isinstance(params[name], dict) else params[name].dict()
+            )
+            results.update({k: v for k, v in configs.items() if v is not None})
         return results
 
 

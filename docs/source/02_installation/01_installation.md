@@ -49,6 +49,13 @@ Commands:
   ui              Open VertexAI Pipelines UI in new browser tab
 ```
 
+````{warning}
+`vertexai` sub-command group only becomes visible when used inside kedro project context. Make sure that you're inside one, in case you see the message:
+```
+Error: No such command 'vertexai'.
+```
+````
+
 ### `init`
 
 `init` command takes two arguments: `PROJECT_ID` and `REGION`. This command generates a sample
