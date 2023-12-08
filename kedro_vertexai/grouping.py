@@ -91,7 +91,8 @@ class TagNodeGrouper(NodeGrouper):
             ]
             if len(grouping_tags) > 1:
                 raise GroupingException(
-                    f"Inconsistent tagging for grouping, multiple tags with grouping prefix found in node {name}"
+                    "Inconsistent tagging for grouping, multiple tags"
+                    f"with grouping prefix found in node {name}"
                 )
             # 1 or 0 loop
             for tag in grouping_tags:
