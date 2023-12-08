@@ -1,10 +1,11 @@
 # Changes here will be overwritten by Copier
-_commit: d04eecb
+_commit: v1.1.0
 _src_path: git@github.com:getindata/python-opensource-template.git
 authors:
 - Marcin Zabłocki <marcin.zablocki@getindata.com>
 - Mateusz Pytel <mateusz.pytel@getindata.com>
 - Mariusz Strzelecki <mariusz.strzelecki@getindata.com>
+- Artur Dobrogowski <artur.dobrogowski@getindata.com>
 description: Kedro plugin with GCP Vertex AI support
 docs_url: https://kedro-vertexai.readthedocs.io/
 full_name: Kedro Vertex AI Plugin
