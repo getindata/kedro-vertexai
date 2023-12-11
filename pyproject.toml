@@ -52,8 +52,8 @@ grpcio-status = ">=1.4.0,<2.0.0"
 protobuf = ">=3.18.0,<21.0"
 kedro-mlflow = {version = ">=0.11.8,<0.12.0", optional = true}
 cachetools = ">=3.0,<6.0"
-# fixing pyaml for cicd
-pyyaml = ">=6.0,<7"
+# pyaml in version 5 does problems with installing binaries/wheel in cicd env with python 3.10. The following fixes that:
+# pyyaml = ">=6.0,<7"
 
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]
