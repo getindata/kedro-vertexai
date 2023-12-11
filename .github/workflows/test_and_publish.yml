@@ -105,7 +105,7 @@ jobs:
     strategy:
       matrix:
         e2e_case: ["standard", "grouping"]
-        python-version: [3.8']
+        python-version: ['3.8']
     env: 
       PROJECT_NAME: kedro-vertexai
       IMAGE_REGISTRY: gcr.io/gid-ml-ops-sandbox
