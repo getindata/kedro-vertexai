@@ -174,8 +174,8 @@ jobs:
         uses: mattes/gce-docker-push-action@v1
         with:
           creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          src: $PROJECT_NAME-e2e:${{ matrix.e2e_case }}
-          dst: $IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }}
+          src: ${{ env.PROJECT_NAME }}-e2e:${{ matrix.e2e_case }}
+          dst: ${{ env.IMAGE_REGISTRY }}/${{ env.PROJECT_NAME }}-e2e:${{ matrix.e2e_case }}
 
       - name: Run project on vertex pipeline
         working-directory: ./spaceflights
