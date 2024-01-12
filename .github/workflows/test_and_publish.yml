@@ -120,7 +120,7 @@ jobs:
       - name: Setup poetry
         run: |
           python -V
-          python -m pip install poetry wheel setuptools
+          python -m pip install poetry
 
       - name: Build the package
         run: |
