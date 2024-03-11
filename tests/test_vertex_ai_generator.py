@@ -26,8 +26,8 @@ class TestGenerator(unittest.TestCase):
     def create_pipeline(self):
         return Pipeline(
             [
-                node(identity, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
-                node(identity, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
+                node(identity, "A", "B", name="node1", tags=["foo", "group.nodegroup"]),
+                node(identity, "B", "C", name="node2", tags=["bar", "group.nodegroup"]),
             ]
         )
 
@@ -39,7 +39,7 @@ class TestGenerator(unittest.TestCase):
             "grouping": {"cls": "kedro_vertexai.grouping.TagNodeGrouper"},
             "resources": {"__default__": expected1},
         }
-        tags = ["node1", "nodegroup", "foo", "bar", "group:nodegroup"]
+        tags = ["node1", "nodegroup", "foo", "bar", "group.nodegroup"]
 
         configs = []
         for tag in tags:

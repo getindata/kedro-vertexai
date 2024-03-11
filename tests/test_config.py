@@ -66,7 +66,7 @@ run_config:
     grouping:
         cls: "kedro_vertexai.grouping.TagNodeGrouper"
         params:
-            tag_prefix: "group:"
+            tag_prefix: "group."
 """
         cfg = PluginConfig.parse_obj(yaml.safe_load(cfg_tag_group))
         assert cfg.run_config.grouping is not None
@@ -74,7 +74,7 @@ run_config:
             cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
         )
         assert isinstance(c_obj, TagNodeGrouper)
-        assert c_obj.tag_prefix == "group:"
+        assert c_obj.tag_prefix == "group."
 
     @patch("kedro_vertexai.config.logger.error")
     def test_grouping_config_error(self, log_error):

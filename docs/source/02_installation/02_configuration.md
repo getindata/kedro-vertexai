@@ -33,7 +33,7 @@ run_config:
     cls: kedro_vertexai.grouping.IdentityNodeGrouper
     # cls: kedro_vertexai.grouping.TagNodeGrouper
     # params:
-        # tag_prefix: "group:"
+        # tag_prefix: "group."
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
@@ -186,19 +186,19 @@ Note that the `generate_config` has access to an initialized plugin config via `
 
 Optional `grouping` section enables grouping feature that aggregates many Kedro nodes execution to single VertexAI node(s). Using it allows you to freely subdivide Kedro pipelines to as many steps as logically makes sense while keeping advantages of in memory data transmission possibilities. It also saves you a lot of time avoiding delays of docker container starting at Vertex nodes which can amount to about 2 minutes for each VertexAI node.
 
-API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group:"`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
+API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group."`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
 ```yaml
   grouping:
     cls: kedro_vertexai.grouping.TagNodeGrouper
     params:
-        tag_prefix: "group:"
+        tag_prefix: "group."
 ```
 
 The above configuration will result in the following result in this sample pipeline:
 ```python
 Pipeline([
-  node(some_operation, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
-  node(some_operation, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
+  node(some_operation, "A", "B", name="node1", tags=["foo", "group.nodegroup"]),
+  node(some_operation, "B", "C", name="node2", tags=["bar", "group.nodegroup"]),
   node(some_operation, "C", "D", name="node3", tags=["baz"]),
 ])
 ```
