@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.10.1] - 2024-03-13
+
+-   Updated dependencies and tested for kedro `0.19.3`
+-   Node grouping: Changed convention from `:` to `.` due to kedro limitation on colons in node tags
+
+
 ## [0.10.0] - 2023-11-22
 
 -   Added explicite pyarrow dependency to avoid critical vulnerability
