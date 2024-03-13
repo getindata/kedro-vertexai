@@ -179,6 +179,3 @@ dictionary.dic
 
 # vs code
 .vscode
-
-# Poetry
-poetry.lock
