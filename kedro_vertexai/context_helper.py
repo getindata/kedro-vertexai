@@ -129,7 +129,8 @@ CONFIG_LOADER_ARGS = {
                 )
             else:
                 raise ValueError(
-                    "Missing vertexai.yml files in configuration. Make sure that you configure your project first"
+                    "Missing vertexai.yml files in configuration. "
+                    "Make sure that you configure your project first"
                 )
         return PluginConfig.parse_obj(vertex_conf)
 

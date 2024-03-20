@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Applied copier template config for consistency - refactoring and configuration small details
+
 ## [0.10.0] - 2023-11-22
 
 -   Added explicite pyarrow dependency to avoid critical vulnerability

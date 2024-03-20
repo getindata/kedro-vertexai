@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10']
 
     steps:
     - uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
     - name: Check pre-commit status
       run: |
         poetry install -v
-        poetry run pre-commit run --all-files -c .github/pre-commit-config.yaml
+        poetry run pre-commit run --all-files
 
     - name: Test with tox
       run: |
@@ -96,20 +96,26 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
+  ### PROJECT SPECIFIC CONFIGURATION HERE
   e2e_tests:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    if: (github.event.pull_request.head.repo.full_name == github.repository || github.event.pull_request == null)
     needs: [unit_tests, sonarcloud]
     strategy:
       matrix:
         e2e_case: ["standard", "grouping"]
+        python-version: ['3.8']
+    env: 
+      PROJECT_NAME: kedro-vertexai
+      IMAGE_REGISTRY: gcr.io/gid-ml-ops-sandbox
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup python
         uses: actions/setup-python@v4.7.1
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
 
       - name: Setup poetry
         run: |
@@ -120,55 +126,36 @@ jobs:
         run: |
           poetry build -f sdist
 
-      - name: Initialize kedro spaceflights project
-        # kedro 0.18.1 is on purpose here, due to https://github.com/kedro-org/kedro-starters/issues/99
+      - name: Initialize starter project
         run: |
           pip install $(find "./dist" -name "*.tar.gz")
           kedro new --starter spaceflights --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
 
-      - name: Install project dependencies
+      - name: Install starter requirements
         working-directory: ./spaceflights
         run: |
-          find "../dist" -name "*.tar.gz" | xargs -I@ cp @ kedro-vertexai.tar.gz
-          echo -e "\n./kedro-vertexai.tar.gz\n" >> src/requirements.txt
+          find "../dist" -name "*.tar.gz" | xargs -I@ cp @ $PROJECT_NAME.tar.gz
+          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> src/requirements.txt
           echo -e "kedro-docker\n" >> src/requirements.txt
           sed -i '/kedro-telemetry/d' src/requirements.txt
           echo $(cat src/requirements.txt)
           pip install -r src/requirements.txt
 
-      - name: Init and update configuration
+      - name: Init and update starter configuration
         working-directory: ./spaceflights
         run: |
           kedro docker init
-          sed -i 's/\(COPY src\/requirements.txt.*\)$/\1\nCOPY kedro-vertexai.tar.gz ./g' Dockerfile
+          sed -i "s/\(COPY src\/requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz ./g" Dockerfile
+          cat Dockerfile
           echo "!data/01_raw" >> .dockerignore
           kedro vertexai init gid-ml-ops-sandbox europe-west4
-          cp ../tests/e2e/${{ matrix.e2e_case }}/catalog.yml conf/base/catalog.yml
-          cp ../tests/e2e/${{ matrix.e2e_case }}/vertexai.yml conf/base/vertexai.yml
-          # Introducing tagging to pipelines
-          if [[ "${{ matrix.e2e_case }}" == "grouping" ]]; then
-            mv ../tests/e2e/${{ matrix.e2e_case }}/pipeline_data_processing.py src/spaceflights/pipelines/data_processing/pipeline.py
-            mv ../tests/e2e/${{ matrix.e2e_case }}/pipeline_data_science.py src/spaceflights/pipelines/data_science/pipeline.py
-          fi
+          cp -r ../tests/e2e/${{ matrix.e2e_case }}/overwrite/* .
 
       - name: Prepare docker env
         uses: docker/setup-buildx-action@v3
         id: buildx
         with:
           install: true
-
-      - name: Build pipeline docker image
-        run: |
-          cd ./spaceflights
-          docker pull gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} || true
-          docker build --build-arg BASE_IMAGE=python:3.8-buster --tag kedro-vertexai-e2e:${{ matrix.e2e_case }} --load --cache-from=gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }} .
-
-      - name: Publish docker image to GCR
-        uses: mattes/gce-docker-push-action@v1
-        with:
-          creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
-          src: kedro-vertexai-e2e:${{ matrix.e2e_case }}
-          dst: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:${{ matrix.e2e_case }}
 
       - name: Set up GCP Credentials
         uses: google-github-actions/auth@v1.1.1
@@ -177,16 +164,33 @@ jobs:
           create_credentials_file: true
           cleanup_credentials: true
 
-      - name: Run project on vertex pipeline
+      - name: Build docker image
+        working-directory: ./spaceflights
         run: |
-          cd ./spaceflights
+          docker pull $IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }} || true
+          docker build --build-arg BASE_IMAGE=python:${{ matrix.python-version }}-buster --tag $PROJECT_NAME-e2e:${{ matrix.e2e_case }} --load --cache-from=$IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }} .
+
+      - name: Publish docker image to docker registry
+        uses: mattes/gce-docker-push-action@v1
+        with:
+          creds: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          src: ${{ env.PROJECT_NAME }}-e2e:${{ matrix.e2e_case }}
+          dst: ${{ env.IMAGE_REGISTRY }}/${{ env.PROJECT_NAME }}-e2e:${{ matrix.e2e_case }}
+
+      - name: Run project on vertex pipeline
+        working-directory: ./spaceflights
+        run: |
           export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
           kedro vertexai run-once --wait-for-completion
 
   publish:
+    # only run on push to master
     if: github.event.pull_request == null && github.ref == 'refs/heads/master'
-    needs: [ e2e_tests, codeql ]
+    needs: [e2e_tests, codeql]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8']
     env:
       PYTHON_PACKAGE: kedro_vertexai
     steps:
@@ -194,29 +198,35 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # necessary to enable merging, all the history is needed
-      - name: Set up Python 3.8
+
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4.7.1
         with:
-          python-version: "3.8"
+          python-version: ${{ matrix.python-version }}
+
       - name: Build package dist from source # A better way will be : https://packaging.python.org/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/ but pep 517 is still marked as experimental
         run: |
           pip install poetry
           poetry build
-      - name:  Merge back to develop  # we have to set the config first on a fresh machine
+
+      - name: Merge back to develop  # we have to set the config first on a fresh machine
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git checkout -b develop --track origin/develop
+          git checkout -B develop --track origin/develop
           git merge master
           git push
+
       - name: Set dynamically package version as output variable # see https://github.com/actions/create-release/issues/39
         # see https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
         id: set_package_version
         run: |
           echo "::set-output name=PACKAGE_VERSION::$(cat $PYTHON_PACKAGE/__init__.py | grep -Po  '\d+\.\d+\.\d+')"
+
       - name: Create temporary file with the body content for the release
         run: |
           grep -Poz "## \[${{steps.set_package_version.outputs.PACKAGE_VERSION}}] - \d{4}-\d{2}-\d{2}[\S\s]+?(?=## \[\d+\.\d+\.\d+\]|\[.+\]:)" CHANGELOG.md > release_body.md
+
       - name: Create Release # https://github.com/actions/create-release
         id: create_release
         uses: actions/create-release@v1.1.4
@@ -228,6 +238,7 @@ jobs:
           body_path: ./release_body.md
           draft: false
           prerelease: false
+
       - name: Rollback Release in case of run failure
         if: failure() && steps.create_release.outputs.id != ''
         uses: author/action-rollback@stable
@@ -236,6 +247,7 @@ jobs:
           release_id: ${{ steps.create_release.outputs.id }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish distribution to PyPI  # official action from python maintainers
         uses: pypa/gh-action-pypi-publish@master
         with:
