@@ -8,7 +8,7 @@ project_id: my-gcp-mlops-project
 region: europe-west1
 run_config:
   # Name of the image to run as the pipeline steps
-  image: eu.gcr.io/my-gcp-mlops-project/example_model:${commit_id}
+  image: eu.gcr.io/my-gcp-mlops-project/example_model:${oc.env:KEDRO_CONFIG_COMMIT_ID}
 
   # Pull policy to be used for the steps. Use Always if you push the images
   # on the same tag, or Never if you use only local images
@@ -112,38 +112,25 @@ You can consume them as you like or use them within config loaders.
 
 ### Using `OmegaConfigLoader`
 
-`kedro-vertexai` supports `OmegaConfigLoader`. In order to configure it, update the `settings.py` file in your Kedro project as follows:
+In order to enable usage of environment variables with OmegaConfigLoader, update the `settings.py` file in your Kedro project as follows:
 
 ```python
 from kedro.config import OmegaConfigLoader
+from omegaconf.resolvers import oc
 CONFIG_LOADER_CLASS = OmegaConfigLoader
 CONFIG_LOADER_ARGS = {
-    # other args
+    "custom_resolvers": { "oc.env": oc.env },
     "config_patterns": {"vertexai": ["vertexai*"]}
+    # other args
 }
 ```
 
-Follow Kedro's official documentation, to see how to add templating, custom resolvers etc. (https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader)[https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader]
-
-### Using `TemplatedConfigLoader`
-`TemplatedConfigLoader` allows passing environment variables to configuration files. It reads all environment variables following `KEDRO_CONFIG_<NAME>` pattern, which you 
-can later inject in configuration file using `${name}` syntax. 
-
-This feature is especially useful for keeping the executions of the pipelines isolated and traceable by dynamically setting output paths for intermediate data in the **Data Catalog**, e.g.
-
+Then in config you can use it in the following way. Important: `oc.env:...` can't have space in it.
 ```yaml
-# ...
-train_x:
-  type: pandas.CSVDataSet
-  filepath: gs://<bucket>/kedro-vertexai/${run_id}/05_model_input/train_x.csv
-
-train_y:
-  type: pandas.CSVDataSet
-  filepath: gs://<bucket>/kedro-vertexai/${run_id}/05_model_input/train_y.csv
-# ...
+job: ${oc.env:KEDRO_CONFIG_JOB_NAME, default-value}
 ```
 
-In this case, the `${run_id}` placeholder will be substituted by the unique run identifier from Vertex AI Pipelines.
+Follow Kedro's official documentation, to see how to add templating, custom resolvers etc. (https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader)[https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader]
 
 
 ### Dynamic config providers

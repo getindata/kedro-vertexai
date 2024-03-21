@@ -15,7 +15,7 @@ run_config:
   experiment_name: kedro-vertex-e2e-grouping
 
   # Name of the scheduled run, templated with the schedule parameters
-  scheduled_run_name: kedro-vertex-e2e-grouping
+  scheduled_run_name: kedro-vertex-e2e-grouping-${oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}
 
   # Optional service account to run vertex AI Pipeline with
   service_account: vertex-ai-pipelines@gid-ml-ops-sandbox.iam.gserviceaccount.com
