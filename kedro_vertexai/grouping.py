@@ -73,7 +73,7 @@ class TagNodeGrouper(NodeGrouper):
     """Grouping class that uses special tag prefix convention to aggregate
     nodes together. Only one such tag is allowed per node."""
 
-    def __init__(self, kedro_context: KedroContext, tag_prefix="group:") -> None:
+    def __init__(self, kedro_context: KedroContext, tag_prefix="group.") -> None:
         super().__init__(kedro_context)
         self.tag_prefix = tag_prefix
 
