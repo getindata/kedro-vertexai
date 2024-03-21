@@ -135,7 +135,7 @@ jobs:
         working-directory: ./spaceflights
         run: |
           find "../dist" -name "*.tar.gz" | xargs -I@ cp @ $PROJECT_NAME.tar.gz
-          echo -e "\n/tmp/$PROJECT_NAME.tar.gz\n" >> requirements.txt
+          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> requirements.txt
           echo -e "kedro-docker\n" >> requirements.txt
           sed -i '/kedro-telemetry/d' requirements.txt
           echo $(cat requirements.txt)
@@ -145,7 +145,7 @@ jobs:
         working-directory: ./spaceflights
         run: |
           kedro docker init
-          sed -i "s/\(COPY requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz \/tmp\//g" Dockerfile
+          sed -i "s/\(COPY requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz ./g" Dockerfile
           cat Dockerfile
           echo "!data/01_raw" >> .dockerignore
           kedro vertexai init gid-ml-ops-sandbox europe-west4
