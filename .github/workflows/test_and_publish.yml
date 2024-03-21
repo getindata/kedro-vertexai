@@ -129,17 +129,17 @@ jobs:
       - name: Initialize starter project
         run: |
           pip install $(find "./dist" -name "*.tar.gz")
-          kedro new --starter spaceflights --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
+          kedro new --starter spaceflights-pandas --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
 
       - name: Install starter requirements
         working-directory: ./spaceflights
         run: |
           find "../dist" -name "*.tar.gz" | xargs -I@ cp @ $PROJECT_NAME.tar.gz
-          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> src/requirements.txt
-          echo -e "kedro-docker\n" >> src/requirements.txt
-          sed -i '/kedro-telemetry/d' src/requirements.txt
-          echo $(cat src/requirements.txt)
-          pip install -r src/requirements.txt
+          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> requirements.txt
+          echo -e "kedro-docker\n" >> requirements.txt
+          sed -i '/kedro-telemetry/d' requirements.txt
+          echo $(cat requirements.txt)
+          pip install -r requirements.txt
 
       - name: Init and update starter configuration
         working-directory: ./spaceflights

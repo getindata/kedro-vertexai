@@ -25,7 +25,7 @@ run_config:
   grouping:
     cls: kedro_vertexai.grouping.TagNodeGrouper
     params:
-        tag_prefix: "grp:"
+        tag_prefix: "grp."
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
