@@ -5,6 +5,7 @@
 -   Applied copier template config for consistency - refactoring and configuration small details
 -   Updated dependencies and tested for kedro `0.19.3`
 -   Node grouping: Changed convention from `:` to `.` due to kedro limitation on colons in node tags
+-   Removed EnvTemplatedConfigLoader that gets replaced by default OmegaConf capabilities
 
 ## [0.10.0] - 2023-11-22
 
