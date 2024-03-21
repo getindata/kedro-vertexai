@@ -112,7 +112,7 @@ You can consume them as you like or use them within config loaders.
 
 ### Using `OmegaConfigLoader`
 
-In order to enable usage of environment variables with OmegaConfigLoader, update the `settings.py` file in your Kedro project as follows:
+In order to enable usage of environment variables with `OmegaConfigLoader`, update the `settings.py` file in your Kedro project as follows:
 
 ```python
 from kedro.config import OmegaConfigLoader
