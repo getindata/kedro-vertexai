@@ -1,5 +1,3 @@
-import os
-import shutil
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -9,12 +7,7 @@ import yaml
 from kedro.framework.session import KedroSession
 
 from kedro_vertexai.config import PluginConfig, RunConfig
-from kedro_vertexai.context_helper import (
-    ContextHelper,
-    EnvTemplatedConfigLoader,
-)
-
-from .utils import environment
+from kedro_vertexai.context_helper import ContextHelper
 
 
 class TestContextHelper(unittest.TestCase):
@@ -110,54 +103,3 @@ class TestContextHelper(unittest.TestCase):
         with patch.object(KedroSession, "create", return_value=session):
             helper = ContextHelper.init(metadata, "test")
             _ = helper.config
-
-
-class TestEnvTemplatedConfigLoader(unittest.TestCase):
-    @property
-    def test_dir(self) -> str:
-        return str(Path(os.path.dirname(os.path.abspath(__file__))) / "conf")
-
-    def get_config(self, config_dir=None):
-        config_path: str = self.test_dir if not config_dir else config_dir
-        loader = EnvTemplatedConfigLoader(config_path, default_run_env="base")
-        return loader.get("test_config.yml")
-
-    def test_loader_with_defaults(self):
-        config = self.get_config()
-        assert config["run_config"]["image"] == "gcr.io/project-image/dirty"
-        assert config["run_config"]["experiment_name"] == "[Test] local"
-
-    def test_loader_with_env(self):
-        with environment(
-            {
-                "KEDRO_CONFIG_COMMIT_ID": "123abc",
-                "KEDRO_CONFIG_BRANCH_NAME": "feature-1",
-                "KEDRO_CONFIG_XYZ123": "123abc",
-            }
-        ):
-            config = self.get_config()
-
-        assert config["run_config"]["image"] == "gcr.io/project-image/123abc"
-        assert config["run_config"]["experiment_name"] == "[Test] feature-1"
-
-    def test_loader_with_globals(self):
-        test_config_file = Path(self.test_dir) / "base" / "test_config.yml"
-        with environment({"KEDRO_GLOBALS_PATTERN": "*globals.yml"}):
-            with TemporaryDirectory() as tmp_dir:
-                tmp_config_dir = (Path(tmp_dir)) / "base"
-                tmp_config_dir.mkdir()
-
-                shutil.copy(test_config_file, tmp_config_dir / "test_config.yml")
-
-                globals_path = tmp_config_dir / "globals.yml"
-                with globals_path.open("w") as f:
-                    yaml.safe_dump(
-                        {"image_pull_policy": "GlobalsTestPullPolicy"},
-                        f,
-                    )
-
-                config = self.get_config(tmp_dir)
-                assert (
-                    config["run_config"]["image_pull_policy"] == "GlobalsTestPullPolicy"
-                ), "Variable defined in globals.yml was not used in the target config"
-                assert config["run_config"]["experiment_name"] == "[Test] local"
