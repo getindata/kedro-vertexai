@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from uuid import uuid4
 
-from kedro.io import DataCatalog, MemoryDataSet
+from kedro.io import DataCatalog, MemoryDataset
 from kedro.pipeline import node, pipeline
 
 from kedro_vertexai.config import KedroVertexAIRunnerConfig
@@ -117,7 +117,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
         with self.patched_runner() as runner:
             catalog = DataCatalog()
             input_data = ["yolo :)"]
-            catalog.add("input_data", MemoryDataSet(data=input_data))
+            catalog.add("input_data", MemoryDataset(data=input_data))
             results = runner.run(
                 self.dummy_pipeline(),
                 catalog,
@@ -128,7 +128,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
         with self.patched_runner() as runner:
             input_data = ["yolo :)"]
             catalog = DataCatalog()
-            catalog.add("input_data", MemoryDataSet(data=input_data))
+            catalog.add("input_data", MemoryDataset(data=input_data))
             for node_no in range(3):
                 results = runner.run(
                     self.dummy_pipeline().filter(node_names=[f"node{node_no + 1}"]),

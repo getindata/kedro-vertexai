@@ -8,7 +8,7 @@ project_id: my-gcp-mlops-project
 region: europe-west1
 run_config:
   # Name of the image to run as the pipeline steps
-  image: eu.gcr.io/my-gcp-mlops-project/example_model:${commit_id}
+  image: eu.gcr.io/my-gcp-mlops-project/example_model:${oc.env:KEDRO_CONFIG_COMMIT_ID}
 
   # Pull policy to be used for the steps. Use Always if you push the images
   # on the same tag, or Never if you use only local images
@@ -33,7 +33,7 @@ run_config:
     cls: kedro_vertexai.grouping.IdentityNodeGrouper
     # cls: kedro_vertexai.grouping.TagNodeGrouper
     # params:
-        # tag_prefix: "group:"
+        # tag_prefix: "group."
 
   # How long to keep underlying Argo workflow (together with pods and data
   # volume after pipeline finishes) [in seconds]. Default: 1 week
@@ -112,38 +112,25 @@ You can consume them as you like or use them within config loaders.
 
 ### Using `OmegaConfigLoader`
 
-`kedro-vertexai` supports `OmegaConfigLoader`. In order to configure it, update the `settings.py` file in your Kedro project as follows:
+In order to enable usage of environment variables with `OmegaConfigLoader`, update the `settings.py` file in your Kedro project as follows:
 
 ```python
 from kedro.config import OmegaConfigLoader
+from omegaconf.resolvers import oc
 CONFIG_LOADER_CLASS = OmegaConfigLoader
 CONFIG_LOADER_ARGS = {
-    # other args
+    "custom_resolvers": { "oc.env": oc.env },
     "config_patterns": {"vertexai": ["vertexai*"]}
+    # other args
 }
 ```
 
-Follow Kedro's official documentation, to see how to add templating, custom resolvers etc. (https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader)[https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader]
-
-### Using `TemplatedConfigLoader`
-`TemplatedConfigLoader` allows passing environment variables to configuration files. It reads all environment variables following `KEDRO_CONFIG_<NAME>` pattern, which you 
-can later inject in configuration file using `${name}` syntax. 
-
-This feature is especially useful for keeping the executions of the pipelines isolated and traceable by dynamically setting output paths for intermediate data in the **Data Catalog**, e.g.
-
+Then in config you can use it in the following way. Important: `oc.env:...` can't have space in it.
 ```yaml
-# ...
-train_x:
-  type: pandas.CSVDataSet
-  filepath: gs://<bucket>/kedro-vertexai/${run_id}/05_model_input/train_x.csv
-
-train_y:
-  type: pandas.CSVDataSet
-  filepath: gs://<bucket>/kedro-vertexai/${run_id}/05_model_input/train_y.csv
-# ...
+job: ${oc.env:KEDRO_CONFIG_JOB_NAME, default-value}
 ```
 
-In this case, the `${run_id}` placeholder will be substituted by the unique run identifier from Vertex AI Pipelines.
+Follow Kedro's official documentation, to see how to add templating, custom resolvers etc. (https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader)[https://docs.kedro.org/en/stable/configuration/advanced_configuration.html#how-to-do-templating-with-the-omegaconfigloader]
 
 
 ### Dynamic config providers
@@ -186,19 +173,19 @@ Note that the `generate_config` has access to an initialized plugin config via `
 
 Optional `grouping` section enables grouping feature that aggregates many Kedro nodes execution to single VertexAI node(s). Using it allows you to freely subdivide Kedro pipelines to as many steps as logically makes sense while keeping advantages of in memory data transmission possibilities. It also saves you a lot of time avoiding delays of docker container starting at Vertex nodes which can amount to about 2 minutes for each VertexAI node.
 
-API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group:"`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
+API allows implementation of your own aggregation method. You can provide aggregating class and its additional init params as `kwargs` dictionary. Default class is `IdentitiyNodeGrouper` which actually does not group the nodes (plugin behaves as in versions before `0.9.1`). Class that implements grouping using configured tag prefix is called `TagNodeGrouper`. The default prefix is `"group."`. It uses what follows after the tag prefix as a name of group of nodes. Only one tag with this grouping prefix is allowed per node; more than that results in `GroupingException`. Example configuration:
 ```yaml
   grouping:
     cls: kedro_vertexai.grouping.TagNodeGrouper
     params:
-        tag_prefix: "group:"
+        tag_prefix: "group."
 ```
 
 The above configuration will result in the following result in this sample pipeline:
 ```python
 Pipeline([
-  node(some_operation, "A", "B", name="node1", tags=["foo", "group:nodegroup"]),
-  node(some_operation, "B", "C", name="node2", tags=["bar", "group:nodegroup"]),
+  node(some_operation, "A", "B", name="node1", tags=["foo", "group.nodegroup"]),
+  node(some_operation, "B", "C", name="node2", tags=["bar", "group.nodegroup"]),
   node(some_operation, "C", "D", name="node3", tags=["baz"]),
 ])
 ```

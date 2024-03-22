@@ -5,12 +5,12 @@ from typing import Any, Dict
 
 import cloudpickle
 import fsspec
-from kedro.io import AbstractDataSet
+from kedro.io import AbstractDataset, MemoryDataset
 
 from kedro_vertexai.constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME
 
 
-class KedroVertexAIRunnerDataset(AbstractDataSet):
+class KedroVertexAIRunnerDataset(AbstractDataset):
     def __init__(
         self,
         storage_root: str,
@@ -53,3 +53,8 @@ class KedroVertexAIRunnerDataset(AbstractDataSet):
             "dataset_name": self.dataset_name,
             "path": self._get_target_path(),
         }
+
+    def __getattribute__(self, __name: None) -> Any:
+        if __name == "__class__":
+            return MemoryDataset.__getattribute__(MemoryDataset(), __name)
+        return super().__getattribute__(__name)

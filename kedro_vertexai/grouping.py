@@ -73,7 +73,7 @@ class TagNodeGrouper(NodeGrouper):
     """Grouping class that uses special tag prefix convention to aggregate
     nodes together. Only one such tag is allowed per node."""
 
-    def __init__(self, kedro_context: KedroContext, tag_prefix="group:") -> None:
+    def __init__(self, kedro_context: KedroContext, tag_prefix="group.") -> None:
         super().__init__(kedro_context)
         self.tag_prefix = tag_prefix
 
@@ -91,7 +91,8 @@ class TagNodeGrouper(NodeGrouper):
             ]
             if len(grouping_tags) > 1:
                 raise GroupingException(
-                    f"Inconsistent tagging for grouping, multiple tags with grouping prefix found in node {name}"
+                    "Inconsistent tagging for grouping, multiple tags"
+                    f"with grouping prefix found in node {name}"
                 )
             # 1 or 0 loop
             for tag in grouping_tags:
