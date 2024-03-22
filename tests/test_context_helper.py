@@ -20,7 +20,7 @@ class TestContextHelper(unittest.TestCase):
 
     def test_context(self):
         metadata = Mock()
-        metadata.package_name = "test_package"
+        metadata.project_path = "/test/path"
         kedro_session = MagicMock(KedroSession)
         kedro_session.load_context.return_value = "sample_context"
 
@@ -28,7 +28,7 @@ class TestContextHelper(unittest.TestCase):
             create().load_context.return_value = "sample_context"
             helper = ContextHelper.init(metadata, "test")
             assert helper.context == "sample_context"
-            create.assert_called_with("test_package", env="test")
+            create.assert_called_with(metadata.project_path, env="test")
 
     def test_config(self):
         cfg = PluginConfig(
