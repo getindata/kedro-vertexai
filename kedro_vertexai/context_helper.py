@@ -30,7 +30,7 @@ class ContextHelper(object):
     def session(self):
         from kedro.framework.session import KedroSession
 
-        return KedroSession.create(self._metadata.package_name, env=self._env)
+        return KedroSession.create(self._metadata.project_path, env=self._env)
 
     @cached_property
     def context(self):
