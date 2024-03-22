@@ -11,7 +11,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 inputs=["model_input_table", "params:model_options"],
                 outputs=["X_train", "X_test", "y_train", "y_test"],
                 name="split_data_node",
-                tags=["grp:preprocessing"],
+                tags=["grp.preprocessing"],
             ),
             node(
                 func=train_model,

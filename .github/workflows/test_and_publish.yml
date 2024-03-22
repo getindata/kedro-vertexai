@@ -101,11 +101,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     if: (github.event.pull_request.head.repo.full_name == github.repository || github.event.pull_request == null)
-    needs: [unit_tests, sonarcloud]
+    needs: [unit_tests] #, sonarcloud]
     strategy:
       matrix:
         e2e_case: ["standard", "grouping"]
-        python-version: ['3.8']
+        python-version: ['3.8'] # todo update python
     env: 
       PROJECT_NAME: kedro-vertexai
       IMAGE_REGISTRY: gcr.io/gid-ml-ops-sandbox
@@ -129,27 +129,28 @@ jobs:
       - name: Initialize starter project
         run: |
           pip install $(find "./dist" -name "*.tar.gz")
-          kedro new --starter spaceflights --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
+          kedro new --starter spaceflights-pandas --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
 
       - name: Install starter requirements
         working-directory: ./spaceflights
         run: |
           find "../dist" -name "*.tar.gz" | xargs -I@ cp @ $PROJECT_NAME.tar.gz
-          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> src/requirements.txt
-          echo -e "kedro-docker\n" >> src/requirements.txt
-          sed -i '/kedro-telemetry/d' src/requirements.txt
-          echo $(cat src/requirements.txt)
-          pip install -r src/requirements.txt
+          echo -e "\n./$PROJECT_NAME.tar.gz\n" >> requirements.txt
+          echo -e "kedro-docker\n" >> requirements.txt
+          sed -i '/kedro-telemetry/d' requirements.txt
+          echo $(cat requirements.txt)
+          pip install -r requirements.txt
 
       - name: Init and update starter configuration
         working-directory: ./spaceflights
         run: |
           kedro docker init
-          sed -i "s/\(COPY src\/requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz ./g" Dockerfile
+          sed -i "s/\(COPY requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz ./g" Dockerfile
           cat Dockerfile
-          echo "!data/01_raw" >> .dockerignore
+          echo '!data/01_raw' >> .dockerignore
           kedro vertexai init gid-ml-ops-sandbox europe-west4
           cp -r ../tests/e2e/${{ matrix.e2e_case }}/overwrite/* .
+          sed -i "s/\(CONFIG_LOADER_ARGS.*\)$/from omegaconf.resolvers import oc\n\1\n      \"custom_resolvers\": { \"oc.env\": oc.env },/g" src/spaceflights/settings.py
 
       - name: Prepare docker env
         uses: docker/setup-buildx-action@v3
@@ -165,9 +166,9 @@ jobs:
           cleanup_credentials: true
 
       - name: Build docker image
-        working-directory: ./spaceflights
+        working-directory: ./spaceflights # FIXME: pull throws unauthorized error - add docker login? - update in template
         run: |
-          docker pull $IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }} || true
+          docker pull $IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }} || true 
           docker build --build-arg BASE_IMAGE=python:${{ matrix.python-version }}-buster --tag $PROJECT_NAME-e2e:${{ matrix.e2e_case }} --load --cache-from=$IMAGE_REGISTRY/$PROJECT_NAME-e2e:${{ matrix.e2e_case }} .
 
       - name: Publish docker image to docker registry

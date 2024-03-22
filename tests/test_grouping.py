@@ -30,11 +30,11 @@ class TestGenerator(unittest.TestCase):
                     name="node1",
                     tags=[
                         "foo",
-                        "group:group",
-                        "g1:group",
-                        "g2:group",
-                        "ig1:group",
-                        "g5:group",
+                        "group.group",
+                        "g1.group",
+                        "g2.group",
+                        "ig1.group",
+                        "g5.group",
                     ],
                 ),
                 node(
@@ -44,11 +44,11 @@ class TestGenerator(unittest.TestCase):
                     name="node1a",
                     tags=[
                         "bar",
-                        "group:group",
-                        "g1:group",
-                        "g3:group",
-                        "g4:group",
-                        "g5:group",
+                        "group.group",
+                        "g1.group",
+                        "g3.group",
+                        "g4.group",
+                        "g5.group",
                     ],
                 ),
                 node(
@@ -56,14 +56,14 @@ class TestGenerator(unittest.TestCase):
                     "B",
                     "C",
                     name="node2",
-                    tags=["baz", "group:group", "g2:group", "g4:group", "g5:group2"],
+                    tags=["baz", "group.group", "g2.group", "g4.group", "g5.group2"],
                 ),
                 node(
                     identity,
                     "C",
                     "D",
                     name="node3",
-                    tags=["wag", "group:group", "g3:group", "ig1:group", "g5:group2"],
+                    tags=["wag", "group.group", "g3.group", "ig1.group", "g5.group2"],
                 ),
             ]
         ).node_dependencies
@@ -91,7 +91,7 @@ class TestGenerator(unittest.TestCase):
         deps = self.create_pipeline_deps()
         for prefix in self.legal_groups:
             with self.subTest(msg=f"test_{prefix}", group_prefix=prefix):
-                grouper = TagNodeGrouper(None, prefix + ":")
+                grouper = TagNodeGrouper(None, prefix + ".")
                 # when
                 group = grouper.group(deps)
                 # assert
@@ -116,7 +116,7 @@ class TestGenerator(unittest.TestCase):
         deps = self.create_pipeline_deps()
         for prefix in self.illegal_groups:
             with self.subTest(msg=f"test_{prefix}", group_prefix=prefix):
-                grouper = TagNodeGrouper(None, prefix + ":")
+                grouper = TagNodeGrouper(None, prefix + ".")
                 # when
                 with self.assertRaises(GroupingException):
                     grouper.group(deps)

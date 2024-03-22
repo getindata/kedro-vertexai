@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "kedro-vertexai"
-version = "0.10.0"
+version = "0.10.1"
 description = "Kedro plugin with GCP Vertex AI support"
 readme = "README.md"
 authors = ['Marcin Zabłocki <marcin.zablocki@getindata.com>', 'Mateusz Pytel <mateusz.pytel@getindata.com>', 'Mariusz Strzelecki <mariusz.strzelecki@getindata.com>', 'Artur Dobrogowski <artur.dobrogowski@getindata.com>']
@@ -32,15 +32,15 @@ exclude_lines = [
 known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "pydantic","semver","setuptools"]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11" # so far blocked by kedro-mlflow at 0.11.10
-kedro = ">=0.18.8,<0.19.0"
+python = ">=3.8,<3.11" # weird error OverrideNeeded when bumping up. Could be related to old versions with kfp
+kedro = ">=0.19.0,<0.20"
 click = ">=8.0.4"
 kfp = ">=1.8.21,<2.0"
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 toposort = ">1.0,<2.0"
 pyarrow = ">=14.0.1" # Stating explicitly for sub-dependency due to critical vulnerability
-pydantic = ">=1.9.0,<2.0.0" # so far blocked by kedro-mlflow at 0.11.10
+pydantic = ">=1.9.0,<2.0.0" # so far blocked by kedro-mlflow at 0.11.10 & kfp <2.0
 google-auth = "<3"
 google-cloud-scheduler = ">=2.3.2"
 google-cloud-iam = "<3"
@@ -50,7 +50,7 @@ google-cloud-storage = "<3.0.0"
 grpcio = ">=1.4.0,<2.0.0"
 grpcio-status = ">=1.4.0,<2.0.0"
 protobuf = ">=3.18.0,<21.0"
-kedro-mlflow = {version = ">=0.11.8,<0.12.0", optional = true}
+kedro-mlflow = {version = ">=0.12.1,<0.13", optional = true}
 cachetools = ">=3.0,<6.0"
 # pyaml in version 5 does problems with installing binaries/wheel in cicd env with python 3.10. The following fixes that:
 # pyyaml = ">=6.0,<7"

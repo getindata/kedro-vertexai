@@ -1,64 +1,16 @@
 import os
-import warnings
 from functools import cached_property
-from typing import Any, Dict
 
 from kedro.config import (
     AbstractConfigLoader,
-    ConfigLoader,
     MissingConfigException,
-    TemplatedConfigLoader,
+    OmegaConfigLoader,
 )
 from omegaconf import DictConfig, OmegaConf
 
 from kedro_vertexai.client import VertexAIPipelinesClient
 
 from .config import PluginConfig
-from .constants import KEDRO_GLOBALS_PATTERN
-
-
-# FIXME: remove once updated to 0.19
-class EnvTemplatedConfigLoader(TemplatedConfigLoader):
-    """Config loader that can substitute $(commit_id) and $(branch_name)
-    placeholders with information taken from env variables."""
-
-    VAR_PREFIX = "KEDRO_CONFIG_"
-    # defaults provided so default variables ${commit_id|dirty} work for some entries
-    ENV_DEFAULTS = {"commit_id": None, "branch_name": None, "run_id": ""}
-
-    def __init__(
-        self,
-        conf_source: str,
-        env: str = None,
-        runtime_params: Dict[str, Any] = None,
-        *,
-        base_env: str = "base",
-        default_run_env: str = "local",
-    ):
-        warnings.warn(
-            "EnvTemplatedConfigLoader is deprecated and will be removed in future releases, "
-            "use kedro.config.omegaconf_config.OmegaConfigLoader instead.",
-            DeprecationWarning,
-        )
-        super().__init__(
-            conf_source,
-            env=env,
-            runtime_params=runtime_params,
-            globals_dict=self.read_env(),
-            globals_pattern=os.getenv(KEDRO_GLOBALS_PATTERN, None),
-            base_env=base_env,
-            default_run_env=default_run_env,
-        )
-
-    def read_env(self) -> Dict:
-        config = EnvTemplatedConfigLoader.ENV_DEFAULTS.copy()
-        overrides = {
-            k.replace(EnvTemplatedConfigLoader.VAR_PREFIX, "").lower(): v
-            for k, v in os.environ.copy().items()
-            if k.startswith(EnvTemplatedConfigLoader.VAR_PREFIX)
-        }
-        config.update(**overrides)
-        return config
 
 
 class ContextHelper(object):
@@ -78,7 +30,7 @@ class ContextHelper(object):
     def session(self):
         from kedro.framework.session import KedroSession
 
-        return KedroSession.create(self._metadata.package_name, env=self._env)
+        return KedroSession.create(self._metadata.project_path, env=self._env)
 
     @cached_property
     def context(self):
@@ -114,7 +66,7 @@ class ContextHelper(object):
                 self.context.config_loader.get(self.CONFIG_KEY)
             )
         except MissingConfigException:
-            if not isinstance(cl, ConfigLoader):
+            if not isinstance(cl, OmegaConfigLoader):
                 raise ValueError(
                     f"You're using a custom config loader: {cl.__class__.__qualname__}{os.linesep}"
                     f"you need to add the {self.CONFIG_KEY} config to it.{os.linesep}"

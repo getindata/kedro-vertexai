@@ -256,15 +256,17 @@ def schedule(
 @vertexai_group.command()
 @click.argument("project_id")
 @click.argument("region")
-@click.option("--with-github-actions", is_flag=True, default=False)
+@click.option(
+    "--with-github-actions", is_flag=True, default=False
+)  # TODO consider removing
 @click.pass_context
 def init(ctx, project_id, region, with_github_actions: bool):
     """Initializes configuration for the plugin"""
     context_helper = ctx.obj["context_helper"]
     project_name = context_helper.context.project_path.name
     if with_github_actions:
-        image = f"gcr.io/${{google_project_id}}/{project_name}:${{commit_id}}"
-        run_name = f"{project_name}:${{commit_id}}"
+        image = f"gcr.io/${{oc.env:KEDRO_CONFIG_GOOGLE_PROJECT_ID}}/{project_name}:${{oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}}"  # noqa: E501
+        run_name = f"{project_name}:${{oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}}"
     else:
         image = project_name
         run_name = project_name
@@ -279,8 +281,14 @@ def init(ctx, project_id, region, with_github_actions: bool):
     config_path = Path.cwd().joinpath("conf/base/vertexai.yml")
     with open(config_path, "w") as f:
         f.write(sample_config)
+    # FIXME add docs link
+    click.echo(
+        f"""Configuration generated in {config_path}. Make sure to update settings.py to add
+custom resolver for environment variables.
+src/.../settings.py:```
 
-    click.echo(f"Configuration generated in {config_path}")
+```"""
+    )
 
     if with_github_actions:
         PluginConfig.initialize_github_actions(
