@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2024-03-22
+
 -   Applied copier template config for consistency - refactoring and configuration small details
 -   Updated dependencies and tested for kedro `0.19.3`
 -   Node grouping: Changed convention from `:` to `.` due to kedro limitation on colons in node tags
@@ -79,7 +81,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.10.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.11.0...HEAD
+
+[0.11.0]: https://github.com/getindata/kedro-vertexai/compare/0.10.0...0.11.0
 
 [0.10.0]: https://github.com/getindata/kedro-vertexai/compare/0.9.1...0.10.0
 
