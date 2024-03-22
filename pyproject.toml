@@ -59,7 +59,7 @@ cachetools = ">=3.0,<6.0"
 mlflow = ["kedro-mlflow"]
 
 [tool.poetry.dev-dependencies]
-pytest = "<=8"
+pytest = "<=8.0.2"
 pytest-cov = ">=2.8.0, <4.0.0"
 tox = ">=3.25.1,<4.0.0"
 pre-commit = "2.20.0"
