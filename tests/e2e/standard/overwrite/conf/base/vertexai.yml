@@ -12,7 +12,7 @@ run_config:
   root: gid-ml-ops-sandbox-plugin-tests/staging
 
   # Name of the kubeflow experiment to be created
-  experiment_name: kedro-vertex-e2e
+  experiment_name: kedro-vertex-e2e-${oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}
 
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: kedro-vertex-e2e-${oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}
