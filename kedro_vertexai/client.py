@@ -14,8 +14,8 @@ from time import sleep
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
-from kfp.v2 import compiler
-from kfp.v2.google.client import AIPlatformClient
+from kfp import compiler
+from google.cloud import aiplatform as aip
 from tabulate import tabulate
 
 from .config import PluginConfig
@@ -32,9 +32,7 @@ class VertexAIPipelinesClient:
 
     def __init__(self, config: PluginConfig, project_name, context):
 
-        self.api_client = AIPlatformClient(
-            project_id=config.project_id, region=config.region
-        )
+        aip.init(project=config.project_id, location=config.region)
         self.cloud_scheduler_client = CloudSchedulerClient()
         self.location = f"projects/{config.project_id}/locations/{config.region}"
         self.run_config = config.run_config
@@ -46,19 +44,10 @@ class VertexAIPipelinesClient:
         List all the jobs (current and historical) on Vertex AI Pipelines
         :return:
         """
-        list_jobs_response = self.api_client.list_jobs()
-        self.log.debug(list_jobs_response)
-
-        jobs_key = "pipelineJobs"
         headers = ["Name", "ID"]
-        data = (
-            map(
-                lambda x: [x.get("displayName"), x["name"]],
-                list_jobs_response[jobs_key],
-            )
-            if jobs_key in list_jobs_response
-            else []
-        )
+
+        list_jobs_response = aip.PipelineJob.list()
+        data = [(x.display_name, x.name) for x in list_jobs_response]
 
         return tabulate(data, headers=headers)
 

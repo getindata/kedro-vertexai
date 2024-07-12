@@ -3,7 +3,7 @@ Pipeline input and output helper methods for spec generation
 """
 
 from kedro.pipeline.node import Node
-from kfp.components import structures
+# from kfp.components import structures
 
 from ..utils import is_mlflow_enabled
 

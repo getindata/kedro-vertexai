@@ -9,13 +9,13 @@ from typing import Dict
 
 import kfp
 from kedro.framework.context import KedroContext
-from kfp.components.structures import (
-    ComponentSpec,
-    ContainerImplementation,
-    ContainerSpec,
-    OutputPathPlaceholder,
-    OutputSpec,
-)
+# from kfp.components.structures import (
+#     ComponentSpec,
+#     ContainerImplementation,
+#     ContainerSpec,
+#     OutputPathPlaceholder,
+#     OutputSpec,
+# )
 from kfp.v2 import dsl
 
 from kedro_vertexai.config import (
@@ -105,7 +105,7 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, should_add_params) -> dsl.ContainerOp:
+    def _create_mlflow_op(self, image, should_add_params):
 
         mlflow_command = " ".join(
             [
@@ -148,7 +148,7 @@ class PipelineGenerator:
         image,
         pipeline,
         tracking_token=None,
-    ) -> Dict[str, dsl.ContainerOp]:
+    ):
         """Build kfp container graph from Kedro node dependencies."""
         kfp_ops = {}
 
@@ -230,7 +230,7 @@ class PipelineGenerator:
         )
 
     def _create_kedro_op(
-        self, name: str, tags: set, spec: ComponentSpec, op_function_parameters
+        self, name: str, tags: set, spec, op_function_parameters
     ):
         with NamedTemporaryFile(
             mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
