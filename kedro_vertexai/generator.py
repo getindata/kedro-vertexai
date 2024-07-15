@@ -9,6 +9,7 @@ from typing import Dict
 
 import kfp
 from kedro.framework.context import KedroContext
+
 # from kfp.components.structures import (
 #     ComponentSpec,
 #     ContainerImplementation,
@@ -16,7 +17,7 @@ from kedro.framework.context import KedroContext
 #     OutputPathPlaceholder,
 #     OutputSpec,
 # )
-from kfp.v2 import dsl
+from kfp import dsl
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -93,8 +94,8 @@ class PipelineGenerator:
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_ops)
 
-            for operator in kfp_ops.values():
-                operator.container.set_image_pull_policy(image_pull_policy)
+            # for operator in kfp_ops.values():
+            #     operator.container.set_image_pull_policy(image_pull_policy)
 
         return convert_kedro_pipeline_to_kfp
 
@@ -105,42 +106,42 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, should_add_params):
+    # def _create_mlflow_op(self, image, should_add_params):
 
-        mlflow_command = " ".join(
-            [
-                self._generate_hosts_file(),
-                "mkdir --parents",
-                "`dirname {{$.outputs.parameters['output'].output_file}}`",
-                "&&",
-                self._generate_params_command(should_add_params),
-                f"kedro vertexai -e {self.context.env} mlflow-start",
-                "--output {{$.outputs.parameters['output'].output_file}}",
-                self.run_name,
-            ]
-        ).strip()
+    #     mlflow_command = " ".join(
+    #         [
+    #             self._generate_hosts_file(),
+    #             "mkdir --parents",
+    #             "`dirname {{$.outputs.parameters['output'].output_file}}`",
+    #             "&&",
+    #             self._generate_params_command(should_add_params),
+    #             f"kedro vertexai -e {self.context.env} mlflow-start",
+    #             "--output {{$.outputs.parameters['output'].output_file}}",
+    #             self.run_name,
+    #         ]
+    #     ).strip()
 
-        spec = ComponentSpec(
-            name="mlflow-start-run",
-            inputs=[],
-            outputs=[OutputSpec("output", "String")],
-            implementation=ContainerImplementation(
-                container=ContainerSpec(
-                    image=image,
-                    command=["/bin/bash", "-c"],
-                    args=[
-                        mlflow_command,
-                        OutputPathPlaceholder(output_name="output"),
-                    ],
-                )
-            ),
-        )
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-        return component()
+    #     spec = ComponentSpec(
+    #         name="mlflow-start-run",
+    #         inputs=[],
+    #         outputs=[OutputSpec("output", "String")],
+    #         implementation=ContainerImplementation(
+    #             container=ContainerSpec(
+    #                 image=image,
+    #                 command=["/bin/bash", "-c"],
+    #                 args=[
+    #                     mlflow_command,
+    #                     OutputPathPlaceholder(output_name="output"),
+    #                 ],
+    #             )
+    #         ),
+    #     )
+    #     with NamedTemporaryFile(
+    #         mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
+    #     ) as spec_file:
+    #         spec.save(spec_file.name)
+    #         component = kfp.components.load_component_from_file(spec_file.name)
+    #     return component()
 
     def _build_kfp_ops(
         self,
@@ -155,19 +156,22 @@ class PipelineGenerator:
         should_add_params = len(self.context.params) > 0
 
         mlflow_enabled = is_mlflow_enabled()
-        if mlflow_enabled:
-            kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
-                image, should_add_params
-            )
+        # if mlflow_enabled:
+        #     kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
+        #         image, should_add_params
+        #     )
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
-            mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
+            # mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
+            # component_params = (
+            #     [kfp_ops["mlflow-start-run"].output] if mlflow_enabled else []
+            # )
             component_params = (
-                [kfp_ops["mlflow-start-run"].output] if mlflow_enabled else []
-            )
+                []
+            )  # TODO why is it needed when we pass mlflow run id to component as env var?
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
@@ -189,24 +193,24 @@ class PipelineGenerator:
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
                     self._generate_params_command(should_add_params),
-                    mlflow_envs,
+                    # mlflow_envs,
                     kedro_command,
                 ]
             ).strip()
 
-            spec = ComponentSpec(
-                name=name,
-                inputs=mlflow_inputs,
-                outputs=[],
-                implementation=ContainerImplementation(
-                    container=ContainerSpec(
-                        image=image,
-                        command=["/bin/bash", "-c"],
-                        args=[node_command],  # TODO: re-enable? + output_placeholders,
-                    )
-                ),
-            )
-            kfp_ops[name] = self._create_kedro_op(name, tags, spec, component_params)
+            @dsl.container_component
+            def component():
+                return dsl.ContainerSpec(
+                    image=image,
+                    command=["/bin/bash", "-c"],
+                    args=[node_command],
+                )
+
+            task = component()
+            task.component_spec.name = name
+            task.set_display_name(name)
+            self._configure_resources(name, tags, task)
+            kfp_ops[name] = task
 
         return kfp_ops
 
@@ -228,19 +232,6 @@ class PipelineGenerator:
             if should_add_params
             else ""
         )
-
-    def _create_kedro_op(
-        self, name: str, tags: set, spec, op_function_parameters
-    ):
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-
-        operator = component(*op_function_parameters)
-        self._configure_resources(name, tags, operator)
-        return operator
 
     def _configure_resources(self, name: str, tags: set, operator):
         resources = self.run_config.resources_for(name, tags)

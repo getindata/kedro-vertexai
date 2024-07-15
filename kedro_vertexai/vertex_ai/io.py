@@ -3,9 +3,10 @@ Pipeline input and output helper methods for spec generation
 """
 
 from kedro.pipeline.node import Node
-# from kfp.components import structures
 
 from ..utils import is_mlflow_enabled
+
+# from kfp.components import structures
 
 
 def _find_input_node(input_name, nodes):

@@ -11,11 +11,11 @@ from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
 from time import sleep
 
+from google.cloud import aiplatform as aip
 from google.cloud.scheduler_v1.services.cloud_scheduler import (
     CloudSchedulerClient,
 )
 from kfp import compiler
-from google.cloud import aiplatform as aip
 from tabulate import tabulate
 
 from .config import PluginConfig
@@ -66,7 +66,7 @@ class VertexAIPipelinesClient:
         :return:
         """
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-vertexai", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".yaml"
         ) as spec_output:
             self.compile(
                 pipeline,
@@ -75,18 +75,26 @@ class VertexAIPipelinesClient:
                 image_pull_policy=image_pull_policy,
             )
 
-            run = self.api_client.create_run_from_job_spec(
-                service_account=self.run_config.service_account,
-                job_spec_path=spec_output.name,
-                job_id=self.run_name,
-                pipeline_root=f"gs://{self.run_config.root}",
-                parameter_values=parameters or {},
-                enable_caching=False,
-                network=self.run_config.network.vpc,
-            )
-            self.log.debug("Run created %s", str(run))
+            # run = self.api_client.create_run_from_job_spec(
+            #     service_account=self.run_config.service_account,
+            #     job_spec_path=spec_output.name,
+            #     job_id=self.run_name,
+            #     pipeline_root=f"gs://{self.run_config.root}",
+            #     parameter_values=parameters or {},
+            #     enable_caching=False,
+            #     network=self.run_config.network.vpc,
+            # )
+            # self.log.debug("Run created %s", str(run))
 
-            return run
+            job = aip.PipelineJob(
+                display_name="example_model_training",
+                template_path=spec_output.name,
+                parameter_values=parameters or {},
+            )
+
+            job.submit()
+
+            # return run
 
     def _generate_run_name(self, config: PluginConfig):  # noqa
         return config.run_config.experiment_name.rstrip("-") + "-{}".format(

@@ -150,22 +150,22 @@ def run_once(
         parameters=format_params(params),
     )
 
-    click.echo(
-        f"Intermediate data datasets will be stored in {os.linesep}"
-        f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
-    )
+    # click.echo(
+    #     f"Intermediate data datasets will be stored in {os.linesep}"
+    #     f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
+    # )
 
-    if wait_for_completion:
-        result: PipelineResult = client.wait_for_completion(
-            timeout_seconds
-        )  # blocking call
-        if result.is_success:
-            logger.info("Pipeline finished successfully!")
-            exit_code = 0
-        else:
-            logger.error(f"Pipeline finished with status: {result.state}")
-            exit_code = 1
-        ctx.exit(exit_code)
+    # if wait_for_completion:
+    #     result: PipelineResult = client.wait_for_completion(
+    #         timeout_seconds
+    #     )  # blocking call
+    #     if result.is_success:
+    #         logger.info("Pipeline finished successfully!")
+    #         exit_code = 0
+    #     else:
+    #         logger.error(f"Pipeline finished with status: {result.state}")
+    #         exit_code = 1
+    #     ctx.exit(exit_code)
 
 
 @vertexai_group.command()
