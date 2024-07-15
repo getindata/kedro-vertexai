@@ -75,24 +75,19 @@ class VertexAIPipelinesClient:
                 image_pull_policy=image_pull_policy,
             )
 
-            # run = self.api_client.create_run_from_job_spec(
-            #     service_account=self.run_config.service_account,
-            #     job_spec_path=spec_output.name,
-            #     job_id=self.run_name,
-            #     pipeline_root=f"gs://{self.run_config.root}",
-            #     parameter_values=parameters or {},
-            #     enable_caching=False,
-            #     network=self.run_config.network.vpc,
-            # )
-            # self.log.debug("Run created %s", str(run))
-
             job = aip.PipelineJob(
-                display_name="example_model_training",
+                display_name=self.run_name,
                 template_path=spec_output.name,
+                job_id=self.run_name,
+                pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values=parameters or {},
+                enable_caching=False,
             )
 
-            job.submit()
+            job.submit(
+                service_account=self.run_config.service_account,
+                network=self.run_config.network.vpc,
+            )
 
             # return run
 
