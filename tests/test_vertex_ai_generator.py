@@ -92,7 +92,6 @@ class TestGenerator(unittest.TestCase):
 
             # then
             assert dsl_pipeline.ops["node1"].container.image == "unittest-image"
-            assert dsl_pipeline.ops["node1"].container.image_pull_policy == "Never"
 
     def test_should_skip_volume_init_if_requested(self):
         # given

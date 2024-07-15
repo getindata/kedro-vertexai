@@ -146,7 +146,6 @@ def run_once(
     run = client.run_once(
         pipeline=pipeline,
         image=image,
-        image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
 
@@ -210,7 +209,6 @@ def compile(ctx, image, pipeline, output) -> None:
 
     context_helper.vertexai_client.compile(
         pipeline=pipeline,
-        image_pull_policy=config.image_pull_policy,
         image=image if image else config.image,
         output=output,
     )

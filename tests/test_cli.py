@@ -61,7 +61,6 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.run_once.assert_called_with(
             image="new_img",
-            image_pull_policy="Always",
             pipeline="new_pipe",
             parameters={"key1": "some value"},
         )
@@ -175,7 +174,6 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.compile.assert_called_with(
             image="img",
-            image_pull_policy="Always",
             output="output",
             pipeline="pipe",
         )

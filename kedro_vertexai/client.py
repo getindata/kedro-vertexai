@@ -55,7 +55,6 @@ class VertexAIPipelinesClient:
         self,
         pipeline,
         image,
-        image_pull_policy="IfNotPresent",
         parameters=None,
     ):
         """
@@ -101,20 +100,16 @@ class VertexAIPipelinesClient:
         pipeline,
         image,
         output,
-        image_pull_policy="IfNotPresent",
     ):
         """
         Creates json file in given local output path
         :param pipeline:
         :param image:
         :param output:
-        :param image_pull_policy:
         :return:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
-        pipeline_func = self.generator.generate_pipeline(
-            pipeline, image, image_pull_policy, token
-        )
+        pipeline_func = self.generator.generate_pipeline(pipeline, image, token)
         compiler.Compiler().compile(
             pipeline_func=pipeline_func,
             package_path=output,

@@ -63,13 +63,12 @@ class PipelineGenerator:
         """
         return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
-    def generate_pipeline(self, pipeline, image, image_pull_policy, token):
+    def generate_pipeline(self, pipeline, image, token):
         """
         This method return @dsl.pipeline annotated function that contains
         dynamically generated pipelines.
         :param pipeline: kedro pipeline
         :param image: full docker image name
-        :param image_pull_policy: docker pull policy
         :param token: mlflow authentication token
         :return: kfp pipeline function
         """
@@ -93,9 +92,6 @@ class PipelineGenerator:
             kfp_ops = self._build_kfp_ops(grouping, image, pipeline, token)
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_ops)
-
-            # for operator in kfp_ops.values():
-            #     operator.container.set_image_pull_policy(image_pull_policy)
 
         return convert_kedro_pipeline_to_kfp
 
@@ -233,7 +229,9 @@ class PipelineGenerator:
             else ""
         )
 
-    def _configure_resources(self, name: str, tags: set, task: dsl.pipeline_task.PipelineTask):
+    def _configure_resources(
+        self, name: str, tags: set, task: dsl.pipeline_task.PipelineTask
+    ):
         resources = self.run_config.resources_for(name, tags)
         node_selectors = self.run_config.node_selectors_for(name, tags)
         if "cpu" in resources and resources["cpu"]:

@@ -10,10 +10,6 @@ run_config:
   # Name of the image to run as the pipeline steps
   image: eu.gcr.io/my-gcp-mlops-project/example_model:${oc.env:KEDRO_CONFIG_COMMIT_ID}
 
-  # Pull policy to be used for the steps. Use Always if you push the images
-  # on the same tag, or Never if you use only local images
-  image_pull_policy: IfNotPresent
-
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 

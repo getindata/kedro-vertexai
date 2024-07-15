@@ -9,7 +9,6 @@ test_config = PluginConfig.parse_obj(
         "region": "test",
         "run_config": {
             "image": "gcr.io/project-image/test",
-            "image_pull_policy": "Always",
             "experiment_name": "Test Experiment",
             "run_name": "test run",
             "root": "unit_tests",
