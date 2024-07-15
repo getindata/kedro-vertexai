@@ -233,16 +233,16 @@ class PipelineGenerator:
             else ""
         )
 
-    def _configure_resources(self, name: str, tags: set, operator):
+    def _configure_resources(self, name: str, tags: set, task: dsl.pipeline_task.PipelineTask):
         resources = self.run_config.resources_for(name, tags)
         node_selectors = self.run_config.node_selectors_for(name, tags)
         if "cpu" in resources and resources["cpu"]:
-            operator.set_cpu_limit(resources["cpu"])
-            operator.set_cpu_request(resources["cpu"])
+            task.set_cpu_limit(resources["cpu"])
+            task.set_cpu_request(resources["cpu"])
         if "gpu" in resources and resources["gpu"]:
-            operator.set_gpu_limit(resources["gpu"])
+            task.set_gpu_limit(resources["gpu"])
         if "memory" in resources and resources["memory"]:
-            operator.set_memory_limit(resources["memory"])
-            operator.set_memory_request(resources["memory"])
+            task.set_memory_limit(resources["memory"])
+            task.set_memory_request(resources["memory"])
         for constraint, value in node_selectors.items():
-            operator.add_node_selector_constraint(constraint, value)
+            task.add_node_selector_constraint(constraint, value)
