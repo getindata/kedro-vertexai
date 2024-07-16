@@ -71,7 +71,6 @@ class VertexAIPipelinesClient:
                 pipeline,
                 image,
                 output=spec_output.name,
-                image_pull_policy=image_pull_policy,
             )
 
             job = aip.PipelineJob(

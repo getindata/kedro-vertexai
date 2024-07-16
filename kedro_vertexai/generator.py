@@ -102,42 +102,30 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    # def _create_mlflow_op(self, image, should_add_params):
+    def _create_mlflow_op(self, image, should_add_params):
 
-    #     mlflow_command = " ".join(
-    #         [
-    #             self._generate_hosts_file(),
-    #             "mkdir --parents",
-    #             "`dirname {{$.outputs.parameters['output'].output_file}}`",
-    #             "&&",
-    #             self._generate_params_command(should_add_params),
-    #             f"kedro vertexai -e {self.context.env} mlflow-start",
-    #             "--output {{$.outputs.parameters['output'].output_file}}",
-    #             self.run_name,
-    #         ]
-    #     ).strip()
+        @dsl.container_component
+        def mlflow_start_run(mlflow_output_path: dsl.OutputPath(str)):
 
-    #     spec = ComponentSpec(
-    #         name="mlflow-start-run",
-    #         inputs=[],
-    #         outputs=[OutputSpec("output", "String")],
-    #         implementation=ContainerImplementation(
-    #             container=ContainerSpec(
-    #                 image=image,
-    #                 command=["/bin/bash", "-c"],
-    #                 args=[
-    #                     mlflow_command,
-    #                     OutputPathPlaceholder(output_name="output"),
-    #                 ],
-    #             )
-    #         ),
-    #     )
-    #     with NamedTemporaryFile(
-    #         mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
-    #     ) as spec_file:
-    #         spec.save(spec_file.name)
-    #         component = kfp.components.load_component_from_file(spec_file.name)
-    #     return component()
+            mlflow_command = " ".join(
+                [
+                    self._generate_hosts_file(),
+                    f"mkdir -p $(dirname {mlflow_output_path})",
+                    "&&",
+                    self._generate_params_command(should_add_params),
+                    f"kedro vertexai -e {self.context.env} mlflow-start",
+                    f"--output {mlflow_output_path}",
+                    self.run_name,
+                ]
+            ).strip()
+
+            return dsl.ContainerSpec(
+                image=image,
+                command=["/bin/bash", "-c"],
+                args=[mlflow_command],
+            )
+
+        return mlflow_start_run()
 
     def _build_kfp_ops(
         self,
@@ -152,10 +140,10 @@ class PipelineGenerator:
         should_add_params = len(self.context.params) > 0
 
         mlflow_enabled = is_mlflow_enabled()
-        # if mlflow_enabled:
-        #     kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
-        #         image, should_add_params
-        #     )
+        if mlflow_enabled:
+            kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
+                image, should_add_params
+            )
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
