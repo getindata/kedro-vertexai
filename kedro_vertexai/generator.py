@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, Union
 
 import kfp
 from kedro.framework.context import KedroContext
@@ -103,18 +103,17 @@ class PipelineGenerator:
         )
 
     def _create_mlflow_op(self, image, should_add_params):
-
         @dsl.container_component
-        def mlflow_start_run(mlflow_output_path: dsl.OutputPath(str)):
+        def mlflow_start_run(mlflow_run_id: dsl.OutputPath(str)):
 
             mlflow_command = " ".join(
                 [
                     self._generate_hosts_file(),
-                    f"mkdir -p $(dirname {mlflow_output_path})",
+                    f"mkdir -p $(dirname {mlflow_run_id})",
                     "&&",
                     self._generate_params_command(should_add_params),
                     f"kedro vertexai -e {self.context.env} mlflow-start",
-                    f"--output {mlflow_output_path}",
+                    f"--output {mlflow_run_id}",
                     self.run_name,
                 ]
             ).strip()
@@ -150,12 +149,9 @@ class PipelineGenerator:
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
             # mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
-            # component_params = (
-            #     [kfp_ops["mlflow-start-run"].output] if mlflow_enabled else []
-            # )
             component_params = (
-                []
-            )  # TODO why is it needed when we pass mlflow run id to component as env var?
+                kfp_ops["mlflow-start-run"].outputs if mlflow_enabled else {}
+            )
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
@@ -177,20 +173,22 @@ class PipelineGenerator:
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
                     self._generate_params_command(should_add_params),
-                    # mlflow_envs,
+                    "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
+                    if is_mlflow_enabled()
+                    else "",
                     kedro_command,
                 ]
             ).strip()
 
             @dsl.container_component
-            def component():
+            def component(mlflow_run_id: Union[str, None] = None):
                 return dsl.ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
                     args=[node_command],
                 )
 
-            task = component()
+            task = component(**component_params)
             task.component_spec.name = name
             task.set_display_name(name)
             self._configure_resources(name, tags, task)

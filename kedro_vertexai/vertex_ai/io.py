@@ -3,10 +3,9 @@ Pipeline input and output helper methods for spec generation
 """
 
 from kedro.pipeline.node import Node
+from kfp.dsl.structures import InputSpec
 
 from ..utils import is_mlflow_enabled
-
-# from kfp.components import structures
 
 
 def _find_input_node(input_name, nodes):
@@ -56,11 +55,7 @@ def generate_mlflow_inputs():
     :return: mlflow_inputs, mlflow_envs
     """
     mlflow_inputs = (
-        [
-            structures.InputSpec("mlflow_run_id", "String"),
-        ]
-        if is_mlflow_enabled()
-        else []
+        {"mlflow_run_id": InputSpec("String")} if is_mlflow_enabled() else {}
     )
     mlflow_envs = (
         "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
