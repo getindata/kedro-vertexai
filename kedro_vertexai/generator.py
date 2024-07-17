@@ -23,7 +23,6 @@ from kedro_vertexai.constants import (
 )
 from kedro_vertexai.grouping import Grouping, NodeGrouper
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
-from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
 
 

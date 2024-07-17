@@ -8,7 +8,7 @@ from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
 from .config import PluginConfig, RunConfig
-from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
+from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .utils import (
     docker_build,

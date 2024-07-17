@@ -1,7 +1,6 @@
 """Test kedro_vertexai module."""
 
 import unittest
-from time import sleep
 from unittest.mock import MagicMock, patch
 
 from kedro_vertexai.client import VertexAIPipelinesClient
