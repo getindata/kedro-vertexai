@@ -4,20 +4,11 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from tempfile import NamedTemporaryFile
 from typing import Dict, Union
 
-import kfp
 from kedro.framework.context import KedroContext
-
-# from kfp.components.structures import (
-#     ComponentSpec,
-#     ContainerImplementation,
-#     ContainerSpec,
-#     OutputPathPlaceholder,
-#     OutputSpec,
-# )
 from kfp import dsl
+from kfp.dsl.pipeline_task import PipelineTask
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -73,11 +64,13 @@ class PipelineGenerator:
         :return: kfp pipeline function
         """
 
-        def set_dependencies(node_name, dependencies, kfp_ops):
+        def set_dependencies(
+            node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
+        ):
             for dependency_group in dependencies:
                 name = clean_name(node_name)
                 dependency_name = clean_name(dependency_group)
-                kfp_ops[name].after(kfp_ops[dependency_name])
+                kfp_tasks[name].after(kfp_tasks[dependency_name])
 
         @dsl.pipeline(
             name=self.get_pipeline_name(),
@@ -89,9 +82,9 @@ class PipelineGenerator:
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_ops = self._build_kfp_ops(grouping, image, pipeline, token)
+            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token)
             for group_name, dependencies in grouping.dependencies.items():
-                set_dependencies(group_name, dependencies, kfp_ops)
+                set_dependencies(group_name, dependencies, kfp_tasks)
 
         return convert_kedro_pipeline_to_kfp
 
@@ -102,7 +95,7 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, should_add_params):
+    def _create_mlflow_task(self, image, should_add_params) -> PipelineTask:
         @dsl.container_component
         def mlflow_start_run(mlflow_run_id: dsl.OutputPath(str)):
 
@@ -126,21 +119,21 @@ class PipelineGenerator:
 
         return mlflow_start_run()
 
-    def _build_kfp_ops(
+    def _build_kfp_tasks(
         self,
         node_grouping: Grouping,
         image,
         pipeline,
         tracking_token=None,
-    ):
+    ) -> Dict[str, PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
-        kfp_ops = {}
+        kfp_tasks = {}
 
         should_add_params = len(self.context.params) > 0
 
         mlflow_enabled = is_mlflow_enabled()
         if mlflow_enabled:
-            kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
+            kfp_tasks["mlflow-start-run"] = self._create_mlflow_task(
                 image, should_add_params
             )
 
@@ -150,7 +143,7 @@ class PipelineGenerator:
 
             # mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
             component_params = (
-                kfp_ops["mlflow-start-run"].outputs if mlflow_enabled else {}
+                kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
@@ -192,9 +185,9 @@ class PipelineGenerator:
             task.component_spec.name = name
             task.set_display_name(name)
             self._configure_resources(name, tags, task)
-            kfp_ops[name] = task
+            kfp_tasks[name] = task
 
-        return kfp_ops
+        return kfp_tasks
 
     def _globals_env(self) -> str:
         return (
@@ -215,9 +208,7 @@ class PipelineGenerator:
             else ""
         )
 
-    def _configure_resources(
-        self, name: str, tags: set, task: dsl.pipeline_task.PipelineTask
-    ):
+    def _configure_resources(self, name: str, tags: set, task: PipelineTask):
         resources = self.run_config.resources_for(name, tags)
         node_selectors = self.run_config.node_selectors_for(name, tags)
         if "cpu" in resources and resources["cpu"]:
