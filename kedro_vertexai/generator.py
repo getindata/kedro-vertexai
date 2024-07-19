@@ -219,4 +219,5 @@ class PipelineGenerator:
             task.set_memory_limit(resources["memory"])
             task.set_memory_request(resources["memory"])
         for constraint, value in node_selectors.items():
-            task.add_node_selector_constraint(constraint, value)
+            task.set_accelerator_type(constraint)
+            task.add_node_selector_constraint(value)
