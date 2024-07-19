@@ -97,13 +97,17 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
 
             # then
-            for node_name in ["node1", "node2"]:
-                spec = dsl_pipeline.ops[node_name].container
-                assert spec.resources is None
+            for component in ["exec-component", "exec-component-2"]:
+                spec = pipeline_spec["deploymentSpec"]["executors"][component]["container"]
+                assert "resources" not in spec
 
     def test_should_add_resources_spec(self):
         # given
