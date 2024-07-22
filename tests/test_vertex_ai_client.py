@@ -106,6 +106,9 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["schedule"] == "0 0 12 * *"
             assert kwargs["pipeline_root"] == "gs://BUCKET/PREFIX"
 
+    @unittest.skip(
+        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
+    )
     def test_should_remove_old_schedule(self):
         def mock_job(job_name, pipeline_name=None):
             if pipeline_name:
