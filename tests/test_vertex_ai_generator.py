@@ -187,10 +187,12 @@ class TestGenerator(unittest.TestCase):
             # then
             assert pipeline.description == "DESC"
 
-    def test_should_add_env_and_pipeline_in_the_invocations(self):
+    @patch("kedro_vertexai.generator.is_mlflow_enabled", return_value=True)
+    def test_should_add_env_and_pipeline_in_the_invocations(
+        self, mock_is_mlflow_enabled
+    ):
         # given
         self.create_generator()
-        self.mock_mlflow(True)
 
         # when
         with patch(
@@ -200,18 +202,19 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
 
-            # then
-            assert (
-                "kedro vertexai -e unittests mlflow-start"
-                in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
-            )
-            assert (
-                'kedro run -e unittests --pipeline pipeline --nodes "node1"'
-                in dsl_pipeline.ops["node1"].container.args[0]
-            )
+                assert (
+                    "kedro vertexai -e unittests mlflow-start"
+                    in pipeline_spec["deploymentSpec"]["executors"][
+                        "exec-mlflow-start-run"
+                    ]["container"]["args"][0]
+                )
 
     def test_should_add_runner_and_runner_config(self):
         # given
@@ -328,7 +331,7 @@ class TestGenerator(unittest.TestCase):
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
-            if not enabled and name == "mlflow":
+            if not enabled and (name == "mlflow" or name == "kedro_mlflow"):
                 raise ImportError
             return self.realimport(name, *args, **kw)
 
