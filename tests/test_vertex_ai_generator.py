@@ -216,8 +216,7 @@ class TestGenerator(unittest.TestCase):
                     ]["container"]["args"][0]
                 )
 
-    @patch("kedro_vertexai.generator.is_mlflow_enabled", return_value=True)
-    def test_should_add_runner_and_runner_config(self, mock_is_mlflow_enabled):
+    def test_should_add_runner_and_runner_config(self):
         # given
         self.create_generator()
 
@@ -251,7 +250,6 @@ class TestGenerator(unittest.TestCase):
 
     def test_should_dump_params_and_add_config_if_params_are_set(self):
         self.create_generator(params={"my_params1": 1.0, "my_param2": ["a", "b", "c"]})
-        self.mock_mlflow(False)
 
         with patch(
             "kedro.framework.project.pipelines",
@@ -260,17 +258,27 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
 
             assert (
                 "kedro vertexai -e unittests initialize-job --params="
-                in dsl_pipeline.ops["node1"].container.args[0]
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    "container"
+                ]["args"][0]
             )
 
             assert (
                 'kedro run -e unittests --pipeline pipeline --nodes "node1"'
-                in (args := dsl_pipeline.ops["node1"].container.args[0])
+                in (
+                    args := pipeline_spec["deploymentSpec"]["executors"][
+                        "exec-component"
+                    ]["container"]["args"][0]
+                )
             ) and args.endswith("--config config.yaml")
 
     def test_should_add_globals_env_if_present(self):
@@ -289,17 +297,27 @@ class TestGenerator(unittest.TestCase):
                     "unittest-image",
                     "MLFLOW_TRACKING_TOKEN",
                 )
-                with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                    pipeline()
+                with NamedTemporaryFile(
+                    mode="rt", prefix="pipeline", suffix=".yaml"
+                ) as spec_output:
+                    kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                    with open(spec_output.name) as f:
+                        pipeline_spec = yaml.safe_load(f)
 
                 expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-                assert expected in dsl_pipeline.ops["node1"].container.args[0]
+                assert pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    "container"
+                ]["args"][0]
 
                 assert (
-                    dsl_pipeline.ops["node1"].container.args[0].count(expected) == 2
+                    pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                        "container"
+                    ]["args"][0].count(expected)
+                    == 2
                 ), "Globals variable should be added twice - once for initialize-job, once for kedro run"
 
-    def test_should_add_host_aliases_if_requested(self):
+    @patch("kedro_vertexai.generator.is_mlflow_enabled", return_value=True)
+    def test_should_add_host_aliases_if_requested(self, mock_is_mlflow_enabled):
         # given
         self.create_generator(
             config={
@@ -313,7 +331,6 @@ class TestGenerator(unittest.TestCase):
                 }
             }
         )
-        self.mock_mlflow(True)
 
         # when
         with patch(
@@ -323,8 +340,12 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
 
             # then
             hosts_entry_cmd = (
@@ -332,9 +353,16 @@ class TestGenerator(unittest.TestCase):
             )
             assert (
                 hosts_entry_cmd
-                in dsl_pipeline.ops["mlflow-start-run"].container.args[0]
+                in pipeline_spec["deploymentSpec"]["executors"][
+                    "exec-mlflow-start-run"
+                ]["container"]["args"][0]
             )
-            assert hosts_entry_cmd in dsl_pipeline.ops["node1"].container.args[0]
+            assert (
+                hosts_entry_cmd
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    "container"
+                ]["args"][0]
+            )
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
