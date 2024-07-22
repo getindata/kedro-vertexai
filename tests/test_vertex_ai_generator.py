@@ -2,9 +2,11 @@
 
 import unittest
 from copy import deepcopy
+from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock, patch
 
 import kfp
+import yaml
 from kedro.pipeline import Pipeline, node
 
 from kedro_vertexai.config import PluginConfig
@@ -16,8 +18,6 @@ from kedro_vertexai.constants import (
 from kedro_vertexai.generator import PipelineGenerator
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
 from tests.utils import environment
-from tempfile import NamedTemporaryFile
-import yaml
 
 
 def identity(input1: str):
@@ -35,18 +35,23 @@ class TestGenerator(unittest.TestCase):
 
     def test_should_group_when_enabled(self):
         # given
-        expected1 = {"cpu": "100m"}
-        expected2 = {"cpu": "400m", "memory": "64Gi"}
+        expected1 = {"cpuLimit": 0.1, "cpuRequest": 0.1}
+        expected2 = {
+            "cpuLimit": 0.4,
+            "cpuRequest": 0.4,
+            "memoryLimit": 68.719476736,
+            "memoryRequest": 68.719476736,
+        }
         base = {
             "grouping": {"cls": "kedro_vertexai.grouping.TagNodeGrouper"},
-            "resources": {"__default__": expected1},
+            "resources": {"__default__": {"cpu": "100m"}},
         }
         tags = ["node1", "nodegroup", "foo", "bar", "group.nodegroup"]
 
         configs = []
         for tag in tags:
             testcfg = deepcopy(base)
-            testcfg["resources"][tag] = expected2
+            testcfg["resources"][tag] = {"cpu": "400m", "memory": "64Gi"}
             configs.append(testcfg)
 
         expected = [expected1] + 4 * [expected2]
@@ -63,21 +68,27 @@ class TestGenerator(unittest.TestCase):
                     pipeline = self.generator_under_test.generate_pipeline(
                         "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
                     )
-                    # TODO try to find how to access those properties
-                    # with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                    #     pipeline()
+                    with NamedTemporaryFile(
+                        mode="rt", prefix="pipeline", suffix=".yaml"
+                    ) as spec_output:
+                        kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                        with open(spec_output.name) as f:
+                            pipeline_spec = yaml.safe_load(f)
 
-                    # # then
-                    # assert (
-                    #     '--nodes "node1,node2"'
-                    #     in dsl_pipeline.ops["nodegroup"].container.args[0]
-                    #     or '--nodes "node2,node1"'
-                    #     in dsl_pipeline.ops["nodegroup"].container.args[0]
-                    # )
-                    # self.assertDictEqual(
-                    #     dsl_pipeline.ops["nodegroup"].container.resources.requests, exp
-                    # )
+                        component_args = pipeline_spec["deploymentSpec"]["executors"][
+                            "exec-component"
+                        ]["container"]["args"][0]
+                        assert (
+                            '--nodes "node1,node2"' in component_args
+                            or '"node2,node1"' in component_args
+                        )
 
+                        self.assertDictEqual(
+                            pipeline_spec["deploymentSpec"]["executors"][
+                                "exec-component"
+                            ]["container"]["resources"],
+                            exp,
+                        )
 
     def test_should_not_add_resources_spec_if_not_requested(self):
         # given
@@ -106,7 +117,9 @@ class TestGenerator(unittest.TestCase):
 
             # then
             for component in ["exec-component", "exec-component-2"]:
-                spec = pipeline_spec["deploymentSpec"]["executors"][component]["container"]
+                spec = pipeline_spec["deploymentSpec"]["executors"][component][
+                    "container"
+                ]
                 assert "resources" not in spec
 
     def test_should_add_resources_spec(self):
@@ -139,15 +152,22 @@ class TestGenerator(unittest.TestCase):
                     pipeline_spec = yaml.safe_load(f)
 
                     # then
-                    component1_resources = pipeline_spec["deploymentSpec"]["executors"]["exec-component"]["container"]["resources"]
+                    component1_resources = pipeline_spec["deploymentSpec"]["executors"][
+                        "exec-component"
+                    ]["container"]["resources"]
                     assert component1_resources["cpuLimit"] == 0.4
                     assert component1_resources["memoryLimit"] == 68.719476736
                     assert component1_resources["cpuRequest"] == 0.4
                     assert component1_resources["memoryRequest"] == 68.719476736
                     assert component1_resources["accelerator"]["count"] == "1"
-                    assert component1_resources["accelerator"]["type"] == "NVIDIA_TESLA_K80"
+                    assert (
+                        component1_resources["accelerator"]["type"]
+                        == "NVIDIA_TESLA_K80"
+                    )
 
-                    component2_resources = pipeline_spec["deploymentSpec"]["executors"]["exec-component-2"]["container"]["resources"]
+                    component2_resources = pipeline_spec["deploymentSpec"]["executors"][
+                        "exec-component-2"
+                    ]["container"]["resources"]
                     assert component2_resources["cpuLimit"] == 0.1
                     assert component2_resources["cpuRequest"] == 0.1
 
@@ -166,7 +186,6 @@ class TestGenerator(unittest.TestCase):
 
             # then
             assert pipeline.description == "DESC"
-
 
     def test_should_add_env_and_pipeline_in_the_invocations(self):
         # given
