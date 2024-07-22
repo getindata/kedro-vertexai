@@ -216,10 +216,10 @@ class TestGenerator(unittest.TestCase):
                     ]["container"]["args"][0]
                 )
 
-    def test_should_add_runner_and_runner_config(self):
+    @patch("kedro_vertexai.generator.is_mlflow_enabled", return_value=True)
+    def test_should_add_runner_and_runner_config(self, mock_is_mlflow_enabled):
         # given
         self.create_generator()
-        self.mock_mlflow(True)
 
         # when
         with patch(
@@ -229,12 +229,19 @@ class TestGenerator(unittest.TestCase):
             pipeline = self.generator_under_test.generate_pipeline(
                 "pipeline", "unittest-image", "MLFLOW_TRACKING_TOKEN"
             )
-            with kfp.dsl.Pipeline(None) as dsl_pipeline:
-                pipeline()
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
 
             # then
             assert all(
-                check in dsl_pipeline.ops["node1"].container.args[0]
+                check
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    "container"
+                ]["args"][0]
                 for check in (
                     f"{KEDRO_CONFIG_RUN_ID}=",
                     f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{{",
