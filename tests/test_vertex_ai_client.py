@@ -27,32 +27,15 @@ class TestVertexAIClient(unittest.TestCase):
         return VertexAIPipelinesClient(config, MagicMock(), MagicMock())
 
     def test_compile(self):
-        with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ), patch("kfp.v2.compiler.Compiler") as Compiler:
+        with patch("kedro_vertexai.client.PipelineGenerator"), patch(
+            "kedro_vertexai.client.aip.init"
+        ), patch("kfp.compiler.Compiler") as Compiler:
             compiler = Compiler.return_value
 
             client_under_test = self.create_client()
-            client_under_test.compile(
-                MagicMock("pipeline"), "image", "some_path", "run-name"
-            )
+            client_under_test.compile(MagicMock("pipeline"), "image", "some_path")
 
             compiler.compile.assert_called_once()
-
-    def test_run_once(self):
-        with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
-            ai_client = AIPlatformClient.return_value
-
-            run_mock = {"run": "mock"}
-            ai_client.create_run_from_job_spec.return_value = run_mock
-            client_under_test = self.create_client()
-            run = client_under_test.run_once(MagicMock("pipeline"), "image")
-
-            assert run_mock == run
-            _, kwargs = ai_client.create_run_from_job_spec.call_args
-            assert kwargs["network"] == "my-vpc"
 
     def test_should_list_pipelines(self):
         job1 = MagicMock()
@@ -69,11 +52,8 @@ class TestVertexAIClient(unittest.TestCase):
 
         jobs = [job1, job2, job3]
 
-        def _mock_aip_init(*args, **kwargs):
-            pass
-
         with patch("kedro_vertexai.client.aip.PipelineJob") as PipelineJob, patch(
-            "kedro_vertexai.client.aip.init", new=_mock_aip_init
+            "kedro_vertexai.client.aip.init"
         ):
             PipelineJob.list.return_value = jobs
 
