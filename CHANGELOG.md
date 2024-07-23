@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased] 2024-07-23
+
+- Migrated to kfp `2.8.0`
 
 ## [0.11.1] - 2024-07-01
 
