@@ -14,7 +14,7 @@ class TestMlflowTagsHook(unittest.TestCase):
     def test_should_set_mlflow_tags(self, mlflow_set_tag: MagicMock):
         with environment(
             {"KEDRO_CONFIG_RUN_ID": "KFP_123", "KEDRO_CONFIG_JOB_NAME": "asd"}
-        ):
+        ), patch("kedro_vertexai.hooks.is_mlflow_enabled", return_value=True):
             MlflowTagsHook().before_node_run()
 
         mlflow_set_tag.assert_has_calls(
