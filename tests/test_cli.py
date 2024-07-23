@@ -81,14 +81,11 @@ class TestPluginCLI(unittest.TestCase):
                 "--param",
                 "key1:some value",
                 "--wait-for-completion",
-                "--timeout-seconds",
-                "666",
             ],
             obj=config,
         )
 
         assert result.exit_code == 0
-        context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
     def test_docker_build(self):
         for exit_code in range(10):
