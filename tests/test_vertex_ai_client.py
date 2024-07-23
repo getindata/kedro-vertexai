@@ -55,36 +55,37 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["network"] == "my-vpc"
 
     def test_should_list_pipelines(self):
-        with patch("kedro_vertexai.client.AIPlatformClient") as AIPlatformClient:
-            ai_client = AIPlatformClient.return_value
-            ai_client.list_jobs.return_value = {
-                "pipelineJobs": [
-                    {
-                        "displayName": "run1",
-                        "name": "projects/29350373243/locations/"
-                        "europe-west4/pipelineJobs/run1",
-                    },
-                    {
-                        "displayName": "run2",
-                        "name": "projects/29350373243/locations/"
-                        "europe-west4/pipelineJobs/run2",
-                    },
-                    {
-                        "name": "projects/123/locations/"
-                        "europe-west4/pipelineJobs/no-display-name",
-                    },
-                ]
-            }
+        job1 = MagicMock()
+        job1.display_name = "vertex-ai-plugin-demo-20240717134831"
+        job1.name = "vertex-ai-plugin-demo-20240717134831"
+
+        job2 = MagicMock()
+        job2.display_name = "vertex-ai-plugin-demo-20240717134258"
+        job2.name = "vertex-ai-plugin-demo-20240717134258"
+
+        job3 = MagicMock()
+        job3.display_name = "vertex-ai-plugin-demo-20240717120026"
+        job3.name = "vertex-ai-plugin-demo-20240717120026"
+
+        jobs = [job1, job2, job3]
+
+        def _mock_aip_init(*args, **kwargs):
+            pass
+
+        with patch("kedro_vertexai.client.aip.PipelineJob") as PipelineJob, patch(
+            "kedro_vertexai.client.aip.init", new=_mock_aip_init
+        ):
+            PipelineJob.list.return_value = jobs
 
             client_under_test = self.create_client()
             tabulation = client_under_test.list_pipelines()
 
             expected_output = """
-            |Name    ID
-            |------  ----------------------------------------------------------------
-            |run1    projects/29350373243/locations/europe-west4/pipelineJobs/run1
-            |run2    projects/29350373243/locations/europe-west4/pipelineJobs/run2
-            |        projects/123/locations/europe-west4/pipelineJobs/no-display-name"""
+            |Name                                  ID
+            |------------------------------------  ------------------------------------
+            |vertex-ai-plugin-demo-20240717134831  vertex-ai-plugin-demo-20240717134831
+            |vertex-ai-plugin-demo-20240717134258  vertex-ai-plugin-demo-20240717134258
+            |vertex-ai-plugin-demo-20240717120026  vertex-ai-plugin-demo-20240717120026"""
             assert tabulation == strip_margin(expected_output)
 
     @unittest.skip(
