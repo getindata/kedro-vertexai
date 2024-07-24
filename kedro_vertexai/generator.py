@@ -140,7 +140,6 @@ class PipelineGenerator:
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
-            # mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
             component_params = (
                 kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
