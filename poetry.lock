@@ -4148,4 +4148,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "e1eebb66d0709769e343e28443a4930a50718526e4fd69ec468ea2f5fa386db3"
+content-hash = "4d35c9a848ee572627adaf86da557b493cc0a894dbc81dd2bcd64d52ced608d3"

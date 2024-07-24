@@ -8,7 +8,7 @@ from typing import Dict, Union
 
 from kedro.framework.context import KedroContext
 from kfp import dsl
-from kfp.dsl.pipeline_task import PipelineTask
+from kfp.dsl import PipelineTask
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
