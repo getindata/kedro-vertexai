@@ -2,7 +2,9 @@
 
 ## [Unreleased] 2024-07-23
 
-- Migrated to kfp `2.8.0`
+- Migrated to kfp 2
+- Removed `image_pull_policy` parameter from configuration, as it only applies to Kubernetes backend and not Vertex AI,
+and it's only available in `kfp-kubernetes` extension package
 
 ## [0.11.1] - 2024-07-01
 
