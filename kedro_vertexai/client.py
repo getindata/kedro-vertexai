@@ -153,7 +153,6 @@ class VertexAIPipelinesClient:
                 pipeline,
                 self.run_config.image,
                 output=spec_output.name,
-                image_pull_policy=image_pull_policy,
             )
             self.api_client.create_schedule_from_job_spec(
                 job_spec_path=spec_output.name,
