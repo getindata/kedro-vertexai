@@ -204,7 +204,15 @@ def compile(ctx, image, pipeline, output) -> None:
     "--cron-expression",
     type=str,
     help="Cron expression for recurring run",
+    required=True,
+)
+@click.option(
+    "-c",
+    "--timezone",
+    type=str,
+    help="Time zone of the crone expression. Defaults to UTC.",
     required=False,
+    default="Etc/UTC",
 )
 @click.option(
     "--param",
@@ -218,12 +226,18 @@ def schedule(
     ctx,
     pipeline: str,
     cron_expression: str,
+    timezone: str,
     params: list,
 ):
     """Schedules recurring execution of latest version of the pipeline"""
-    logger.warning(
-        "Scheduler functionality was temporarily disabled, "
-        "follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
+    context_helper = ctx.obj["context_helper"]
+    client: VertexAIPipelinesClient = context_helper.vertexai_client
+
+    client.schedule(
+        pipeline=pipeline,
+        cron_expression=cron_expression,
+        timezone=timezone,
+        parameter_values=format_params(params),
     )
 
 

@@ -7,6 +7,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
+from typing import Any, Dict, Optional
 
 from google.cloud import aiplatform as aip
 from google.cloud.aiplatform import PipelineJob
@@ -132,35 +133,45 @@ class VertexAIPipelinesClient:
 
     def schedule(
         self,
-        pipeline,
-        cron_expression,
-        parameter_values=None,
-        image_pull_policy="IfNotPresent",
+        pipeline: str,
+        cron_expression: str,
+        timezone: str,
+        parameter_values: Optional[Dict[str, Any]] = None,
     ):
         """
         Schedule pipeline to Vertex AI with given cron expression
-        :param pipeline:
-        :param cron_expression:
-        :param parameter_values:
-        :param image_pull_policy:
+        :param pipeline: Name of the Kedro pipeline to schedule.
+        :param cron_expression: Schedule cron expression.
+        :param timezone: Cron expression timezone. May only be a valid string from IANA time zone database.
+        :param parameter_values: Kubeflow pipeline parameter values.
         :return:
         """
-        self._cleanup_old_schedule(self.generator.get_pipeline_name())
+        # self._cleanup_old_schedule(self.generator.get_pipeline_name())
+
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-vertexai", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".yaml"
         ) as spec_output:
             self.compile(
                 pipeline,
                 self.run_config.image,
                 output=spec_output.name,
             )
-            self.api_client.create_schedule_from_job_spec(
-                job_spec_path=spec_output.name,
-                time_zone="Etc/UTC",
-                schedule=cron_expression,
+
+            job = aip.PipelineJob(
+                display_name=self.run_name,
+                template_path=spec_output.name,
+                job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
-                enable_caching=False,
                 parameter_values=parameter_values or {},
+                enable_caching=False,
+            )
+            cron_with_timezone = f"TZ={timezone} {cron_expression}"
+
+            job.create_schedule(
+                display_name=self.run_config.scheduled_run_name,
+                cron=cron_with_timezone,
+                service_account=self.run_config.service_account,
+                network=self.run_config.network.vpc,
             )
 
-            self.log.info("Pipeline scheduled to %s", cron_expression)
+        self.log.info("Pipeline scheduled to %s", cron_with_timezone)
