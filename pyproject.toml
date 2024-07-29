@@ -35,7 +35,7 @@ known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "py
 python = ">=3.8,<3.11" # weird error OverrideNeeded when bumping up. Could be related to old versions with kfp
 kedro = ">=0.19.0,<0.20"
 click = ">=8.0.4"
-kfp = ">=1.8.21,<2.0"
+kfp = ">=2.0.0,<3.0"
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 toposort = ">1.0,<2.0"
@@ -54,6 +54,9 @@ kedro-mlflow = {version = ">=0.12.1,<0.13", optional = true}
 cachetools = ">=3.0,<6.0"
 # pyaml in version 5 does problems with installing binaries/wheel in cicd env with python 3.10. The following fixes that:
 # pyyaml = ">=6.0,<7"
+google-cloud-aiplatform = {extras = ["metadata"], version = "^1.59.0"}
+cloudpickle = "^3.0.0"
+mlflow = "^2.14.3"
 
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]

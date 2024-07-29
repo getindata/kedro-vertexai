@@ -61,7 +61,6 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.run_once.assert_called_with(
             image="new_img",
-            image_pull_policy="Always",
             pipeline="new_pipe",
             parameters={"key1": "some value"},
         )
@@ -82,14 +81,11 @@ class TestPluginCLI(unittest.TestCase):
                 "--param",
                 "key1:some value",
                 "--wait-for-completion",
-                "--timeout-seconds",
-                "666",
             ],
             obj=config,
         )
 
         assert result.exit_code == 0
-        context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
     def test_docker_build(self):
         for exit_code in range(10):
@@ -175,7 +171,6 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.compile.assert_called_with(
             image="img",
-            image_pull_policy="Always",
             output="output",
             pipeline="pipe",
         )

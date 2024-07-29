@@ -108,17 +108,14 @@ Adjusted `catalog.yml` should look like this (note: remove the rest of the entri
 companies:
   type: pandas.CSVDataSet
   filepath: data/01_raw/companies.csv
-  layer: raw
 
 reviews:
   type: pandas.CSVDataSet
   filepath: data/01_raw/reviews.csv
-  layer: raw
 
 shuttles:
   type: pandas.ExcelDataSet
   filepath: data/01_raw/shuttles.xlsx
-  layer: raw
 ```
 
 All intermediate and output data will be stored in the location with the following pattern:

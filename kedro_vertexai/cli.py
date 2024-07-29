@@ -8,9 +8,8 @@ from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
 from .config import PluginConfig, RunConfig
-from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
+from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
-from .data_models import PipelineResult
 from .utils import (
     docker_build,
     docker_push,
@@ -98,14 +97,6 @@ def list_pipelines(ctx):
     help="Parameters override in form of `key=value`",
 )
 @click.option("--wait-for-completion", type=bool, is_flag=True, default=False)
-@click.option(
-    "--timeout-seconds",
-    type=int,
-    default=1800,
-    help="If --wait-for-completion is used, "
-    "this option sets timeout after which the plugin will return non-zero exit code "
-    "if the pipeline does not finish in time",
-)
 @click.pass_context
 def run_once(
     ctx: Context,
@@ -115,7 +106,6 @@ def run_once(
     pipeline: str,
     params: list,
     wait_for_completion: bool,
-    timeout_seconds: int,
 ):
     """Deploy pipeline as a single run within given experiment
     Config can be specified in kubeflow.yml as well."""
@@ -143,29 +133,14 @@ def run_once(
  Consider using '--auto-build' parameter."
         )
 
-    run = client.run_once(
+    job = client.run_once(
         pipeline=pipeline,
         image=image,
-        image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
 
-    click.echo(
-        f"Intermediate data datasets will be stored in {os.linesep}"
-        f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
-    )
-
     if wait_for_completion:
-        result: PipelineResult = client.wait_for_completion(
-            timeout_seconds
-        )  # blocking call
-        if result.is_success:
-            logger.info("Pipeline finished successfully!")
-            exit_code = 0
-        else:
-            logger.error(f"Pipeline finished with status: {result.state}")
-            exit_code = 1
-        ctx.exit(exit_code)
+        job.wait()
 
 
 @vertexai_group.command()
@@ -210,7 +185,6 @@ def compile(ctx, image, pipeline, output) -> None:
 
     context_helper.vertexai_client.compile(
         pipeline=pipeline,
-        image_pull_policy=config.image_pull_policy,
         image=image if image else config.image,
         output=output,
     )

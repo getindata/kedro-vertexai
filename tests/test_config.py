@@ -12,7 +12,6 @@ project_id: test-project-id
 region: some-region
 run_config:
   image: "gcr.io/project-image/test"
-  image_pull_policy: "Always"
   experiment_name: "Test Experiment"
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
@@ -100,7 +99,6 @@ run_config:
         obj = yaml.safe_load(CONFIG_FULL)
         cfg = PluginConfig.parse_obj(obj)
         assert cfg.run_config.image == "gcr.io/project-image/test"
-        assert cfg.run_config.image_pull_policy == "Always"
         assert cfg.run_config.experiment_name == "Test Experiment"
         assert cfg.run_config.scheduled_run_name == "scheduled run"
         assert cfg.run_config.service_account == "test@pipelines.gserviceaccount.com"
@@ -117,7 +115,6 @@ run_config:
 
     def test_defaults(self):
         cfg = PluginConfig.parse_obj(yaml.safe_load(CONFIG_MINIMAL))
-        assert cfg.run_config.image_pull_policy == "IfNotPresent"
         assert cfg.run_config.description is None
         assert cfg.run_config.ttl == 3600 * 24 * 7
 
