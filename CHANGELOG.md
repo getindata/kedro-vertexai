@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased] 2024-07-29
+
+- Brought back the Vertex AI Pipelines scheduling capability
+
 ## [Unreleased] 2024-07-23
 
 - Migrated to kfp 2
