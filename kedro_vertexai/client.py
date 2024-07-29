@@ -3,7 +3,6 @@ Vertex AI Pipelines specific client, based on AIPlatformClient.
 """
 
 import datetime as dt
-import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
@@ -113,23 +112,25 @@ class VertexAIPipelinesClient:
         )
         self.log.info("Generated pipeline definition was saved to %s", str(output))
 
-    def _cleanup_old_schedule(self, pipeline_name):
-        """
-        Removes old jobs scheduled for given pipeline name
-        """
-        for job in self.cloud_scheduler_client.list_jobs(parent=self.location):
-            if "jobs/pipeline_pipeline" not in job.name:
-                continue
+    def _cleanup_old_schedule(self, display_name: str):
+        """Cleanup old schedules with a given display name.
 
-            job_pipeline_name = json.loads(job.http_target.body)["pipelineSpec"][
-                "pipelineInfo"
-            ]["name"]
-            if job_pipeline_name == pipeline_name:
-                self.log.info(
-                    "Found existing schedule for the pipeline at %s, deleting...",
-                    job.schedule,
-                )
-                self.cloud_scheduler_client.delete_job(name=job.name)
+        Args:
+            display_name (str): Display name of the schedule.
+        """
+        existing_schedules = aip.PipelineJobSchedule.list(
+            filter=f'display_name="{display_name}"'
+        )
+        self.log.info(
+            f"Found {len(existing_schedules)} existing schedules with display name {display_name}"
+        )
+
+        for schedule in existing_schedules:
+            schedule.delete()
+
+        self.log.info(
+            f"Cleaned up existing old schedules with display name {display_name}"
+        )
 
     def schedule(
         self,
@@ -146,7 +147,7 @@ class VertexAIPipelinesClient:
         :param parameter_values: Kubeflow pipeline parameter values.
         :return:
         """
-        # self._cleanup_old_schedule(self.generator.get_pipeline_name())
+        self._cleanup_old_schedule(display_name=self.run_config.scheduled_run_name)
 
         with NamedTemporaryFile(
             mode="rt", prefix="kedro-vertexai", suffix=".yaml"
