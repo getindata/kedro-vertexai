@@ -7,7 +7,7 @@ import click
 from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
-from .config import PluginConfig, RunConfig
+from .config import PluginConfig, RunConfig, ScheduleConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .utils import (
@@ -204,15 +204,14 @@ def compile(ctx, image, pipeline, output) -> None:
     "--cron-expression",
     type=str,
     help="Cron expression for recurring run",
-    required=True,
+    required=False,
 )
 @click.option(
     "-c",
     "--timezone",
     type=str,
-    help="Time zone of the crone expression. Defaults to UTC.",
+    help="Time zone of the crone expression.",
     required=False,
-    default="Etc/UTC",
 )
 @click.option(
     "--param",
@@ -232,6 +231,16 @@ def schedule(
     """Schedules recurring execution of latest version of the pipeline"""
     context_helper = ctx.obj["context_helper"]
     client: VertexAIPipelinesClient = context_helper.vertexai_client
+    config: RunConfig = context_helper.config.run_config
+
+    schedule_config: ScheduleConfig = config.schedules.get(
+        pipeline, config.schedules["default_schedule"]
+    )
+
+    cron_expression = (
+        cron_expression if cron_expression else schedule_config.cron_expression
+    )
+    timezone = timezone if timezone else schedule_config.timezone
 
     client.schedule(
         pipeline=pipeline,

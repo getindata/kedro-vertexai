@@ -94,6 +94,16 @@ run_config:
   #      client_id: iam-client-id
 
   dynamic_config_providers: []
+
+  # Schedules configuration
+  schedules:
+    default_schedule:
+      cron_expression: "0 * * * *"
+      timezone: Etc/UTC
+    # training_pipeline:
+    #   cron_expression: "0 0 * * *"
+    #   timezone: America/New_York
+
 ```
 
 ## Dynamic configuration support
