@@ -2,7 +2,7 @@ import logging
 import os
 from importlib import import_module
 from inspect import signature
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, validator
 from pydantic.networks import IPvAnyAddress
@@ -218,7 +218,7 @@ class ScheduleConfig(BaseModel):
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     allow_queueing: Optional[bool] = False
-    max_run_count: Optional[Union[int, None]] = None
+    max_run_count: Optional[int] = None
     max_concurrent_run_count: Optional[int] = 1
 
 
@@ -238,7 +238,7 @@ class RunConfig(BaseModel):
     node_selectors: Optional[Dict[str, Dict[str, str]]] = {}
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
-    schedules: Dict[str, ScheduleConfig]
+    schedules: Optional[Dict[str, ScheduleConfig]] = None
 
     def resources_for(self, node: str, tags: Optional[set] = None):
         default_config = self.resources["__default__"].dict()

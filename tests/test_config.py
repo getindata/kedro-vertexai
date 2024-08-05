@@ -31,6 +31,15 @@ run_config:
     size: 3Gi
     access_modes: [ReadWriteOnce]
     keep: True
+#   schedules:
+#     default_schedule:
+#       cron_expression: "0 * * * *"
+#       timezone: Etc/UTC
+#       start_time: null
+#       end_time: null
+#       allow_queueing: false
+#       max_run_count: null
+#       max_concurrent_run_count: 1
   mlflow:
     request_header_provider_params:
       service_account: test@example.com

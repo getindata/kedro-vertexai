@@ -9,9 +9,7 @@ from kedro_vertexai.utils import strip_margin
 
 
 class TestVertexAIClient(unittest.TestCase):
-    @patch("kedro_vertexai.client.CloudSchedulerClient")
-    def create_client(self, cloud_scheduler_client_mock):
-        self.cloud_scheduler_client_mock = cloud_scheduler_client_mock.return_value
+    def create_client(self):
         config = PluginConfig.parse_obj(
             {
                 "project_id": "PROJECT_ID",
