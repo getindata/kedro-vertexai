@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from kedro_vertexai.client import VertexAIPipelinesClient
-from kedro_vertexai.config import PluginConfig
+from kedro_vertexai.config import PluginConfig, ScheduleConfig
 from kedro_vertexai.utils import strip_margin
 
 
@@ -66,24 +66,31 @@ class TestVertexAIClient(unittest.TestCase):
             |vertex-ai-plugin-demo-20240717120026  vertex-ai-plugin-demo-20240717120026"""
             assert tabulation == strip_margin(expected_output)
 
-    @unittest.skip(
-        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
-    )
     def test_should_schedule_pipeline(self):
-        with patch("kedro_vertexai.generator.PipelineGenerator"), patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
-            ai_client = AIPlatformClient.return_value
+        with patch("kedro_vertexai.client.PipelineGenerator"), patch(
+            "kedro_vertexai.client.aip.PipelineJob"
+        ) as PipelineJob, patch("kedro_vertexai.client.Compiler"), patch(
+            "kedro_vertexai.client.aip.init"
+        ):
+            job = PipelineJob.return_value
 
             client_under_test = self.create_client()
-            client_under_test.schedule(MagicMock("pipeline"), None, None, "0 0 12 * *")
+            client_under_test.schedule(
+                MagicMock("pipeline"),
+                ScheduleConfig(cron_expression="0 0 12 * *", timezone="Etc/UTC"),
+            )
 
-            ai_client.create_schedule_from_job_spec.assert_not_called()
-            args, kwargs = ai_client.create_schedule_from_job_spec.call_args
-            assert kwargs["time_zone"] == "Etc/UTC"
-            assert kwargs["enable_caching"] is False
-            assert kwargs["schedule"] == "0 0 12 * *"
-            assert kwargs["pipeline_root"] == "gs://BUCKET/PREFIX"
+            # job.create_schedule.assert_not_called()
+            _, kwargs = job.create_schedule.call_args
+            assert kwargs["cron"] == "TZ=Etc/UTC 0 0 12 * *"
+            assert kwargs["display_name"] is None
+            assert kwargs["start_time"] is None
+            assert kwargs["end_time"] is None
+            assert kwargs["allow_queueing"] is False
+            assert kwargs["max_run_count"] is None
+            assert kwargs["max_concurrent_run_count"] == 1
+            assert kwargs["service_account"] is None
+            assert kwargs["network"] == "my-vpc"
 
     @unittest.skip(
         "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"

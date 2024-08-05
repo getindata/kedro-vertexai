@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 
 from google.cloud import aiplatform as aip
 from google.cloud.aiplatform import PipelineJob
-from kfp import compiler
+from kfp.compiler import Compiler
 from tabulate import tabulate
 
 from .config import PluginConfig, ScheduleConfig
@@ -102,7 +102,7 @@ class VertexAIPipelinesClient:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
         pipeline_func = self.generator.generate_pipeline(pipeline, image, token)
-        compiler.Compiler().compile(
+        Compiler().compile(
             pipeline_func=pipeline_func,
             package_path=output,
         )
