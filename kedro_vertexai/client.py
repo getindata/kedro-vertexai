@@ -10,9 +10,6 @@ from typing import Any, Dict, Optional
 
 from google.cloud import aiplatform as aip
 from google.cloud.aiplatform import PipelineJob
-from google.cloud.scheduler_v1.services.cloud_scheduler import (
-    CloudSchedulerClient,
-)
 from kfp import compiler
 from tabulate import tabulate
 
@@ -30,7 +27,6 @@ class VertexAIPipelinesClient:
     def __init__(self, config: PluginConfig, project_name, context):
 
         aip.init(project=config.project_id, location=config.region)
-        self.cloud_scheduler_client = CloudSchedulerClient()
         self.location = f"projects/{config.project_id}/locations/{config.region}"
         self.run_config = config.run_config
         self.run_name = self._generate_run_name(config)
