@@ -207,10 +207,40 @@ def compile(ctx, image, pipeline, output) -> None:
     required=False,
 )
 @click.option(
-    "-c",
+    "-t",
     "--timezone",
     type=str,
     help="Time zone of the crone expression.",
+    required=False,
+)
+@click.option(
+    "--start-time",
+    type=str,
+    help="Timestamp after which the first run can be scheduled.",
+    required=False,
+)
+@click.option(
+    "--end-time",
+    type=str,
+    help="Timestamp after which no more runs will be scheduled. ",
+    required=False,
+)
+@click.option(
+    "--allow-queueing",
+    type=bool,
+    help="Whether new scheduled runs can be queued when max_concurrent_runs limit is reached.",
+    required=False,
+)
+@click.option(
+    "--max-run-count",
+    type=int,
+    help="Maximum run count of the schedule.",
+    required=False,
+)
+@click.option(
+    "--max-concurrent-run-count",
+    type=int,
+    help="Maximum number of runs that can be started concurrently.",
     required=False,
 )
 @click.option(
@@ -226,7 +256,12 @@ def schedule(
     pipeline: str,
     cron_expression: str,
     timezone: str,
-    params: list,
+    start_time: str = None,
+    end_time: str = None,
+    allow_queueing: bool = None,
+    max_run_count: int = None,
+    max_concurrent_run_count: int = None,
+    params: list = [],
 ):
     """Schedules recurring execution of latest version of the pipeline"""
     context_helper = ctx.obj["context_helper"]
@@ -237,15 +272,29 @@ def schedule(
         pipeline, config.schedules["default_schedule"]
     )
 
-    cron_expression = (
+    schedule_config.cron_expression = (
         cron_expression if cron_expression else schedule_config.cron_expression
     )
-    timezone = timezone if timezone else schedule_config.timezone
+    schedule_config.timezone = timezone if timezone else schedule_config.timezone
+    schedule_config.start_time = (
+        start_time if start_time else schedule_config.start_time
+    )
+    schedule_config.end_time = end_time if end_time else schedule_config.end_time
+    schedule_config.allow_queueing = (
+        allow_queueing if allow_queueing else schedule_config.allow_queueing
+    )
+    schedule_config.max_run_count = (
+        max_run_count if max_run_count else schedule_config.max_run_count
+    )
+    schedule_config.max_concurrent_run_count = (
+        max_concurrent_run_count
+        if max_concurrent_run_count
+        else schedule_config.max_concurrent_run_count
+    )
 
     client.schedule(
         pipeline=pipeline,
-        cron_expression=cron_expression,
-        timezone=timezone,
+        schedule_config=schedule_config,
         parameter_values=format_params(params),
     )
 

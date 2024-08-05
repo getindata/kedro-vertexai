@@ -16,7 +16,7 @@ from google.cloud.scheduler_v1.services.cloud_scheduler import (
 from kfp import compiler
 from tabulate import tabulate
 
-from .config import PluginConfig
+from .config import PluginConfig, ScheduleConfig
 from .generator import PipelineGenerator
 
 
@@ -135,15 +135,13 @@ class VertexAIPipelinesClient:
     def schedule(
         self,
         pipeline: str,
-        cron_expression: str,
-        timezone: str,
+        schedule_config: ScheduleConfig,
         parameter_values: Optional[Dict[str, Any]] = None,
     ):
         """
         Schedule pipeline to Vertex AI with given cron expression
         :param pipeline: Name of the Kedro pipeline to schedule.
-        :param cron_expression: Schedule cron expression.
-        :param timezone: Cron expression timezone. May only be a valid string from IANA time zone database.
+        :param schedule_config: Schedule config.
         :param parameter_values: Kubeflow pipeline parameter values.
         :return:
         """
@@ -166,11 +164,19 @@ class VertexAIPipelinesClient:
                 parameter_values=parameter_values or {},
                 enable_caching=False,
             )
-            cron_with_timezone = f"TZ={timezone} {cron_expression}"
+
+            cron_with_timezone = (
+                f"TZ={schedule_config.timezone} {schedule_config.cron_expression}"
+            )
 
             job.create_schedule(
-                display_name=self.run_config.scheduled_run_name,
                 cron=cron_with_timezone,
+                display_name=self.run_config.scheduled_run_name,
+                start_time=schedule_config.start_time,
+                end_time=schedule_config.end_time,
+                allow_queueing=schedule_config.allow_queueing,
+                max_run_count=schedule_config.max_run_count,
+                max_concurrent_run_count=schedule_config.max_concurrent_run_count,
                 service_account=self.run_config.service_account,
                 network=self.run_config.network.vpc,
             )

@@ -2,7 +2,7 @@ import logging
 import os
 from importlib import import_module
 from inspect import signature
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, validator
 from pydantic.networks import IPvAnyAddress
@@ -107,9 +107,19 @@ run_config:
     default_schedule:
       cron_expression: "0 * * * *"
       timezone: Etc/UTC
+      start_time: none
+      end_time: none
+      allow_queueing: false
+      max_run_count: none
+      max_concurrent_run_count: 1
     # training_pipeline:
     #   cron_expression: "0 0 * * *"
     #   timezone: America/New_York
+    #   start_time: none
+    #   end_time: none
+    #   allow_queueing: false
+    #   max_run_count: none
+    #   max_concurrent_run_count: 1
 """
 
 
@@ -205,6 +215,11 @@ class MLFlowVertexAIConfig(BaseModel):
 class ScheduleConfig(BaseModel):
     cron_expression: str
     timezone: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    allow_queueing: Optional[bool] = False
+    max_run_count: Optional[Union[int, None]] = None
+    max_concurrent_run_count: Optional[int] = 1
 
 
 class RunConfig(BaseModel):
