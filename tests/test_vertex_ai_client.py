@@ -72,6 +72,8 @@ class TestVertexAIClient(unittest.TestCase):
             "kedro_vertexai.client.aip.PipelineJob"
         ) as PipelineJob, patch("kedro_vertexai.client.Compiler"), patch(
             "kedro_vertexai.client.aip.init"
+        ), patch(
+            "kedro_vertexai.client.aip.PipelineJobSchedule"
         ):
             job = PipelineJob.return_value
 
