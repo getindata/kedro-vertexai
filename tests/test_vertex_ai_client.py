@@ -19,6 +19,7 @@ class TestVertexAIClient(unittest.TestCase):
                     "root": "BUCKET/PREFIX",
                     "network": {"vpc": "my-vpc"},
                     "experiment_name": "experiment-name",
+                    "scheduled_run_name": "scheduled-run",
                 },
             }
         )
@@ -80,10 +81,9 @@ class TestVertexAIClient(unittest.TestCase):
                 ScheduleConfig(cron_expression="0 0 12 * *", timezone="Etc/UTC"),
             )
 
-            # job.create_schedule.assert_not_called()
             _, kwargs = job.create_schedule.call_args
             assert kwargs["cron"] == "TZ=Etc/UTC 0 0 12 * *"
-            assert kwargs["display_name"] is None
+            assert kwargs["display_name"] == "scheduled-run"
             assert kwargs["start_time"] is None
             assert kwargs["end_time"] is None
             assert kwargs["allow_queueing"] is False
