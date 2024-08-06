@@ -92,62 +92,26 @@ class TestVertexAIClient(unittest.TestCase):
             assert kwargs["service_account"] is None
             assert kwargs["network"] == "my-vpc"
 
-    @unittest.skip(
-        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
-    )
     def test_should_remove_old_schedule(self):
-        def mock_job(job_name, pipeline_name=None):
-            if pipeline_name:
-                body = (
-                    '{"pipelineSpec": {"pipelineInfo": {"name": "'
-                    + pipeline_name
-                    + '"}}}'
-                )
-            else:
-                body = ""
-            return type(
-                "obj",
-                (object,),
-                {
-                    "schedule": "* * * * *",
-                    "name": job_name,
-                    "http_target": type("obj", (object,), {"body": body}),
-                },
-            )
-
         with patch("kedro_vertexai.client.PipelineGenerator") as generator, patch(
-            "kedro_vertexai.client.AIPlatformClient"
-        ) as AIPlatformClient, patch("kfp.v2.compiler.Compiler"):
+            "kedro_vertexai.client.aip.PipelineJobSchedule"
+        ) as PipelineJobSchedule, patch(
+            "kedro_vertexai.client.aip.PipelineJob"
+        ) as PipelineJob, patch(
+            "kedro_vertexai.client.Compiler"
+        ), patch(
+            "kedro_vertexai.client.aip.init"
+        ):
             # given
-            ai_client = AIPlatformClient.return_value
+            job_schedule = PipelineJobSchedule.return_value
+            job = PipelineJob.return_value
             client_under_test = self.create_client()
             generator.return_value.get_pipeline_name.return_value = "unittest-pipeline"
-            self.cloud_scheduler_client_mock.list_jobs.return_value = [
-                # not removed (some other job)
-                mock_job(job_name="some-job"),
-                # not removed (some other pipeline)
-                mock_job(
-                    job_name="projects/.../locations/.../jobs/pipeline_pipeline_abc",
-                    pipeline_name="some-other-pipeline",
-                ),
-                # removed
-                mock_job(
-                    job_name="projects/.../locations/.../jobs/pipeline_pipeline_def",
-                    pipeline_name="unittest-pipeline",
-                ),
-            ]
+            PipelineJobSchedule.list.return_value = [job_schedule]
 
             # when
-            client_under_test.schedule(MagicMock("pipeline"), None, None, "0 0 12 * *")
+            client_under_test.schedule(MagicMock("pipeline"), MagicMock())
 
             # then
-            ai_client.create_schedule_from_job_spec.assert_called_once()
-            self.cloud_scheduler_client_mock.delete_job.assert_called_once()
-            (
-                args,
-                kwargs,
-            ) = self.cloud_scheduler_client_mock.delete_job.call_args
-            assert (
-                kwargs["name"]
-                == "projects/.../locations/.../jobs/pipeline_pipeline_def"
-            )
+            job.create_schedule.assert_called_once()
+            job_schedule.delete.assert_called_once()
