@@ -28,7 +28,7 @@ class TestVertexAIClient(unittest.TestCase):
     def test_compile(self):
         with patch("kedro_vertexai.client.PipelineGenerator"), patch(
             "kedro_vertexai.client.aip.init"
-        ), patch("kfp.compiler.Compiler") as Compiler:
+        ), patch("kedro_vertexai.client.Compiler") as Compiler:
             compiler = Compiler.return_value
 
             client_under_test = self.create_client()
