@@ -7,7 +7,7 @@ import click
 from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
-from .config import PluginConfig, RunConfig
+from .config import PluginConfig, RunConfig, ScheduleConfig
 from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
 from .utils import (
@@ -207,6 +207,43 @@ def compile(ctx, image, pipeline, output) -> None:
     required=False,
 )
 @click.option(
+    "-t",
+    "--timezone",
+    type=str,
+    help="Time zone of the crone expression.",
+    required=False,
+)
+@click.option(
+    "--start-time",
+    type=str,
+    help="Timestamp after which the first run can be scheduled.",
+    required=False,
+)
+@click.option(
+    "--end-time",
+    type=str,
+    help="Timestamp after which no more runs will be scheduled. ",
+    required=False,
+)
+@click.option(
+    "--allow-queueing",
+    type=bool,
+    help="Whether new scheduled runs can be queued when max_concurrent_runs limit is reached.",
+    required=False,
+)
+@click.option(
+    "--max-run-count",
+    type=int,
+    help="Maximum run count of the schedule.",
+    required=False,
+)
+@click.option(
+    "--max-concurrent-run-count",
+    type=int,
+    help="Maximum number of runs that can be started concurrently.",
+    required=False,
+)
+@click.option(
     "--param",
     "params",
     type=str,
@@ -218,12 +255,47 @@ def schedule(
     ctx,
     pipeline: str,
     cron_expression: str,
-    params: list,
+    timezone: str,
+    start_time: str = None,
+    end_time: str = None,
+    allow_queueing: bool = None,
+    max_run_count: int = None,
+    max_concurrent_run_count: int = None,
+    params: list = [],
 ):
     """Schedules recurring execution of latest version of the pipeline"""
-    logger.warning(
-        "Scheduler functionality was temporarily disabled, "
-        "follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
+    context_helper = ctx.obj["context_helper"]
+    client: VertexAIPipelinesClient = context_helper.vertexai_client
+    config: RunConfig = context_helper.config.run_config
+
+    schedule_config: ScheduleConfig = config.schedules.get(
+        pipeline, config.schedules["default_schedule"]
+    )
+
+    schedule_config.cron_expression = (
+        cron_expression if cron_expression else schedule_config.cron_expression
+    )
+    schedule_config.timezone = timezone if timezone else schedule_config.timezone
+    schedule_config.start_time = (
+        start_time if start_time else schedule_config.start_time
+    )
+    schedule_config.end_time = end_time if end_time else schedule_config.end_time
+    schedule_config.allow_queueing = (
+        allow_queueing if allow_queueing else schedule_config.allow_queueing
+    )
+    schedule_config.max_run_count = (
+        max_run_count if max_run_count else schedule_config.max_run_count
+    )
+    schedule_config.max_concurrent_run_count = (
+        max_concurrent_run_count
+        if max_concurrent_run_count
+        else schedule_config.max_concurrent_run_count
+    )
+
+    client.schedule(
+        pipeline=pipeline,
+        schedule_config=schedule_config,
+        parameter_values=format_params(params),
     )
 
 

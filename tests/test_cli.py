@@ -258,37 +258,56 @@ class TestPluginCLI(unittest.TestCase):
                     data["run"]["data"] == "abc" and data["other_keys"] == 66.6
                 ), "Other keys were modified"
 
-    @unittest.skip(
-        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
-    )
     def test_schedule(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
         context_helper.config = test_config
+
+        mock_schedule = MagicMock()
+        context_helper.config.run_config.schedules = {
+            "default_schedule": MagicMock(),
+            "my-pipeline": mock_schedule,
+        }
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
         result = runner.invoke(
             schedule,
             [
-                "-c",
-                "* * *",
-                "-p",
+                "--pipeline",
                 "my-pipeline",
+                "--cron-expression",
+                "2 * * * *",
+                "--timezone",
+                "test-timezone",
+                "--start-time",
+                None,
+                "--end-time",
+                None,
+                "--allow-queueing",
+                True,
+                "--max-run-count",
+                10,
+                "--max-concurrent-run-count",
+                1,
                 "--param",
                 "key1:some value",
             ],
             obj=config,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
+
         context_helper.vertexai_client.schedule.assert_called_with(
-            "my-pipeline",
-            "test_experiment",
-            None,
-            "* * *",
-            run_name="test run",
-            parameters={"key1": "some value"},
+            pipeline="my-pipeline",
+            schedule_config=mock_schedule,
+            parameter_values={"key1": "some value"},
         )
+
+        assert mock_schedule.cron_expression == "2 * * * *"
+        assert mock_schedule.timezone == "test-timezone"
+        assert mock_schedule.allow_queueing
+        assert mock_schedule.max_run_count == 10
 
     @patch.object(Path, "cwd")
     def test_init(self, cwd):
