@@ -213,8 +213,8 @@ class MLFlowVertexAIConfig(BaseModel):
 
 
 class ScheduleConfig(BaseModel):
-    cron_expression: str
-    timezone: str
+    cron_expression: Optional[str] = "0 * * * *"
+    timezone: Optional[str] = "Etc/UTC"
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     allow_queueing: Optional[bool] = False
