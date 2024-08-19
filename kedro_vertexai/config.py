@@ -18,8 +18,11 @@ run_config:
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Prefix of Vertex AI pipeline run
+  # Name of the Vertex AI experiment to be created
   experiment_name: {project}
+
+  # Optional description of the Vertex AI experiment to be created
+  # experiment_description: "My experiment description."
 
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: {run_name}
@@ -227,6 +230,7 @@ class RunConfig(BaseModel):
     root: Optional[str]
     description: Optional[str]
     experiment_name: str
+    experiment_description: Optional[str] = None
     scheduled_run_name: Optional[str]
     grouping: Optional[GroupingConfig] = GroupingConfig()
     service_account: Optional[str]

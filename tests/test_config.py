@@ -13,6 +13,7 @@ region: some-region
 run_config:
   image: "gcr.io/project-image/test"
   experiment_name: "Test Experiment"
+  experiment_description: "Test Experiment Description."
   scheduled_run_name: "scheduled run"
   description: "My awesome pipeline"
   service_account: test@pipelines.gserviceaccount.com
@@ -100,6 +101,7 @@ run_config:
         cfg = PluginConfig.parse_obj(obj)
         assert cfg.run_config.image == "gcr.io/project-image/test"
         assert cfg.run_config.experiment_name == "Test Experiment"
+        assert cfg.run_config.experiment_description == "Test Experiment Description."
         assert cfg.run_config.scheduled_run_name == "scheduled run"
         assert cfg.run_config.service_account == "test@pipelines.gserviceaccount.com"
         assert cfg.run_config.network.vpc == "my-vpc"
