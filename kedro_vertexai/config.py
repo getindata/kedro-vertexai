@@ -101,6 +101,25 @@ run_config:
   # mlflow:
   #   request_header_provider_params:
   #       key: value
+
+  # Schedules configuration
+  schedules:
+    default_schedule:
+      cron_expression: "0 * * * *"
+      timezone: Etc/UTC
+      start_time: none
+      end_time: none
+      allow_queueing: false
+      max_run_count: none
+      max_concurrent_run_count: 1
+    # training_pipeline:
+    #   cron_expression: "0 0 * * *"
+    #   timezone: America/New_York
+    #   start_time: none
+    #   end_time: none
+    #   allow_queueing: false
+    #   max_run_count: none
+    #   max_concurrent_run_count: 1
 """
 
 
@@ -193,6 +212,16 @@ class MLFlowVertexAIConfig(BaseModel):
     request_header_provider_params: Optional[Dict[str, str]]
 
 
+class ScheduleConfig(BaseModel):
+    cron_expression: Optional[str] = "0 * * * *"
+    timezone: Optional[str] = "Etc/UTC"
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    allow_queueing: Optional[bool] = False
+    max_run_count: Optional[int] = None
+    max_concurrent_run_count: Optional[int] = 1
+
+
 class RunConfig(BaseModel):
     image: str
     root: Optional[str]
@@ -209,6 +238,7 @@ class RunConfig(BaseModel):
     node_selectors: Optional[Dict[str, Dict[str, str]]] = {}
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
+    schedules: Optional[Dict[str, ScheduleConfig]] = None
 
     def resources_for(self, node: str, tags: Optional[set] = None):
         default_config = self.resources["__default__"].dict()

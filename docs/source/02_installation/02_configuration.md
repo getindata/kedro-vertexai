@@ -94,6 +94,23 @@ run_config:
   #      client_id: iam-client-id
 
   dynamic_config_providers: []
+
+  # Schedules configuration
+  schedules:
+    default_schedule:
+      cron_expression: "0 * * * *"
+      timezone: Etc/UTC
+      # Optional. Timestamp after which the first run can be scheduled. If unspecified, it defaults to the schedule creation timestamp.
+      start_time: null
+      # Optional. Timestamp after which no more runs will be scheduled. If unspecified, then runs will be scheduled indefinitely.
+      end_time: null
+      # Optional. Whether new scheduled runs can be queued when max_concurrent_runs limit is reached.
+      allow_queueing: false
+      # Optional. Maximum run count of the schedule. If specified, The schedule will be completed when either started_run_count >= max_run_count or when end_time is reached. Must be positive and <= 2^63-1.
+      max_run_count: null
+      # Optional. Maximum number of runs that can be started concurrently for this PipelineJobSchedule.
+      max_concurrent_run_count: 1
+
 ```
 
 ## Dynamic configuration support
