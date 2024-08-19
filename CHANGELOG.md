@@ -3,9 +3,6 @@
 ## [Unreleased] 2024-07-29
 
 - Brought back the Vertex AI Pipelines scheduling capability
-
-## [Unreleased] 2024-07-23
-
 - Migrated to kfp 2
 - Removed `image_pull_policy` parameter from configuration, as it only applies to Kubernetes backend and not Vertex AI,
 and it's only available in `kfp-kubernetes` extension package
