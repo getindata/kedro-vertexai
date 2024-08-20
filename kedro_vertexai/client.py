@@ -82,6 +82,7 @@ class VertexAIPipelinesClient:
             job.submit(
                 service_account=self.run_config.service_account,
                 network=self.run_config.network.vpc,
+                experiment=self.run_config.experiment_name,
             )
 
             return job
