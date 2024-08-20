@@ -19,7 +19,7 @@ run_config:
   root: bucket_name/gcs_suffix
 
   # Name of the Vertex AI experiment to be created
-  experiment_name: {project}
+  experiment_name: {project}-experiment
 
   # Optional description of the Vertex AI experiment to be created
   # experiment_description: "My experiment description."
