@@ -13,8 +13,11 @@ run_config:
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Name of the kubeflow experiment to be created
+  # Name of the Vertex AI experiment to be created
   experiment_name: MyExperiment
+
+  # Optional description of the Vertex AI experiment to be created
+  # experiment_description: "My experiment description."
 
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: MyExperimentRun

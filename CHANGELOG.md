@@ -9,6 +9,7 @@ and it's only available in `kfp-kubernetes` extension package
 - Removed `--timeout-seconds` parameter from `run-once` command for now, as in the old version of the plugin exceeding the specified time
 didn't alter the remote pipeline execution, and only escaped the local Python processs. The timeout funcionality will be added later on,
 with the proper remote pipeline execution handling, and possibly per-task timeout enabled by [the new kfp feature](https://github.com/kubeflow/pipelines/pull/10481).
+- Assign pipelines to Vertex AI experiments
 
 ## [0.11.1] - 2024-07-01
 

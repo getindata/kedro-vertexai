@@ -26,8 +26,12 @@ class VertexAIPipelinesClient:
 
     def __init__(self, config: PluginConfig, project_name, context):
 
-        aip.init(project=config.project_id, location=config.region)
-        self.location = f"projects/{config.project_id}/locations/{config.region}"
+        aip.init(
+            project=config.project_id,
+            location=config.region,
+            experiment=config.run_config.experiment_name,
+            experiment_description=config.run_config.experiment_description,
+        )
         self.run_config = config.run_config
         self.run_name = self._generate_run_name(config)
         self.generator = PipelineGenerator(config, project_name, context, self.run_name)
@@ -78,6 +82,7 @@ class VertexAIPipelinesClient:
             job.submit(
                 service_account=self.run_config.service_account,
                 network=self.run_config.network.vpc,
+                experiment=self.run_config.experiment_name,
             )
 
             return job
