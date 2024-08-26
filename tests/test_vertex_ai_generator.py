@@ -403,7 +403,7 @@ class TestGenerator(unittest.TestCase):
         }
         config_with_defaults.update(config)
         self.generator_under_test = PipelineGenerator(
-            PluginConfig.parse_obj(
+            PluginConfig.model_validate(
                 {
                     "project_id": "test-project",
                     "region": "test-region",

@@ -4,7 +4,7 @@ from importlib import import_module
 from inspect import signature
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from pydantic.networks import IPvAnyAddress
 
 DEFAULT_CONFIG_TEMPLATE = """
@@ -163,16 +163,16 @@ def dynamic_init_class(load_class, *args, **kwargs):
 
 
 class GroupingConfig(BaseModel):
-    cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
     params: Optional[dict] = {}
+    cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
 
-    @validator("cls")
+    @field_validator("cls")
     def class_valid(cls, v, values, **kwargs):
         try:
             grouper_class = dynamic_load_class(v)
             class_sig = signature(grouper_class)
-            if "params" in values:
-                class_sig.bind(None, **values["params"])
+            if "params" in values.data:
+                class_sig.bind(None, **values.data["params"])
             else:
                 class_sig.bind(None)
         except:  # noqa: E722
@@ -196,13 +196,13 @@ class HostAliasConfig(BaseModel):
 
 
 class ResourcesConfig(BaseModel):
-    cpu: Optional[str]
-    gpu: Optional[str]
-    memory: Optional[str]
+    cpu: Optional[str] = None
+    gpu: Optional[str] = None
+    memory: Optional[str] = None
 
 
 class NetworkConfig(BaseModel):
-    vpc: Optional[str]
+    vpc: Optional[str] = None
     host_aliases: Optional[List[HostAliasConfig]] = []
 
 
@@ -212,7 +212,7 @@ class DynamicConfigProviderConfig(BaseModel):
 
 
 class MLFlowVertexAIConfig(BaseModel):
-    request_header_provider_params: Optional[Dict[str, str]]
+    request_header_provider_params: Optional[Dict[str, str]] = None
 
 
 class ScheduleConfig(BaseModel):
@@ -227,13 +227,13 @@ class ScheduleConfig(BaseModel):
 
 class RunConfig(BaseModel):
     image: str
-    root: Optional[str]
-    description: Optional[str]
+    root: Optional[str] = None
+    description: Optional[str] = None
     experiment_name: str
     experiment_description: Optional[str] = None
-    scheduled_run_name: Optional[str]
+    scheduled_run_name: Optional[str] = None
     grouping: Optional[GroupingConfig] = GroupingConfig()
-    service_account: Optional[str]
+    service_account: Optional[str] = None
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
     resources: Optional[Dict[str, ResourcesConfig]] = dict(

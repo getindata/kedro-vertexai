@@ -69,7 +69,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
                 },
             }
         ]
-        config = PluginConfig.parse_obj(config_raw)
+        config = PluginConfig.model_validate(config_raw)
         return config
 
     def test_initialization_from_config(self):

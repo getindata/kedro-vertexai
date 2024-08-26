@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 from kedro_vertexai.config import PluginConfig
 
-test_config = PluginConfig.parse_obj(
+test_config = PluginConfig.model_validate(
     {
         "project_id": "test-project-id",
         "region": "test",
