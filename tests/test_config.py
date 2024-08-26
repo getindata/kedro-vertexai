@@ -90,9 +90,11 @@ run_config:
         params:
             foo: "bar:"
 """
-        cfg = PluginConfig.model_validate(yaml.safe_load(cfg_tag_group))
+        cfg = yaml.safe_load(cfg_tag_group)
         c = dynamic_init_class(
-            cfg.run_config.grouping.cls, None, **cfg.run_config.grouping.params
+            cfg["run_config"]["grouping"]["cls"],
+            None,
+            **cfg["run_config"]["grouping"]["params"]
         )
         assert c is None
         log_error.assert_called_once()
