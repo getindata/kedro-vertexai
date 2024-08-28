@@ -163,8 +163,8 @@ def dynamic_init_class(load_class, *args, **kwargs):
 
 
 class GroupingConfig(BaseModel):
-    params: Optional[dict] = {}
     cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
+    params: Optional[dict] = {}
 
     @field_validator("cls")
     def class_valid(cls, v, values, **kwargs):
