@@ -12,11 +12,6 @@ test_config = PluginConfig.model_validate(
             "experiment_name": "Test Experiment",
             "run_name": "test run",
             "root": "unit_tests",
-            "volume": {
-                "storageclass": "default",
-                "size": "3Gi",
-                "access_modes": "[ReadWriteOnce]",
-            },
         },
     }
 )
