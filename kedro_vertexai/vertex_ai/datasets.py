@@ -5,8 +5,10 @@ from typing import Any, Dict
 
 import cloudpickle
 import fsspec
+from google.cloud import aiplatform as aip
 from kedro.io import AbstractDataset, MemoryDataset
 
+from kedro_vertexai.config import dynamic_load_class
 from kedro_vertexai.constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME
 
 
@@ -58,3 +60,34 @@ class KedroVertexAIRunnerDataset(AbstractDataset):
         if __name == "__class__":
             return MemoryDataset.__getattribute__(MemoryDataset(), __name)
         return super().__getattribute__(__name)
+
+
+class KedroVertexAIMetadataDataset(AbstractDataset):
+    def __init__(
+        self, base_dataset: str, display_name: str, base_dataset_args: Dict[str, Any]
+    ) -> None:
+        base_dataset_class: AbstractDataset = dynamic_load_class(base_dataset)
+        self._base_dataset = base_dataset_class(**base_dataset_args)
+        self._display_name: str = display_name
+
+        aip.init(
+            project="gid-ml-ops-sandbox",
+            location="europe-west3",
+        )
+
+        super().__init__()
+
+    def _load(self) -> Any:
+        return self._base_dataset._load()
+
+    def _save(self, data: Any) -> None:
+        self._base_dataset._save(data)
+        aip.Artifact.create(
+            schema_title="system.Dataset", display_name=self._display_name
+        )  # , uri=DATASET_URI)
+
+    def _describe(self) -> Dict[str, Any]:
+        return {
+            "info": "for use only within Kedro Vertex AI Pipelines",
+            "display_name": self._display_name,
+        }
