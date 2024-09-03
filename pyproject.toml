@@ -40,7 +40,7 @@ tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 toposort = ">1.0,<2.0"
 pyarrow = ">=14.0.1" # Stating explicitly for sub-dependency due to critical vulnerability
-pydantic = ">=1.9.0,<2.0.0" # so far blocked by kedro-mlflow at 0.11.10 & kfp <2.0
+pydantic = ">=2,<3"
 google-auth = "<3"
 google-cloud-scheduler = ">=2.3.2"
 google-cloud-iam = "<3"

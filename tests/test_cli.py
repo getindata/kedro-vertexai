@@ -2,6 +2,7 @@ import json
 import os
 import unittest
 from collections import namedtuple
+from copy import deepcopy
 from itertools import product
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -41,7 +42,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_run_once(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -67,7 +68,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_run_once_with_wait(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -109,7 +110,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_run_once_auto_build(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -146,7 +147,7 @@ class TestPluginCLI(unittest.TestCase):
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
         context_helper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -160,7 +161,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_compile(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -177,7 +178,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_store_params_empty(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -215,7 +216,7 @@ class TestPluginCLI(unittest.TestCase):
         Covers the case when there is an exiting config.yaml in the pwd
         """
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -260,7 +261,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_schedule(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
 
         mock_schedule = MagicMock()
         context_helper.config.run_config.schedules = {
@@ -312,7 +313,7 @@ class TestPluginCLI(unittest.TestCase):
     @patch.object(Path, "cwd")
     def test_init(self, cwd):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
         config = dict(context_helper=context_helper)
@@ -333,7 +334,7 @@ class TestPluginCLI(unittest.TestCase):
     @patch.object(Path, "cwd")
     def test_init_with_github_actions(self, cwd):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
         config = dict(context_helper=context_helper)

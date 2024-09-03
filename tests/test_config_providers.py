@@ -1,5 +1,6 @@
 """Test Dynamic Config Providers"""
 
+import json
 import logging
 import unittest
 from copy import deepcopy
@@ -59,7 +60,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
         self,
         class_name=MLFlowGoogleOAuthCredentialsProvider.full_name(),
     ) -> PluginConfig:
-        config_raw = deepcopy(test_config.dict())
+        config_raw = deepcopy(json.loads(test_config.model_dump_json()))
         config_raw["run_config"]["dynamic_config_providers"] = [
             {
                 "cls": class_name,
@@ -69,7 +70,7 @@ class TestDynamicConfigProviders(unittest.TestCase):
                 },
             }
         ]
-        config = PluginConfig.parse_obj(config_raw)
+        config = PluginConfig.model_validate(config_raw)
         return config
 
     def test_initialization_from_config(self):

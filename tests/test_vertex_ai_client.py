@@ -10,7 +10,7 @@ from kedro_vertexai.utils import strip_margin
 
 class TestVertexAIClient(unittest.TestCase):
     def create_client(self):
-        config = PluginConfig.parse_obj(
+        config = PluginConfig.model_validate(
             {
                 "project_id": "PROJECT_ID",
                 "region": "REGION",

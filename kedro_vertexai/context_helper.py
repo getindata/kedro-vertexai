@@ -82,7 +82,7 @@ CONFIG_LOADER_ARGS = {
                     "Missing vertexai.yml files in configuration. "
                     "Make sure that you configure your project first"
                 )
-        return PluginConfig.parse_obj(vertex_conf)
+        return PluginConfig.model_validate(vertex_conf)
 
     @cached_property
     def vertexai_client(self) -> VertexAIPipelinesClient:
