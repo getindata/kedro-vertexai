@@ -1,4 +1,5 @@
 import bz2
+import os
 from functools import lru_cache
 from sys import version_info
 from typing import Any, Dict
@@ -70,9 +71,12 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
         self._base_dataset = base_dataset_class(**base_dataset_args)
         self._display_name: str = display_name
 
+        project_id = os.environ["GCP_PROJECT_ID"]
+        region = os.environ["GCP_REGION"]
+
         aip.init(
-            project="gid-ml-ops-sandbox",
-            location="europe-west3",
+            project=project_id,
+            location=region,
         )
 
         super().__init__()
