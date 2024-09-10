@@ -65,7 +65,11 @@ class KedroVertexAIRunnerDataset(AbstractDataset):
 
 class KedroVertexAIMetadataDataset(AbstractDataset):
     def __init__(
-        self, base_dataset: str, display_name: str, base_dataset_args: Dict[str, Any]
+        self,
+        base_dataset: str,
+        display_name: str,
+        base_dataset_args: Dict[str, Any],
+        schema: str = "system.Dataset",
     ) -> None:
         base_dataset_class: AbstractDataset = dynamic_load_class(base_dataset)
 
@@ -76,6 +80,7 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
         self._artifact_uri = (
             f"{self._base_dataset._protocol}://{self._base_dataset._get_save_path()}"
         )
+        self._artifact_schema = schema
 
         try:
             project_id = os.environ["GCP_PROJECT_ID"]
@@ -105,7 +110,7 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
         )
 
         aip.Artifact.create(
-            schema_title="system.Dataset",
+            schema_title=self._artifact_schema,
             display_name=self._display_name,
             uri=self._artifact_uri,
         )

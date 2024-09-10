@@ -19,6 +19,7 @@ class TestKedroVertexAIMetadataDataset(unittest.TestCase):
             mock_dynamic_load_class.return_value.return_value._get_save_path.return_value = Path(
                 "save_path/file.csv"
             )
+            mock_dynamic_load_class.return_value.return_value.__class__.__name__ == "some_package.SomeDataset"
 
             os.environ["GCP_PROJECT_ID"] = "project id"
             os.environ["GCP_REGION"] = "region"
@@ -57,3 +58,7 @@ class TestKedroVertexAIMetadataDataset(unittest.TestCase):
                 aip_artifact_create_mock.call_args.kwargs["uri"]
                 == "gcs://save_path/file.csv"
             )
+
+            dataset_info = dataset._describe()
+            assert dataset_info["display_name"] == "dataset_name"
+            assert dataset_info["artifact_uri"] == "gcs://save_path/file.csv"
