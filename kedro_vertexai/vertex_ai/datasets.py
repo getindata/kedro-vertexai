@@ -68,11 +68,24 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
         self, base_dataset: str, display_name: str, base_dataset_args: Dict[str, Any]
     ) -> None:
         base_dataset_class: AbstractDataset = dynamic_load_class(base_dataset)
-        self._base_dataset = base_dataset_class(**base_dataset_args)
-        self._display_name: str = display_name
 
-        project_id = os.environ["GCP_PROJECT_ID"]
-        region = os.environ["GCP_REGION"]
+        # breakpoint()
+
+        self._base_dataset: AbstractDataset = base_dataset_class(**base_dataset_args)
+        self._display_name = display_name
+        self._artifact_uri = (
+            f"{self._base_dataset._protocol}://{self._base_dataset._get_save_path()}"
+        )
+
+        try:
+            project_id = os.environ["GCP_PROJECT_ID"]
+            region = os.environ["GCP_REGION"]
+        except KeyError as e:
+            self._logger.error(
+                """Did you set GCP_PROJECT_ID and GCP_REGION env variables?
+                They must be set in order to create Vertex AI artifact."""
+            )
+            raise e
 
         aip.init(
             project=project_id,
@@ -86,12 +99,21 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
 
     def _save(self, data: Any) -> None:
         self._base_dataset._save(data)
+
+        self._logger.info(
+            f"Creating {self._display_name} artifact with uri {self._artifact_uri}"
+        )
+
         aip.Artifact.create(
-            schema_title="system.Dataset", display_name=self._display_name
-        )  # , uri=DATASET_URI)
+            schema_title="system.Dataset",
+            display_name=self._display_name,
+            uri=self._artifact_uri,
+        )
 
     def _describe(self) -> Dict[str, Any]:
         return {
             "info": "for use only within Kedro Vertex AI Pipelines",
             "display_name": self._display_name,
+            "artifact_uri": self._artifact_uri,
+            "base_dataset": self._base_dataset.__class__.__name__,
         }
