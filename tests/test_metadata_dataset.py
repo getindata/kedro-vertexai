@@ -28,6 +28,7 @@ class TestKedroVertexAIMetadataDataset(unittest.TestCase):
                 base_dataset="some_package.SomeDataset",
                 display_name="dataset_name",
                 base_dataset_args={"some_argument": "its_value"},
+                metadata={"test_key": "Some additional info"},
             )
 
             mock_dynamic_load_class.assert_called_once()
@@ -57,6 +58,10 @@ class TestKedroVertexAIMetadataDataset(unittest.TestCase):
             assert (
                 aip_artifact_create_mock.call_args.kwargs["uri"]
                 == "gcs://save_path/file.csv"
+            )
+            assert (
+                aip_artifact_create_mock.call_args.kwargs["metadata"]["test_key"]
+                == "Some additional info"
             )
 
             dataset_info = dataset._describe()

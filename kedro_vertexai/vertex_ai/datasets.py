@@ -69,6 +69,7 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
         base_dataset: str,
         display_name: str,
         base_dataset_args: Dict[str, Any],
+        metadata: Dict[str, Any],
         schema: str = "system.Dataset",
     ) -> None:
         base_dataset_class: AbstractDataset = dynamic_load_class(base_dataset)
@@ -97,6 +98,17 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
             location=region,
         )
 
+        self._run_id = os.environ.get("KEDRO_CONFIG_RUN_ID")
+        self._job_name = os.environ.get("KEDRO_CONFIG_JOB_NAME")
+
+        if self._run_id is None or self._job_name is None:
+            self._logger.warning(
+                """KEDRO_CONFIG_RUN_ID and PIPELINE_JOB_NAME_PLACEHOLDER env variables are not set.
+                                 Set them to assign it as artifact metadata."""
+            )
+
+        self._metadata = metadata
+
         super().__init__()
 
     def _load(self) -> Any:
@@ -113,6 +125,11 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
             schema_title=self._artifact_schema,
             display_name=self._display_name,
             uri=self._artifact_uri,
+            metadata={
+                "pipeline run id": self._run_id,
+                "pipeline job name": self._job_name,
+                **self._metadata,
+            },
         )
 
     def _describe(self) -> Dict[str, Any]:
