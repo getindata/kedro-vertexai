@@ -209,8 +209,8 @@ class PipelineGenerator:
 
     def _generate_gcp_env_vars_command(self) -> str:
         vertex_conf = self.context.config_loader.get("vertexai")
-        project_id = vertex_conf["project_id"]
-        region = vertex_conf["region"]
+        project_id = vertex_conf.get("project_id")
+        region = vertex_conf.get("region")
         return f"GCP_PROJECT_ID={project_id} GCP_REGION={region}"
 
     def _configure_resources(self, name: str, tags: set, task: PipelineTask):
