@@ -74,8 +74,6 @@ class KedroVertexAIMetadataDataset(AbstractDataset):
     ) -> None:
         base_dataset_class: AbstractDataset = dynamic_load_class(base_dataset)
 
-        # breakpoint()
-
         self._base_dataset: AbstractDataset = base_dataset_class(**base_dataset_args)
         self._display_name = display_name
         self._artifact_uri = (
