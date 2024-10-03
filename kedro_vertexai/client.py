@@ -106,7 +106,9 @@ class VertexAIPipelinesClient:
         :return:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
-        pipeline_func = self.generator.generate_pipeline(pipeline, image, token)
+        pipeline_func = self.generator.generate_pipeline(
+            pipeline, image, token, params={"test_param": "test value"}
+        )
         Compiler().compile(
             pipeline_func=pipeline_func,
             package_path=output,

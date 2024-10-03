@@ -4,11 +4,14 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from typing import Dict, Union
+from functools import wraps
+from inspect import Parameter, signature
+from typing import Any, Dict, List, Union
 
 from kedro.framework.context import KedroContext
 from kfp import dsl
 from kfp.dsl import PipelineTask
+from makefun import with_signature
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -24,6 +27,38 @@ from kedro_vertexai.constants import (
 from kedro_vertexai.grouping import Grouping, NodeGrouper
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
+
+
+def maybe_add_params(kedro_parameters):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            return f()
+
+        sig = signature(f)
+        # new_params = (
+        #     Parameter(
+        #         name=name,
+        #         kind=Parameter.KEYWORD_ONLY,
+        #         default=default,
+        #         annotation=str,
+        #     )
+        #     for name, default in kedro_parameters.items()
+        # )
+        new_params = [
+            Parameter(
+                name=name,
+                kind=Parameter.KEYWORD_ONLY,
+                default=default,
+                annotation=str,
+            )
+            for name, default in kedro_parameters.items()
+        ]
+
+        wrapper.__signature__ = sig.replace(parameters=new_params)
+        return wrapper
+
+    return decorator
 
 
 class PipelineGenerator:
@@ -53,7 +88,7 @@ class PipelineGenerator:
         """
         return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
-    def generate_pipeline(self, pipeline, image, token):
+    def generate_pipeline(self, pipeline, image, token, params):
         """
         This method return @dsl.pipeline annotated function that contains
         dynamically generated pipelines.
@@ -75,16 +110,22 @@ class PipelineGenerator:
             name=self.get_pipeline_name(),
             description=self.run_config.description,
         )
-        def convert_kedro_pipeline_to_kfp() -> None:
+        # @maybe_add_params(params)
+        @with_signature(f"pipeline(test_param: str) -> None")
+        def convert_kedro_pipeline_to_kfp(*args, **kwargs) -> None:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token)
+            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token, params)
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_tasks)
 
+        # signature = inspect.signature(convert_kedro_pipeline_to_kfp)
+        # param = inspect.Parameter(name="test_param", annotation=str, kind=inspect.Parameter.KEYWORD_ONLY)
+        # convert_kedro_pipeline_to_kfp.__signature__ = signature.replace(parameters=[param])
+        # breakpoint()
         return convert_kedro_pipeline_to_kfp
 
     def _generate_hosts_file(self):
@@ -124,6 +165,7 @@ class PipelineGenerator:
         image,
         pipeline,
         tracking_token=None,
+        params: List[str] = [],
     ) -> Dict[str, PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_tasks = {}
@@ -140,9 +182,11 @@ class PipelineGenerator:
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
-            component_params = (
+            mlflow_params = (
                 kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
+            # component_params = {"mlflow_run_id": "test id"}
+            component_params = {**mlflow_params, **params}
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
@@ -172,16 +216,29 @@ class PipelineGenerator:
             ).strip()
 
             @dsl.container_component
-            def component(mlflow_run_id: Union[str, None] = None):
+            # @maybe_add_params(params)
+            @with_signature(
+                f"{name.replace('-', '_')}(test_param: str, mlflow_run_id: str = None)"
+            )
+            def component(mlflow_run_id: Union[str, None] = None, *args, **kwargs):
+                dynamic_parameters = []
+                for i, p in enumerate(params.keys()):
+                    dynamic_parameters.append(kwargs[p])
+
                 return dsl.ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
-                    args=[node_command],
+                    args=[
+                        dsl.ConcatPlaceholder(
+                            [node_command, " --params", dynamic_parameters[0]]
+                        )
+                    ],
                 )
 
             task = component(**component_params)
-            task.component_spec.name = name
-            task.set_display_name(name)
+            # breakpoint()
+            # task.component_spec.name = name
+            # task.set_display_name(name)
             self._configure_resources(name, tags, task)
             kfp_tasks[name] = task
 

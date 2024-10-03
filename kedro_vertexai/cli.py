@@ -174,7 +174,7 @@ def ui(ctx) -> None:
     "-o",
     "--output",
     type=str,
-    default="pipeline.json",
+    default="pipeline.yaml",
     help="Pipeline JSON definition file.",
 )
 @click.pass_context
