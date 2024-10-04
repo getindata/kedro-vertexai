@@ -118,7 +118,7 @@ class PipelineGenerator:
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token, params)
+            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token, kwargs)
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_tasks)
 
@@ -185,7 +185,6 @@ class PipelineGenerator:
             mlflow_params = (
                 kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
-            # component_params = {"mlflow_run_id": "test id"}
             component_params = {**mlflow_params, **params}
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
@@ -230,7 +229,7 @@ class PipelineGenerator:
                     command=["/bin/bash", "-c"],
                     args=[
                         dsl.ConcatPlaceholder(
-                            [node_command, " --params", dynamic_parameters[0]]
+                            [node_command, " --params", f" {list(params.keys())[0]}=", dynamic_parameters[0]]
                         )
                     ],
                 )
