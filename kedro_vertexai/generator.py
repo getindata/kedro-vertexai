@@ -119,7 +119,9 @@ class PipelineGenerator:
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token, kwargs)
+            kfp_tasks = self._build_kfp_tasks(
+                grouping, image, pipeline, token, kwargs, params_signature
+            )
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_tasks)
 
@@ -163,6 +165,7 @@ class PipelineGenerator:
         pipeline,
         tracking_token=None,
         params: List[str] = [],
+        params_signature: str = "",
     ) -> Dict[str, PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_tasks = {}
@@ -212,14 +215,13 @@ class PipelineGenerator:
             ).strip()
 
             @dsl.container_component
-            # @maybe_add_params(params)
             @with_signature(
-                f"{name.replace('-', '_')}(test_param: str, mlflow_run_id: str = None)"
+                f"{name.replace('-', '_')}({params_signature}, mlflow_run_id: str = None)"
             )
             def component(mlflow_run_id: Union[str, None] = None, *args, **kwargs):
-                dynamic_parameters = []
-                for i, p in enumerate(params.keys()):
-                    dynamic_parameters.append(kwargs[p])
+                dynamic_parameters = ",".join(
+                    [f"{k}={kwargs[k]}" for k in params.keys()]
+                )
 
                 return dsl.ContainerSpec(
                     image=image,
@@ -229,17 +231,13 @@ class PipelineGenerator:
                             [
                                 node_command,
                                 " --params",
-                                f" {list(params.keys())[0]}=",
-                                dynamic_parameters[0],
+                                f" {dynamic_parameters}",
                             ]
                         )
                     ],
                 )
 
             task = component(**component_params)
-            # breakpoint()
-            # task.component_spec.name = name
-            # task.set_display_name(name)
             self._configure_resources(name, tags, task)
             kfp_tasks[name] = task
 
