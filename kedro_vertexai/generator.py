@@ -95,8 +95,10 @@ class PipelineGenerator:
         :param pipeline: kedro pipeline
         :param image: full docker image name
         :param token: mlflow authentication token
+        :param params: Pipeline parameters specified at run time.
         :return: kfp pipeline function
         """
+        params_signature = ", ".join([f"{param}: str" for param in params])
 
         def set_dependencies(
             node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
@@ -110,8 +112,7 @@ class PipelineGenerator:
             name=self.get_pipeline_name(),
             description=self.run_config.description,
         )
-        # @maybe_add_params(params)
-        @with_signature(f"pipeline(test_param: str) -> None")
+        @with_signature(f"pipeline({params_signature}) -> None")
         def convert_kedro_pipeline_to_kfp(*args, **kwargs) -> None:
             from kedro.framework.project import pipelines
 
@@ -122,10 +123,6 @@ class PipelineGenerator:
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_tasks)
 
-        # signature = inspect.signature(convert_kedro_pipeline_to_kfp)
-        # param = inspect.Parameter(name="test_param", annotation=str, kind=inspect.Parameter.KEYWORD_ONLY)
-        # convert_kedro_pipeline_to_kfp.__signature__ = signature.replace(parameters=[param])
-        # breakpoint()
         return convert_kedro_pipeline_to_kfp
 
     def _generate_hosts_file(self):
@@ -229,7 +226,12 @@ class PipelineGenerator:
                     command=["/bin/bash", "-c"],
                     args=[
                         dsl.ConcatPlaceholder(
-                            [node_command, " --params", f" {list(params.keys())[0]}=", dynamic_parameters[0]]
+                            [
+                                node_command,
+                                " --params",
+                                f" {list(params.keys())[0]}=",
+                                dynamic_parameters[0],
+                            ]
                         )
                     ],
                 )
