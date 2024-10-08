@@ -98,7 +98,11 @@ class PipelineGenerator:
         :param params: Pipeline parameters specified at run time.
         :return: kfp pipeline function
         """
-        params_signature = ", ".join([f"{param}: str" for param in params])
+        params = params.split(",") if len(params) > 0 else []
+
+        params_signature = ", ".join(
+            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
+        )
 
         def set_dependencies(
             node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
@@ -215,9 +219,7 @@ class PipelineGenerator:
             ).strip()
 
             @dsl.container_component
-            @with_signature(
-                f"{name.replace('-', '_')}({params_signature}, mlflow_run_id: str = None)"
-            )
+            @with_signature(f"{name.replace('-', '_')}({params_signature})")
             def component(mlflow_run_id: Union[str, None] = None, *args, **kwargs):
                 dynamic_parameters = ",".join(
                     [f"{k}={kwargs[k]}" for k in params.keys()]

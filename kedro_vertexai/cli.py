@@ -193,7 +193,7 @@ def compile(ctx, image, pipeline, output, params) -> None:
         pipeline=pipeline,
         image=image if image else config.image,
         output=output,
-        params=params.split(",") if len(params) > 0 else [],
+        params=params,
     )
 
 
