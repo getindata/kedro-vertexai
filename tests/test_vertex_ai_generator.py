@@ -366,7 +366,21 @@ class TestGenerator(unittest.TestCase):
 
     def test_generate_params_signature(self):
         self.create_generator()
-        pass
+
+        params = ""
+        assert self.generator_under_test._generate_params_signature(params) == ""
+
+        params = "test_param:str"
+        assert (
+            self.generator_under_test._generate_params_signature(params)
+            == "test_param: str"
+        )
+
+        params = "test_param:str,param2:int"
+        assert (
+            self.generator_under_test._generate_params_signature(params)
+            == "test_param: str, param2: int"
+        )
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
