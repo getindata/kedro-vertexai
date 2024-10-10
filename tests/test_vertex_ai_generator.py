@@ -403,6 +403,73 @@ class TestGenerator(unittest.TestCase):
             == "test_param: str, param2: int, mlflow_run_id: Union[str, None] = None"
         )
 
+    def test_generate_pipeline_with_params(self):
+        self.create_generator()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+
+            pipeline = self.generator_under_test.generate_pipeline(
+                pipeline="pipeline",
+                image="unittest-image",
+                token="MLFLOW_TRACKING_TOKEN",
+                params="test_param:str,param2:int",
+            )
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
+
+                    pipeline_params = pipeline_spec["root"]["inputDefinitions"][
+                        "parameters"
+                    ]
+                    assert pipeline_params["test_param"]["parameterType"] == "STRING"
+                    assert (
+                        pipeline_params["param2"]["parameterType"] == "NUMBER_INTEGER"
+                    )
+
+                    assert (
+                        "test_param"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node1"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+                    assert (
+                        "param2"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node1"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+
+                    assert (
+                        "test_param"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node2"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+                    assert (
+                        "param2"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node2"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+
+                    assert (
+                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
+                            "container"
+                        ]["args"]
+                    )
+                    assert (
+                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        in pipeline_spec["deploymentSpec"]["executors"]["exec-node2"][
+                            "container"
+                        ]["args"]
+                    )
+
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
             if not enabled and (name == "mlflow" or name == "kedro_mlflow"):
