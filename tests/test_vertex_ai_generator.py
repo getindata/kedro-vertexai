@@ -382,6 +382,27 @@ class TestGenerator(unittest.TestCase):
             == "test_param: str, param2: int"
         )
 
+    def test_add_mlflow_param_to_signature(self):
+        self.create_generator()
+
+        params_signature = ""
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "mlflow_run_id: Union[str, None] = None"
+        )
+
+        params_signature = "test_param: str"
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "test_param: str, mlflow_run_id: Union[str, None] = None"
+        )
+
+        params_signature = "test_param: str, param2: int"
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "test_param: str, param2: int, mlflow_run_id: Union[str, None] = None"
+        )
+
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
             if not enabled and (name == "mlflow" or name == "kedro_mlflow"):

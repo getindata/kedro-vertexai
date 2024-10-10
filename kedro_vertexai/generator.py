@@ -4,7 +4,7 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Union  # noqa
 
 from kedro.framework.context import KedroContext
 from kfp import dsl
@@ -132,6 +132,16 @@ class PipelineGenerator:
 
         return mlflow_start_run()
 
+    def _add_mlflow_param_to_signature(self, params_signature: str) -> str:
+        mlflow_signature = "mlflow_run_id: Union[str, None] = None"
+
+        params_signature = (
+            f"{params_signature}, {mlflow_signature}"
+            if len(params_signature) > 0
+            else mlflow_signature
+        )
+        return params_signature
+
     def _build_kfp_tasks(
         self,
         node_grouping: Grouping,
@@ -152,12 +162,7 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
-        mlflow_signature = "mlflow_run_id: Union[str, None] = None"
-        params_signature = (
-            f"{params_signature}, {mlflow_signature}"
-            if len(params_signature) > 0
-            else mlflow_signature
-        )
+        params_signature = self._add_mlflow_param_to_signature(params_signature)
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
