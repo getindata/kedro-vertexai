@@ -4,9 +4,7 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from functools import wraps
-from inspect import Parameter, signature
-from typing import Any, Dict, List, Union
+from typing import Dict, List
 
 from kedro.framework.context import KedroContext
 from kfp import dsl
@@ -27,38 +25,6 @@ from kedro_vertexai.constants import (
 from kedro_vertexai.grouping import Grouping, NodeGrouper
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
-
-
-def maybe_add_params(kedro_parameters):
-    def decorator(f):
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            return f()
-
-        sig = signature(f)
-        # new_params = (
-        #     Parameter(
-        #         name=name,
-        #         kind=Parameter.KEYWORD_ONLY,
-        #         default=default,
-        #         annotation=str,
-        #     )
-        #     for name, default in kedro_parameters.items()
-        # )
-        new_params = [
-            Parameter(
-                name=name,
-                kind=Parameter.KEYWORD_ONLY,
-                default=default,
-                annotation=str,
-            )
-            for name, default in kedro_parameters.items()
-        ]
-
-        wrapper.__signature__ = sig.replace(parameters=new_params)
-        return wrapper
-
-    return decorator
 
 
 class PipelineGenerator:
@@ -88,7 +54,15 @@ class PipelineGenerator:
         """
         return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
-    def generate_pipeline(self, pipeline, image, token, params):
+    def _generate_params_signature(self, params: str) -> str:
+        params = params.split(",") if len(params) > 0 else []
+
+        params_signature = ", ".join(
+            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
+        )
+        return params_signature
+
+    def generate_pipeline(self, pipeline, image, token, params: str = ""):
         """
         This method return @dsl.pipeline annotated function that contains
         dynamically generated pipelines.
@@ -98,11 +72,7 @@ class PipelineGenerator:
         :param params: Pipeline parameters specified at run time.
         :return: kfp pipeline function
         """
-        params = params.split(",") if len(params) > 0 else []
-
-        params_signature = ", ".join(
-            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
-        )
+        params_signature = self._generate_params_signature(params)
 
         def set_dependencies(
             node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
@@ -182,6 +152,13 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
+        mlflow_signature = "mlflow_run_id: Union[str, None] = None"
+        params_signature = (
+            f"{params_signature}, {mlflow_signature}"
+            if len(params_signature) > 0
+            else mlflow_signature
+        )
+
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
@@ -220,7 +197,7 @@ class PipelineGenerator:
 
             @dsl.container_component
             @with_signature(f"{name.replace('-', '_')}({params_signature})")
-            def component(mlflow_run_id: Union[str, None] = None, *args, **kwargs):
+            def component(*args, **kwargs):
                 dynamic_parameters = ",".join(
                     [f"{k}={kwargs[k]}" for k in params.keys()]
                 )
@@ -229,13 +206,9 @@ class PipelineGenerator:
                     image=image,
                     command=["/bin/bash", "-c"],
                     args=[
-                        dsl.ConcatPlaceholder(
-                            [
-                                node_command,
-                                " --params",
-                                f" {dynamic_parameters}",
-                            ]
-                        )
+                        node_command,
+                        " --params",  # TODO what if there is no dynamic params?
+                        f" {dynamic_parameters}",
                     ],
                 )
 

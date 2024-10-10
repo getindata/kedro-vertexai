@@ -76,7 +76,7 @@ class TestGenerator(unittest.TestCase):
                             pipeline_spec = yaml.safe_load(f)
 
                         component_args = pipeline_spec["deploymentSpec"]["executors"][
-                            "exec-component"
+                            "exec-nodegroup"
                         ]["container"]["args"][0]
                         assert (
                             '--nodes "node1,node2"' in component_args
@@ -85,7 +85,7 @@ class TestGenerator(unittest.TestCase):
 
                         self.assertDictEqual(
                             pipeline_spec["deploymentSpec"]["executors"][
-                                "exec-component"
+                                "exec-nodegroup"
                             ]["container"]["resources"],
                             exp,
                         )
@@ -116,7 +116,7 @@ class TestGenerator(unittest.TestCase):
                     pipeline_spec = yaml.safe_load(f)
 
             # then
-            for component in ["exec-component", "exec-component-2"]:
+            for component in ["exec-node1", "exec-node2"]:
                 spec = pipeline_spec["deploymentSpec"]["executors"][component][
                     "container"
                 ]
@@ -153,7 +153,7 @@ class TestGenerator(unittest.TestCase):
 
                     # then
                     component1_resources = pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component"
+                        "exec-node1"
                     ]["container"]["resources"]
                     assert component1_resources["cpuLimit"] == 0.4
                     assert component1_resources["memoryLimit"] == 68.719476736
@@ -166,7 +166,7 @@ class TestGenerator(unittest.TestCase):
                     )
 
                     component2_resources = pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component-2"
+                        "exec-node2"
                     ]["container"]["resources"]
                     assert component2_resources["cpuLimit"] == 0.1
                     assert component2_resources["cpuRequest"] == 0.1
@@ -238,7 +238,7 @@ class TestGenerator(unittest.TestCase):
             # then
             assert all(
                 check
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
                 for check in (
@@ -267,7 +267,7 @@ class TestGenerator(unittest.TestCase):
 
             assert (
                 "kedro vertexai -e unittests initialize-job --params="
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
             )
@@ -275,9 +275,9 @@ class TestGenerator(unittest.TestCase):
             assert (
                 'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in (
-                    args := pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component"
-                    ]["container"]["args"][0]
+                    args := pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
+                        "container"
+                    ]["args"][0]
                 )
             ) and args.endswith("--config config.yaml")
 
@@ -305,12 +305,12 @@ class TestGenerator(unittest.TestCase):
                         pipeline_spec = yaml.safe_load(f)
 
                 expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-                assert pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                assert pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
 
                 assert (
-                    pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                         "container"
                     ]["args"][0].count(expected)
                     == 2
@@ -359,10 +359,14 @@ class TestGenerator(unittest.TestCase):
             )
             assert (
                 hosts_entry_cmd
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
             )
+
+    def test_generate_params_signature(self):
+        self.create_generator()
+        pass
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
