@@ -17,7 +17,7 @@ maintainers = [
     {name = "GetInData MLOPS", email = "mlops@getindata.com"},
 ]
 license = {text = "Apache-2.0"}
-requires-python = "<3.11,>=3.8"
+requires-python = ">=3.8"
 dependencies = [
     "kedro<0.20,>=0.19.0",
     "click>=8.0.4",
