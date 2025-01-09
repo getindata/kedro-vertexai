@@ -69,7 +69,7 @@ class PipelineGenerator:
         :param pipeline: kedro pipeline
         :param image: full docker image name
         :param token: mlflow authentication token
-        :param params: Pipeline parameters specified at run time.
+        :param params: Pipeline parameters to be specified at run time.
         :return: kfp pipeline function
         """
         params_signature = self._generate_params_signature(params)

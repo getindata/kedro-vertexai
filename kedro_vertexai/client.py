@@ -98,7 +98,7 @@ class VertexAIPipelinesClient:
         :param pipeline:
         :param image:
         :param output:
-        :param params: Pipeline parameters specified at run time.
+        :param params: Pipeline parameters to be specified at run time.
         :return:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
