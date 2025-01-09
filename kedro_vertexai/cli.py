@@ -175,13 +175,17 @@ def ui(ctx) -> None:
     "--output",
     type=str,
     default="pipeline.yaml",
-    help="Pipeline JSON definition file.",
+    help="Pipeline YAML definition file.",
 )
 @click.option(
     "--params",
     type=str,
     default="",
-    help="Pipeline parameters specified at run time. Should be separated by comma.",
+    help="""
+Pipeline parameters to be specified at run time.
+In a format <param name≥:<param type>, for example test_param:int.
+Should be separated by comma.
+""",
 )
 @click.pass_context
 def compile(ctx, image, pipeline, output, params) -> None:
