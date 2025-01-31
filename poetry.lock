@@ -2082,6 +2082,17 @@ lint = ["pre-commit (>=3.3)"]
 test = ["pytest (>=7.4)", "pytest-cov (>=4.1)"]
 
 [[package]]
+name = "makefun"
+version = "1.15.6"
+description = "Small library to dynamically create python functions."
+optional = false
+python-versions = "*"
+files = [
+    {file = "makefun-1.15.6-py2.py3-none-any.whl", hash = "sha256:e69b870f0bb60304765b1e3db576aaecf2f9b3e5105afe8cfeff8f2afe6ad067"},
+    {file = "makefun-1.15.6.tar.gz", hash = "sha256:26bc63442a6182fb75efed8b51741dd2d1db2f176bec8c64e20a586256b8f149"},
+]
+
+[[package]]
 name = "mako"
 version = "1.3.2"
 description = "A super-fast templating language that borrows the best ideas from the existing templating languages."
@@ -4230,4 +4241,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.11"
-content-hash = "de7086311b6b855c6b96b2d0942fde5fbed01925812c9045856a86ab7197777d"
+content-hash = "15575988ac92ba01f8479c949c0c03eeeafd82fa40bcdad9d509b7bf810128e9"
