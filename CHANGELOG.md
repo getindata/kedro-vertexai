@@ -12,6 +12,7 @@ with the proper remote pipeline execution handling, and possibly per-task timeou
 - Assign pipelines to Vertex AI experiments
 - Migrated `pydantic` library to v2
 - Added pipeline parametrization
+- Migrated to `actions/upload-artifact@v4` in the Github Actions
 
 ## [0.11.1] - 2024-07-01
 
