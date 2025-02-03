@@ -174,11 +174,21 @@ def ui(ctx) -> None:
     "-o",
     "--output",
     type=str,
-    default="pipeline.json",
-    help="Pipeline JSON definition file.",
+    default="pipeline.yaml",
+    help="Pipeline YAML definition file.",
+)
+@click.option(
+    "--params",
+    type=str,
+    default="",
+    help="""
+Pipeline parameters to be specified at run time.
+In a format <param name≥:<param type>, for example test_param:int.
+Should be separated by comma.
+""",
 )
 @click.pass_context
-def compile(ctx, image, pipeline, output) -> None:
+def compile(ctx, image, pipeline, output, params) -> None:
     """Translates Kedro pipeline into JSON file with VertexAI pipeline definition"""
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
@@ -187,6 +197,7 @@ def compile(ctx, image, pipeline, output) -> None:
         pipeline=pipeline,
         image=image if image else config.image,
         output=output,
+        params=params,
     )
 
 

@@ -6,7 +6,7 @@ import datetime as dt
 import logging
 import os
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from google.cloud import aiplatform as aip
 from google.cloud.aiplatform import PipelineJob
@@ -92,21 +92,19 @@ class VertexAIPipelinesClient:
             dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         )
 
-    def compile(
-        self,
-        pipeline,
-        image,
-        output,
-    ):
+    def compile(self, pipeline, image, output, params: List[str] = []):
         """
         Creates json file in given local output path
         :param pipeline:
         :param image:
         :param output:
+        :param params: Pipeline parameters to be specified at run time.
         :return:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
-        pipeline_func = self.generator.generate_pipeline(pipeline, image, token)
+        pipeline_func = self.generator.generate_pipeline(
+            pipeline, image, token, params=params
+        )
         Compiler().compile(
             pipeline_func=pipeline_func,
             package_path=output,
