@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] 2024-07-29
+## [Unreleased]
 
 - Support for python 3.11 & 3.12 added, dropped support for python 3.8
 - Brought back the Vertex AI Pipelines scheduling capability
@@ -12,6 +12,7 @@ didn't alter the remote pipeline execution, and only escaped the local Python pr
 with the proper remote pipeline execution handling, and possibly per-task timeout enabled by [the new kfp feature](https://github.com/kubeflow/pipelines/pull/10481).
 - Assign pipelines to Vertex AI experiments
 - Migrated `pydantic` library to v2
+- Custom dataset that creates Vertex AI artifact
 - Added pipeline parametrization
 
 ## [0.11.1] - 2024-07-01

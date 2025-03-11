@@ -41,7 +41,7 @@ class PipelineGenerator:
         self.project_name = project_name
         self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
-        self.catalog = context.config_loader.get("catalog*")
+        self.catalog = context.config_loader.get("catalog")
         self.grouping: NodeGrouper = dynamic_init_class(
             self.run_config.grouping.cls,
             context,
@@ -196,6 +196,7 @@ class PipelineGenerator:
                     "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
                     if is_mlflow_enabled()
                     else "",
+                    self._generate_gcp_env_vars_command(),
                     kedro_command,
                 ]
             ).strip()
@@ -241,6 +242,12 @@ class PipelineGenerator:
             if should_add_params
             else ""
         )
+
+    def _generate_gcp_env_vars_command(self) -> str:
+        vertex_conf = self.context.config_loader.get("vertexai")
+        project_id = vertex_conf.get("project_id")
+        region = vertex_conf.get("region")
+        return f"GCP_PROJECT_ID={project_id} GCP_REGION={region}"
 
     def _configure_resources(self, name: str, tags: set, task: PipelineTask):
         resources = self.run_config.resources_for(name, tags)
