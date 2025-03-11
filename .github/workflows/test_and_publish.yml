@@ -31,7 +31,7 @@ jobs:
     - name: Setup poetry
       run: |
         python -V
-        python -m pip install poetry
+        python -m pip install poetry --no-cache-dir
 
     - name: Check pre-commit status
       run: |
