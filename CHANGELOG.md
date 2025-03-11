@@ -2,8 +2,9 @@
 
 ## [Unreleased] 2024-07-29
 
+- Support for python 3.11 & 3.12 added, dropped support for python 3.8
 - Brought back the Vertex AI Pipelines scheduling capability
-- Migrated to kfp 2
+- Migrated to kfp 2 (locked to <2.9.0  due to pipeline spec changes)
 - Removed `image_pull_policy` parameter from configuration, as it only applies to Kubernetes backend and not Vertex AI,
 and it's only available in `kfp-kubernetes` extension package
 - Removed `--timeout-seconds` parameter from `run-once` command for now, as in the old version of the plugin exceeding the specified time
@@ -12,7 +13,6 @@ with the proper remote pipeline execution handling, and possibly per-task timeou
 - Assign pipelines to Vertex AI experiments
 - Migrated `pydantic` library to v2
 - Added pipeline parametrization
-- Migrated to `actions/upload-artifact@v4` in the Github Actions
 
 ## [0.11.1] - 2024-07-01
 

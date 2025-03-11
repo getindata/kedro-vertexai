@@ -17,8 +17,9 @@ jobs:
   unit_tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
     - uses: actions/checkout@v4
@@ -31,7 +32,7 @@ jobs:
     - name: Setup poetry
       run: |
         python -V
-        python -m pip install poetry
+        python -m pip install poetry --no-cache-dir
 
     - name: Check pre-commit status
       run: |
@@ -86,15 +87,15 @@ jobs:
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: python
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
   ### PROJECT SPECIFIC CONFIGURATION HERE
   e2e_tests:
