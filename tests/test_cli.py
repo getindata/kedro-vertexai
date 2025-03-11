@@ -171,9 +171,7 @@ class TestPluginCLI(unittest.TestCase):
 
         assert result.exit_code == 0
         context_helper.vertexai_client.compile.assert_called_with(
-            image="img",
-            output="output",
-            pipeline="pipe",
+            image="img", output="output", pipeline="pipe", params=""
         )
 
     def test_store_params_empty(self):

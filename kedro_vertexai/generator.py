@@ -4,11 +4,12 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from typing import Dict, Union
+from typing import Dict, List, Union  # noqa
 
 from kedro.framework.context import KedroContext
 from kfp import dsl
 from kfp.dsl import PipelineTask
+from makefun import with_signature
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -53,15 +54,25 @@ class PipelineGenerator:
         """
         return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
-    def generate_pipeline(self, pipeline, image, token):
+    def _generate_params_signature(self, params: str) -> str:
+        params = params.split(",") if len(params) > 0 else []
+
+        params_signature = ", ".join(
+            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
+        )
+        return params_signature
+
+    def generate_pipeline(self, pipeline, image, token, params: str = ""):
         """
         This method return @dsl.pipeline annotated function that contains
         dynamically generated pipelines.
         :param pipeline: kedro pipeline
         :param image: full docker image name
         :param token: mlflow authentication token
+        :param params: Pipeline parameters to be specified at run time.
         :return: kfp pipeline function
         """
+        params_signature = self._generate_params_signature(params)
 
         def set_dependencies(
             node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
@@ -75,13 +86,16 @@ class PipelineGenerator:
             name=self.get_pipeline_name(),
             description=self.run_config.description,
         )
-        def convert_kedro_pipeline_to_kfp() -> None:
+        @with_signature(f"pipeline({params_signature}) -> None")
+        def convert_kedro_pipeline_to_kfp(*args, **kwargs) -> None:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_tasks = self._build_kfp_tasks(grouping, image, pipeline, token)
+            kfp_tasks = self._build_kfp_tasks(
+                grouping, image, pipeline, token, kwargs, params_signature
+            )
             for group_name, dependencies in grouping.dependencies.items():
                 set_dependencies(group_name, dependencies, kfp_tasks)
 
@@ -118,12 +132,24 @@ class PipelineGenerator:
 
         return mlflow_start_run()
 
+    def _add_mlflow_param_to_signature(self, params_signature: str) -> str:
+        mlflow_signature = "mlflow_run_id: Union[str, None] = None"
+
+        params_signature = (
+            f"{params_signature}, {mlflow_signature}"
+            if len(params_signature) > 0
+            else mlflow_signature
+        )
+        return params_signature
+
     def _build_kfp_tasks(
         self,
         node_grouping: Grouping,
         image,
         pipeline,
         tracking_token=None,
+        params: List[str] = [],
+        params_signature: str = "",
     ) -> Dict[str, PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
         kfp_tasks = {}
@@ -136,13 +162,16 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
+        params_signature = self._add_mlflow_param_to_signature(params_signature)
+
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
-            component_params = (
+            mlflow_params = (
                 kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
+            component_params = {**mlflow_params, **params}
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
@@ -173,16 +202,23 @@ class PipelineGenerator:
             ).strip()
 
             @dsl.container_component
-            def component(mlflow_run_id: Union[str, None] = None):
+            @with_signature(f"{name.replace('-', '_')}({params_signature})")
+            def component(*args, **kwargs):
+                dynamic_parameters = ",".join(
+                    [f"{k}={kwargs[k]}" for k in params.keys()]
+                )
+
                 return dsl.ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
-                    args=[node_command],
+                    args=[
+                        node_command,
+                        " --params",  # TODO what if there is no dynamic params?
+                        f" {dynamic_parameters}",
+                    ],
                 )
 
             task = component(**component_params)
-            task.component_spec.name = name
-            task.set_display_name(name)
             self._configure_resources(name, tags, task)
             kfp_tasks[name] = task
 

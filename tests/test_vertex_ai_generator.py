@@ -76,7 +76,7 @@ class TestGenerator(unittest.TestCase):
                             pipeline_spec = yaml.safe_load(f)
 
                         component_args = pipeline_spec["deploymentSpec"]["executors"][
-                            "exec-component"
+                            "exec-nodegroup"
                         ]["container"]["args"][0]
                         assert (
                             '--nodes "node1,node2"' in component_args
@@ -85,7 +85,7 @@ class TestGenerator(unittest.TestCase):
 
                         self.assertDictEqual(
                             pipeline_spec["deploymentSpec"]["executors"][
-                                "exec-component"
+                                "exec-nodegroup"
                             ]["container"]["resources"],
                             exp,
                         )
@@ -116,7 +116,7 @@ class TestGenerator(unittest.TestCase):
                     pipeline_spec = yaml.safe_load(f)
 
             # then
-            for component in ["exec-component", "exec-component-2"]:
+            for component in ["exec-node1", "exec-node2"]:
                 spec = pipeline_spec["deploymentSpec"]["executors"][component][
                     "container"
                 ]
@@ -153,7 +153,7 @@ class TestGenerator(unittest.TestCase):
 
                     # then
                     component1_resources = pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component"
+                        "exec-node1"
                     ]["container"]["resources"]
                     assert component1_resources["cpuLimit"] == 0.4
                     assert component1_resources["memoryLimit"] == 68.719476736
@@ -166,7 +166,7 @@ class TestGenerator(unittest.TestCase):
                     )
 
                     component2_resources = pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component-2"
+                        "exec-node2"
                     ]["container"]["resources"]
                     assert component2_resources["cpuLimit"] == 0.1
                     assert component2_resources["cpuRequest"] == 0.1
@@ -238,7 +238,7 @@ class TestGenerator(unittest.TestCase):
             # then
             assert all(
                 check
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
                 for check in (
@@ -267,7 +267,7 @@ class TestGenerator(unittest.TestCase):
 
             assert (
                 "kedro vertexai -e unittests initialize-job --params="
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
             )
@@ -275,9 +275,9 @@ class TestGenerator(unittest.TestCase):
             assert (
                 'kedro run -e unittests --pipeline pipeline --nodes "node1"'
                 in (
-                    args := pipeline_spec["deploymentSpec"]["executors"][
-                        "exec-component"
-                    ]["container"]["args"][0]
+                    args := pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
+                        "container"
+                    ]["args"][0]
                 )
             ) and args.endswith("--config config.yaml")
 
@@ -305,12 +305,12 @@ class TestGenerator(unittest.TestCase):
                         pipeline_spec = yaml.safe_load(f)
 
                 expected = f'{KEDRO_GLOBALS_PATTERN}="*globals.yml"'
-                assert pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                assert pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
 
                 assert (
-                    pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                    pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                         "container"
                     ]["args"][0].count(expected)
                     == 2
@@ -359,10 +359,116 @@ class TestGenerator(unittest.TestCase):
             )
             assert (
                 hosts_entry_cmd
-                in pipeline_spec["deploymentSpec"]["executors"]["exec-component"][
+                in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                     "container"
                 ]["args"][0]
             )
+
+    def test_generate_params_signature(self):
+        self.create_generator()
+
+        params = ""
+        assert self.generator_under_test._generate_params_signature(params) == ""
+
+        params = "test_param:str"
+        assert (
+            self.generator_under_test._generate_params_signature(params)
+            == "test_param: str"
+        )
+
+        params = "test_param:str,param2:int"
+        assert (
+            self.generator_under_test._generate_params_signature(params)
+            == "test_param: str, param2: int"
+        )
+
+    def test_add_mlflow_param_to_signature(self):
+        self.create_generator()
+
+        params_signature = ""
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "mlflow_run_id: Union[str, None] = None"
+        )
+
+        params_signature = "test_param: str"
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "test_param: str, mlflow_run_id: Union[str, None] = None"
+        )
+
+        params_signature = "test_param: str, param2: int"
+        assert (
+            self.generator_under_test._add_mlflow_param_to_signature(params_signature)
+            == "test_param: str, param2: int, mlflow_run_id: Union[str, None] = None"
+        )
+
+    def test_generate_pipeline_with_params(self):
+        self.create_generator()
+        with patch(
+            "kedro.framework.project.pipelines",
+            new=self.pipelines_under_test,
+        ):
+
+            pipeline = self.generator_under_test.generate_pipeline(
+                pipeline="pipeline",
+                image="unittest-image",
+                token="MLFLOW_TRACKING_TOKEN",
+                params="test_param:str,param2:int",
+            )
+            with NamedTemporaryFile(
+                mode="rt", prefix="pipeline", suffix=".yaml"
+            ) as spec_output:
+                kfp.compiler.Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
+
+                    pipeline_params = pipeline_spec["root"]["inputDefinitions"][
+                        "parameters"
+                    ]
+                    assert pipeline_params["test_param"]["parameterType"] == "STRING"
+                    assert (
+                        pipeline_params["param2"]["parameterType"] == "NUMBER_INTEGER"
+                    )
+
+                    assert (
+                        "test_param"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node1"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+                    assert (
+                        "param2"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node1"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+
+                    assert (
+                        "test_param"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node2"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+                    assert (
+                        "param2"
+                        in pipeline_spec["root"]["dag"]["tasks"]["node2"]["inputs"][
+                            "parameters"
+                        ]
+                    )
+
+                    assert (
+                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
+                            "container"
+                        ]["args"]
+                    )
+                    assert (
+                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        in pipeline_spec["deploymentSpec"]["executors"]["exec-node2"][
+                            "container"
+                        ]["args"]
+                    )
 
     def mock_mlflow(self, enabled=False):
         def fakeimport(name, *args, **kw):
