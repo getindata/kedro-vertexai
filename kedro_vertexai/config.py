@@ -4,7 +4,7 @@ from importlib import import_module
 from inspect import signature
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from pydantic.networks import IPvAnyAddress
 
 DEFAULT_CONFIG_TEMPLATE = """
@@ -15,15 +15,14 @@ run_config:
   # Name of the image to run as the pipeline steps
   image: {image}
 
-  # Pull policy to be used for the steps. Use Always if you push the images
-  # on the same tag, or Never if you use only local images
-  image_pull_policy: IfNotPresent
-
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Prefix of Vertex AI pipeline run
-  experiment_name: {project}
+  # Name of the Vertex AI experiment to be created
+  experiment_name: {project}-experiment
+
+  # Optional description of the Vertex AI experiment to be created
+  # experiment_description: "My experiment description."
 
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: {run_name}
@@ -105,6 +104,25 @@ run_config:
   # mlflow:
   #   request_header_provider_params:
   #       key: value
+
+  # Schedules configuration
+  schedules:
+    default_schedule:
+      cron_expression: "0 * * * *"
+      timezone: Etc/UTC
+      start_time: none
+      end_time: none
+      allow_queueing: false
+      max_run_count: none
+      max_concurrent_run_count: 1
+    # training_pipeline:
+    #   cron_expression: "0 0 * * *"
+    #   timezone: America/New_York
+    #   start_time: none
+    #   end_time: none
+    #   allow_queueing: false
+    #   max_run_count: none
+    #   max_concurrent_run_count: 1
 """
 
 
@@ -148,13 +166,13 @@ class GroupingConfig(BaseModel):
     cls: str = "kedro_vertexai.grouping.IdentityNodeGrouper"
     params: Optional[dict] = {}
 
-    @validator("cls")
+    @field_validator("cls")
     def class_valid(cls, v, values, **kwargs):
         try:
             grouper_class = dynamic_load_class(v)
             class_sig = signature(grouper_class)
-            if "params" in values:
-                class_sig.bind(None, **values["params"])
+            if "params" in values.data:
+                class_sig.bind(None, **values.data["params"])
             else:
                 class_sig.bind(None)
         except:  # noqa: E722
@@ -178,13 +196,13 @@ class HostAliasConfig(BaseModel):
 
 
 class ResourcesConfig(BaseModel):
-    cpu: Optional[str]
-    gpu: Optional[str]
-    memory: Optional[str]
+    cpu: Optional[str] = None
+    gpu: Optional[str] = None
+    memory: Optional[str] = None
 
 
 class NetworkConfig(BaseModel):
-    vpc: Optional[str]
+    vpc: Optional[str] = None
     host_aliases: Optional[List[HostAliasConfig]] = []
 
 
@@ -194,18 +212,28 @@ class DynamicConfigProviderConfig(BaseModel):
 
 
 class MLFlowVertexAIConfig(BaseModel):
-    request_header_provider_params: Optional[Dict[str, str]]
+    request_header_provider_params: Optional[Dict[str, str]] = None
+
+
+class ScheduleConfig(BaseModel):
+    cron_expression: Optional[str] = "0 * * * *"
+    timezone: Optional[str] = "Etc/UTC"
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    allow_queueing: Optional[bool] = False
+    max_run_count: Optional[int] = None
+    max_concurrent_run_count: Optional[int] = 1
 
 
 class RunConfig(BaseModel):
     image: str
-    image_pull_policy: Optional[str] = "IfNotPresent"
-    root: Optional[str]
-    description: Optional[str]
+    root: Optional[str] = None
+    description: Optional[str] = None
     experiment_name: str
-    scheduled_run_name: Optional[str]
+    experiment_description: Optional[str] = None
+    scheduled_run_name: Optional[str] = None
     grouping: Optional[GroupingConfig] = GroupingConfig()
-    service_account: Optional[str]
+    service_account: Optional[str] = None
     network: Optional[NetworkConfig] = NetworkConfig()
     ttl: int = 3600 * 24 * 7
     resources: Optional[Dict[str, ResourcesConfig]] = dict(
@@ -214,6 +242,7 @@ class RunConfig(BaseModel):
     node_selectors: Optional[Dict[str, Dict[str, str]]] = {}
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
+    schedules: Optional[Dict[str, ScheduleConfig]] = None
 
     def resources_for(self, node: str, tags: Optional[set] = None):
         default_config = self.resources["__default__"].dict()

@@ -10,15 +10,14 @@ run_config:
   # Name of the image to run as the pipeline steps
   image: eu.gcr.io/my-gcp-mlops-project/example_model:${oc.env:KEDRO_CONFIG_COMMIT_ID}
 
-  # Pull policy to be used for the steps. Use Always if you push the images
-  # on the same tag, or Never if you use only local images
-  image_pull_policy: IfNotPresent
-
   # Location of Vertex AI GCS root
   root: bucket_name/gcs_suffix
 
-  # Name of the kubeflow experiment to be created
+  # Name of the Vertex AI experiment to be created
   experiment_name: MyExperiment
+
+  # Optional description of the Vertex AI experiment to be created
+  # experiment_description: "My experiment description."
 
   # Name of the scheduled run, templated with the schedule parameters
   scheduled_run_name: MyExperimentRun
@@ -98,6 +97,23 @@ run_config:
   #      client_id: iam-client-id
 
   dynamic_config_providers: []
+
+  # Schedules configuration
+  schedules:
+    default_schedule:
+      cron_expression: "0 * * * *"
+      timezone: Etc/UTC
+      # Optional. Timestamp after which the first run can be scheduled. If unspecified, it defaults to the schedule creation timestamp.
+      start_time: null
+      # Optional. Timestamp after which no more runs will be scheduled. If unspecified, then runs will be scheduled indefinitely.
+      end_time: null
+      # Optional. Whether new scheduled runs can be queued when max_concurrent_runs limit is reached.
+      allow_queueing: false
+      # Optional. Maximum run count of the schedule. If specified, The schedule will be completed when either started_run_count >= max_run_count or when end_time is reached. Must be positive and <= 2^63-1.
+      max_run_count: null
+      # Optional. Maximum number of runs that can be started concurrently for this PipelineJobSchedule.
+      max_concurrent_run_count: 1
+
 ```
 
 ## Dynamic configuration support

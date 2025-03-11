@@ -4,19 +4,12 @@ Generator for Vertex AI pipelines
 import json
 import logging
 import os
-from tempfile import NamedTemporaryFile
-from typing import Dict
+from typing import Dict, List, Union  # noqa
 
-import kfp
 from kedro.framework.context import KedroContext
-from kfp.components.structures import (
-    ComponentSpec,
-    ContainerImplementation,
-    ContainerSpec,
-    OutputPathPlaceholder,
-    OutputSpec,
-)
-from kfp.v2 import dsl
+from kfp import dsl
+from kfp.dsl import PipelineTask
+from makefun import with_signature
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -31,7 +24,6 @@ from kedro_vertexai.constants import (
 )
 from kedro_vertexai.grouping import Grouping, NodeGrouper
 from kedro_vertexai.utils import clean_name, is_mlflow_enabled
-from kedro_vertexai.vertex_ai.io import generate_mlflow_inputs
 from kedro_vertexai.vertex_ai.runner import VertexAIPipelinesRunner
 
 
@@ -49,7 +41,7 @@ class PipelineGenerator:
         self.project_name = project_name
         self.context: KedroContext = context
         self.run_config: RunConfig = config.run_config
-        self.catalog = context.config_loader.get("catalog*")
+        self.catalog = context.config_loader.get("catalog")
         self.grouping: NodeGrouper = dynamic_init_class(
             self.run_config.grouping.cls,
             context,
@@ -62,39 +54,50 @@ class PipelineGenerator:
         """
         return self.project_name.lower().replace(" ", "-").replace("_", "-")
 
-    def generate_pipeline(self, pipeline, image, image_pull_policy, token):
+    def _generate_params_signature(self, params: str) -> str:
+        params = params.split(",") if len(params) > 0 else []
+
+        params_signature = ", ".join(
+            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
+        )
+        return params_signature
+
+    def generate_pipeline(self, pipeline, image, token, params: str = ""):
         """
         This method return @dsl.pipeline annotated function that contains
         dynamically generated pipelines.
         :param pipeline: kedro pipeline
         :param image: full docker image name
-        :param image_pull_policy: docker pull policy
         :param token: mlflow authentication token
+        :param params: Pipeline parameters to be specified at run time.
         :return: kfp pipeline function
         """
+        params_signature = self._generate_params_signature(params)
 
-        def set_dependencies(node_name, dependencies, kfp_ops):
+        def set_dependencies(
+            node_name, dependencies, kfp_tasks: Dict[str, PipelineTask]
+        ):
             for dependency_group in dependencies:
                 name = clean_name(node_name)
                 dependency_name = clean_name(dependency_group)
-                kfp_ops[name].after(kfp_ops[dependency_name])
+                kfp_tasks[name].after(kfp_tasks[dependency_name])
 
         @dsl.pipeline(
             name=self.get_pipeline_name(),
             description=self.run_config.description,
         )
-        def convert_kedro_pipeline_to_kfp() -> None:
+        @with_signature(f"pipeline({params_signature}) -> None")
+        def convert_kedro_pipeline_to_kfp(*args, **kwargs) -> None:
             from kedro.framework.project import pipelines
 
             node_dependencies = pipelines[pipeline].node_dependencies
             grouping = self.grouping.group(node_dependencies)
 
-            kfp_ops = self._build_kfp_ops(grouping, image, pipeline, token)
+            kfp_tasks = self._build_kfp_tasks(
+                grouping, image, pipeline, token, kwargs, params_signature
+            )
             for group_name, dependencies in grouping.dependencies.items():
-                set_dependencies(group_name, dependencies, kfp_ops)
-
-            for operator in kfp_ops.values():
-                operator.container.set_image_pull_policy(image_pull_policy)
+                set_dependencies(group_name, dependencies, kfp_tasks)
 
         return convert_kedro_pipeline_to_kfp
 
@@ -105,69 +108,70 @@ class PipelineGenerator:
             for ha in host_aliases
         )
 
-    def _create_mlflow_op(self, image, should_add_params) -> dsl.ContainerOp:
+    def _create_mlflow_task(self, image, should_add_params) -> PipelineTask:
+        @dsl.container_component
+        def mlflow_start_run(mlflow_run_id: dsl.OutputPath(str)):
 
-        mlflow_command = " ".join(
-            [
-                self._generate_hosts_file(),
-                "mkdir --parents",
-                "`dirname {{$.outputs.parameters['output'].output_file}}`",
-                "&&",
-                self._generate_params_command(should_add_params),
-                f"kedro vertexai -e {self.context.env} mlflow-start",
-                "--output {{$.outputs.parameters['output'].output_file}}",
-                self.run_name,
-            ]
-        ).strip()
+            mlflow_command = " ".join(
+                [
+                    self._generate_hosts_file(),
+                    f"mkdir -p $(dirname {mlflow_run_id})",
+                    "&&",
+                    self._generate_params_command(should_add_params),
+                    f"kedro vertexai -e {self.context.env} mlflow-start",
+                    f"--output {mlflow_run_id}",
+                    self.run_name,
+                ]
+            ).strip()
 
-        spec = ComponentSpec(
-            name="mlflow-start-run",
-            inputs=[],
-            outputs=[OutputSpec("output", "String")],
-            implementation=ContainerImplementation(
-                container=ContainerSpec(
-                    image=image,
-                    command=["/bin/bash", "-c"],
-                    args=[
-                        mlflow_command,
-                        OutputPathPlaceholder(output_name="output"),
-                    ],
-                )
-            ),
+            return dsl.ContainerSpec(
+                image=image,
+                command=["/bin/bash", "-c"],
+                args=[mlflow_command],
+            )
+
+        return mlflow_start_run()
+
+    def _add_mlflow_param_to_signature(self, params_signature: str) -> str:
+        mlflow_signature = "mlflow_run_id: Union[str, None] = None"
+
+        params_signature = (
+            f"{params_signature}, {mlflow_signature}"
+            if len(params_signature) > 0
+            else mlflow_signature
         )
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
-        return component()
+        return params_signature
 
-    def _build_kfp_ops(
+    def _build_kfp_tasks(
         self,
         node_grouping: Grouping,
         image,
         pipeline,
         tracking_token=None,
-    ) -> Dict[str, dsl.ContainerOp]:
+        params: List[str] = [],
+        params_signature: str = "",
+    ) -> Dict[str, PipelineTask]:
         """Build kfp container graph from Kedro node dependencies."""
-        kfp_ops = {}
+        kfp_tasks = {}
 
         should_add_params = len(self.context.params) > 0
 
         mlflow_enabled = is_mlflow_enabled()
         if mlflow_enabled:
-            kfp_ops["mlflow-start-run"] = self._create_mlflow_op(
+            kfp_tasks["mlflow-start-run"] = self._create_mlflow_task(
                 image, should_add_params
             )
+
+        params_signature = self._add_mlflow_param_to_signature(params_signature)
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
             tags = {tag for tagging in nodes_group for tag in tagging.tags}
 
-            mlflow_inputs, mlflow_envs = generate_mlflow_inputs()
-            component_params = (
-                [kfp_ops["mlflow-start-run"].output] if mlflow_enabled else []
+            mlflow_params = (
+                kfp_tasks["mlflow-start-run"].outputs if mlflow_enabled else {}
             )
+            component_params = {**mlflow_params, **params}
 
             runner_config = KedroVertexAIRunnerConfig(storage_root=self.run_config.root)
 
@@ -189,26 +193,36 @@ class PipelineGenerator:
                 [
                     h + " " if (h := self._generate_hosts_file()) else "",
                     self._generate_params_command(should_add_params),
-                    mlflow_envs,
+                    "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
+                    if is_mlflow_enabled()
+                    else "",
+                    self._generate_gcp_env_vars_command(),
                     kedro_command,
                 ]
             ).strip()
 
-            spec = ComponentSpec(
-                name=name,
-                inputs=mlflow_inputs,
-                outputs=[],
-                implementation=ContainerImplementation(
-                    container=ContainerSpec(
-                        image=image,
-                        command=["/bin/bash", "-c"],
-                        args=[node_command],  # TODO: re-enable? + output_placeholders,
-                    )
-                ),
-            )
-            kfp_ops[name] = self._create_kedro_op(name, tags, spec, component_params)
+            @dsl.container_component
+            @with_signature(f"{name.replace('-', '_')}({params_signature})")
+            def component(*args, **kwargs):
+                dynamic_parameters = ",".join(
+                    [f"{k}={kwargs[k]}" for k in params.keys()]
+                )
 
-        return kfp_ops
+                return dsl.ContainerSpec(
+                    image=image,
+                    command=["/bin/bash", "-c"],
+                    args=[
+                        node_command,
+                        " --params",  # TODO what if there is no dynamic params?
+                        f" {dynamic_parameters}",
+                    ],
+                )
+
+            task = component(**component_params)
+            self._configure_resources(name, tags, task)
+            kfp_tasks[name] = task
+
+        return kfp_tasks
 
     def _globals_env(self) -> str:
         return (
@@ -229,29 +243,23 @@ class PipelineGenerator:
             else ""
         )
 
-    def _create_kedro_op(
-        self, name: str, tags: set, spec: ComponentSpec, op_function_parameters
-    ):
-        with NamedTemporaryFile(
-            mode="w", prefix="kedro-vertexai-node-spec", suffix=".yaml"
-        ) as spec_file:
-            spec.save(spec_file.name)
-            component = kfp.components.load_component_from_file(spec_file.name)
+    def _generate_gcp_env_vars_command(self) -> str:
+        vertex_conf = self.context.config_loader.get("vertexai")
+        project_id = vertex_conf.get("project_id")
+        region = vertex_conf.get("region")
+        return f"GCP_PROJECT_ID={project_id} GCP_REGION={region}"
 
-        operator = component(*op_function_parameters)
-        self._configure_resources(name, tags, operator)
-        return operator
-
-    def _configure_resources(self, name: str, tags: set, operator):
+    def _configure_resources(self, name: str, tags: set, task: PipelineTask):
         resources = self.run_config.resources_for(name, tags)
         node_selectors = self.run_config.node_selectors_for(name, tags)
         if "cpu" in resources and resources["cpu"]:
-            operator.set_cpu_limit(resources["cpu"])
-            operator.set_cpu_request(resources["cpu"])
+            task.set_cpu_limit(resources["cpu"])
+            task.set_cpu_request(resources["cpu"])
         if "gpu" in resources and resources["gpu"]:
-            operator.set_gpu_limit(resources["gpu"])
+            task.set_gpu_limit(resources["gpu"])
         if "memory" in resources and resources["memory"]:
-            operator.set_memory_limit(resources["memory"])
-            operator.set_memory_request(resources["memory"])
+            task.set_memory_limit(resources["memory"])
+            task.set_memory_request(resources["memory"])
         for constraint, value in node_selectors.items():
-            operator.add_node_selector_constraint(constraint, value)
+            task.set_accelerator_type(constraint)
+            task.add_node_selector_constraint(value)

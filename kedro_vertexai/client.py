@@ -3,23 +3,17 @@ Vertex AI Pipelines specific client, based on AIPlatformClient.
 """
 
 import datetime as dt
-import json
 import logging
 import os
-import threading
-from queue import Empty, Queue
 from tempfile import NamedTemporaryFile
-from time import sleep
+from typing import Any, Dict, List, Optional
 
-from google.cloud.scheduler_v1.services.cloud_scheduler import (
-    CloudSchedulerClient,
-)
-from kfp.v2 import compiler
-from kfp.v2.google.client import AIPlatformClient
+from google.cloud import aiplatform as aip
+from google.cloud.aiplatform import PipelineJob
+from kfp.compiler import Compiler
 from tabulate import tabulate
 
-from .config import PluginConfig
-from .data_models import PipelineResult, PipelineStatus
+from .config import PluginConfig, ScheduleConfig
 from .generator import PipelineGenerator
 
 
@@ -32,11 +26,12 @@ class VertexAIPipelinesClient:
 
     def __init__(self, config: PluginConfig, project_name, context):
 
-        self.api_client = AIPlatformClient(
-            project_id=config.project_id, region=config.region
+        aip.init(
+            project=config.project_id,
+            location=config.region,
+            experiment=config.run_config.experiment_name,
+            experiment_description=config.run_config.experiment_description,
         )
-        self.cloud_scheduler_client = CloudSchedulerClient()
-        self.location = f"projects/{config.project_id}/locations/{config.region}"
         self.run_config = config.run_config
         self.run_name = self._generate_run_name(config)
         self.generator = PipelineGenerator(config, project_name, context, self.run_name)
@@ -46,19 +41,10 @@ class VertexAIPipelinesClient:
         List all the jobs (current and historical) on Vertex AI Pipelines
         :return:
         """
-        list_jobs_response = self.api_client.list_jobs()
-        self.log.debug(list_jobs_response)
-
-        jobs_key = "pipelineJobs"
         headers = ["Name", "ID"]
-        data = (
-            map(
-                lambda x: [x.get("displayName"), x["name"]],
-                list_jobs_response[jobs_key],
-            )
-            if jobs_key in list_jobs_response
-            else []
-        )
+
+        list_jobs_response = aip.PipelineJob.list()
+        data = [(x.display_name, x.name) for x in list_jobs_response]
 
         return tabulate(data, headers=headers)
 
@@ -66,169 +52,132 @@ class VertexAIPipelinesClient:
         self,
         pipeline,
         image,
-        image_pull_policy="IfNotPresent",
         parameters=None,
-    ):
+    ) -> PipelineJob:
         """
         Runs the pipeline in Vertex AI Pipelines
         :param pipeline:
         :param image:
-        :param image_pull_policy:
+        :param parameters:
         :return:
         """
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-vertexai", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".yaml"
         ) as spec_output:
             self.compile(
                 pipeline,
                 image,
                 output=spec_output.name,
-                image_pull_policy=image_pull_policy,
             )
 
-            run = self.api_client.create_run_from_job_spec(
-                service_account=self.run_config.service_account,
-                job_spec_path=spec_output.name,
+            job = aip.PipelineJob(
+                display_name=self.run_name,
+                template_path=spec_output.name,
                 job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
                 parameter_values=parameters or {},
                 enable_caching=False,
-                network=self.run_config.network.vpc,
             )
-            self.log.debug("Run created %s", str(run))
 
-            return run
+            job.submit(
+                service_account=self.run_config.service_account,
+                network=self.run_config.network.vpc,
+                experiment=self.run_config.experiment_name,
+            )
+
+            return job
 
     def _generate_run_name(self, config: PluginConfig):  # noqa
         return config.run_config.experiment_name.rstrip("-") + "-{}".format(
             dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         )
 
-    def compile(
-        self,
-        pipeline,
-        image,
-        output,
-        image_pull_policy="IfNotPresent",
-    ):
+    def compile(self, pipeline, image, output, params: List[str] = []):
         """
         Creates json file in given local output path
         :param pipeline:
         :param image:
         :param output:
-        :param image_pull_policy:
+        :param params: Pipeline parameters to be specified at run time.
         :return:
         """
         token = os.getenv("MLFLOW_TRACKING_TOKEN", "")
         pipeline_func = self.generator.generate_pipeline(
-            pipeline, image, image_pull_policy, token
+            pipeline, image, token, params=params
         )
-        compiler.Compiler().compile(
+        Compiler().compile(
             pipeline_func=pipeline_func,
             package_path=output,
         )
         self.log.info("Generated pipeline definition was saved to %s", str(output))
 
-    def _cleanup_old_schedule(self, pipeline_name):
-        """
-        Removes old jobs scheduled for given pipeline name
-        """
-        for job in self.cloud_scheduler_client.list_jobs(parent=self.location):
-            if "jobs/pipeline_pipeline" not in job.name:
-                continue
+    def _cleanup_old_schedule(self, display_name: str):
+        """Cleanup old schedules with a given display name.
 
-            job_pipeline_name = json.loads(job.http_target.body)["pipelineSpec"][
-                "pipelineInfo"
-            ]["name"]
-            if job_pipeline_name == pipeline_name:
-                self.log.info(
-                    "Found existing schedule for the pipeline at %s, deleting...",
-                    job.schedule,
-                )
-                self.cloud_scheduler_client.delete_job(name=job.name)
+        Args:
+            display_name (str): Display name of the schedule.
+        """
+        existing_schedules = aip.PipelineJobSchedule.list(
+            filter=f'display_name="{display_name}"'
+        )
+        self.log.info(
+            f"Found {len(existing_schedules)} existing schedules with display name {display_name}"
+        )
+
+        for schedule in existing_schedules:
+            schedule.delete()
+
+        self.log.info(
+            f"Cleaned up existing old schedules with display name {display_name}"
+        )
 
     def schedule(
         self,
-        pipeline,
-        cron_expression,
-        parameter_values=None,
-        image_pull_policy="IfNotPresent",
+        pipeline: str,
+        schedule_config: ScheduleConfig,
+        parameter_values: Optional[Dict[str, Any]] = None,
     ):
         """
         Schedule pipeline to Vertex AI with given cron expression
-        :param pipeline:
-        :param cron_expression:
-        :param parameter_values:
-        :param image_pull_policy:
+        :param pipeline: Name of the Kedro pipeline to schedule.
+        :param schedule_config: Schedule config.
+        :param parameter_values: Kubeflow pipeline parameter values.
         :return:
         """
-        self._cleanup_old_schedule(self.generator.get_pipeline_name())
+        self._cleanup_old_schedule(display_name=self.run_config.scheduled_run_name)
+
         with NamedTemporaryFile(
-            mode="rt", prefix="kedro-vertexai", suffix=".json"
+            mode="rt", prefix="kedro-vertexai", suffix=".yaml"
         ) as spec_output:
             self.compile(
                 pipeline,
                 self.run_config.image,
                 output=spec_output.name,
-                image_pull_policy=image_pull_policy,
             )
-            self.api_client.create_schedule_from_job_spec(
-                job_spec_path=spec_output.name,
-                time_zone="Etc/UTC",
-                schedule=cron_expression,
+
+            job = aip.PipelineJob(
+                display_name=self.run_name,
+                template_path=spec_output.name,
+                job_id=self.run_name,
                 pipeline_root=f"gs://{self.run_config.root}",
-                enable_caching=False,
                 parameter_values=parameter_values or {},
+                enable_caching=False,
             )
 
-            self.log.info("Pipeline scheduled to %s", cron_expression)
+            cron_with_timezone = (
+                f"TZ={schedule_config.timezone} {schedule_config.cron_expression}"
+            )
 
-    def wait_for_completion(
-        self,
-        max_timeout_seconds,
-        interval_seconds=30.0,
-        max_api_fails=5,
-    ) -> PipelineResult:
-        termination_statuses = (
-            PipelineStatus.PIPELINE_STATE_FAILED,
-            PipelineStatus.PIPELINE_STATE_SUCCEEDED,
-            PipelineStatus.PIPELINE_STATE_CANCELLED,
-        )
+            job.create_schedule(
+                cron=cron_with_timezone,
+                display_name=self.run_config.scheduled_run_name,
+                start_time=schedule_config.start_time,
+                end_time=schedule_config.end_time,
+                allow_queueing=schedule_config.allow_queueing,
+                max_run_count=schedule_config.max_run_count,
+                max_concurrent_run_count=schedule_config.max_concurrent_run_count,
+                service_account=self.run_config.service_account,
+                network=self.run_config.network.vpc,
+            )
 
-        status_queue = Queue(1)
-
-        def monitor(q: Queue):
-            fails = 0
-            while fails < max_api_fails:
-                try:
-                    job = self.api_client.get_job(self.run_name)
-                    state = job["state"]
-                    if state in termination_statuses:
-                        q.put(
-                            PipelineResult(
-                                is_success=state
-                                == PipelineStatus.PIPELINE_STATE_SUCCEEDED,
-                                state=state,
-                                job_data=job,
-                            )
-                        )
-                        break
-                    else:
-                        self.log.info(f"Pipeline state: {state}")
-                except:  # noqa: E722
-                    fails += 1
-                    self.log.error(
-                        "Exception occurred while checking the pipeline status",
-                        exc_info=True,
-                    )
-                finally:
-                    sleep(interval_seconds)
-            else:
-                q.put(PipelineResult(is_success=False, state="Internal exception"))
-
-        thread = threading.Thread(target=monitor, daemon=True, args=(status_queue,))
-        thread.start()
-        try:
-            return status_queue.get(timeout=max_timeout_seconds)
-        except Empty:
-            return PipelineResult(False, f"Max timeout {max_timeout_seconds}s reached")
+        self.log.info("Pipeline scheduled to %s", cron_with_timezone)

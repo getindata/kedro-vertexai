@@ -2,6 +2,7 @@ import json
 import os
 import unittest
 from collections import namedtuple
+from copy import deepcopy
 from itertools import product
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -41,7 +42,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_run_once(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -61,14 +62,13 @@ class TestPluginCLI(unittest.TestCase):
         assert result.exit_code == 0
         context_helper.vertexai_client.run_once.assert_called_with(
             image="new_img",
-            image_pull_policy="Always",
             pipeline="new_pipe",
             parameters={"key1": "some value"},
         )
 
     def test_run_once_with_wait(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -82,14 +82,11 @@ class TestPluginCLI(unittest.TestCase):
                 "--param",
                 "key1:some value",
                 "--wait-for-completion",
-                "--timeout-seconds",
-                "666",
             ],
             obj=config,
         )
 
         assert result.exit_code == 0
-        context_helper.vertexai_client.wait_for_completion.assert_called_with(666)
 
     def test_docker_build(self):
         for exit_code in range(10):
@@ -113,7 +110,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_run_once_auto_build(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -150,7 +147,7 @@ class TestPluginCLI(unittest.TestCase):
     @patch("webbrowser.open_new_tab")
     def test_ui(self, open_new_tab):
         context_helper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -164,7 +161,7 @@ class TestPluginCLI(unittest.TestCase):
 
     def test_compile(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -174,15 +171,12 @@ class TestPluginCLI(unittest.TestCase):
 
         assert result.exit_code == 0
         context_helper.vertexai_client.compile.assert_called_with(
-            image="img",
-            image_pull_policy="Always",
-            output="output",
-            pipeline="pipe",
+            image="img", output="output", pipeline="pipe", params=""
         )
 
     def test_store_params_empty(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -220,7 +214,7 @@ class TestPluginCLI(unittest.TestCase):
         Covers the case when there is an exiting config.yaml in the pwd
         """
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
@@ -263,42 +257,61 @@ class TestPluginCLI(unittest.TestCase):
                     data["run"]["data"] == "abc" and data["other_keys"] == 66.6
                 ), "Other keys were modified"
 
-    @unittest.skip(
-        "Scheduling feature is temporarily disabled https://github.com/getindata/kedro-vertexai/issues/4"
-    )
     def test_schedule(self):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
+
+        mock_schedule = MagicMock()
+        context_helper.config.run_config.schedules = {
+            "default_schedule": MagicMock(),
+            "my-pipeline": mock_schedule,
+        }
         config = dict(context_helper=context_helper)
         runner = CliRunner()
 
         result = runner.invoke(
             schedule,
             [
-                "-c",
-                "* * *",
-                "-p",
+                "--pipeline",
                 "my-pipeline",
+                "--cron-expression",
+                "2 * * * *",
+                "--timezone",
+                "test-timezone",
+                "--start-time",
+                None,
+                "--end-time",
+                None,
+                "--allow-queueing",
+                True,
+                "--max-run-count",
+                10,
+                "--max-concurrent-run-count",
+                1,
                 "--param",
                 "key1:some value",
             ],
             obj=config,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
+
         context_helper.vertexai_client.schedule.assert_called_with(
-            "my-pipeline",
-            "test_experiment",
-            None,
-            "* * *",
-            run_name="test run",
-            parameters={"key1": "some value"},
+            pipeline="my-pipeline",
+            schedule_config=mock_schedule,
+            parameter_values={"key1": "some value"},
         )
+
+        assert mock_schedule.cron_expression == "2 * * * *"
+        assert mock_schedule.timezone == "test-timezone"
+        assert mock_schedule.allow_queueing
+        assert mock_schedule.max_run_count == 10
 
     @patch.object(Path, "cwd")
     def test_init(self, cwd):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
         config = dict(context_helper=context_helper)
@@ -319,7 +332,7 @@ class TestPluginCLI(unittest.TestCase):
     @patch.object(Path, "cwd")
     def test_init_with_github_actions(self, cwd):
         context_helper: ContextHelper = MagicMock(ContextHelper)
-        context_helper.config = test_config
+        context_helper.config = deepcopy(test_config)
         context_helper.context.project_name = "Test Project"
         context_helper.context.project_path.name = "test_project_path"
         config = dict(context_helper=context_helper)

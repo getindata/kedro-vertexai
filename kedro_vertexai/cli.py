@@ -7,10 +7,9 @@ import click
 from click import ClickException, Context, confirm
 
 from .client import VertexAIPipelinesClient
-from .config import PluginConfig, RunConfig
-from .constants import KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME, VERTEXAI_RUN_ID_TAG
+from .config import PluginConfig, RunConfig, ScheduleConfig
+from .constants import VERTEXAI_RUN_ID_TAG
 from .context_helper import ContextHelper
-from .data_models import PipelineResult
 from .utils import (
     docker_build,
     docker_push,
@@ -98,14 +97,6 @@ def list_pipelines(ctx):
     help="Parameters override in form of `key=value`",
 )
 @click.option("--wait-for-completion", type=bool, is_flag=True, default=False)
-@click.option(
-    "--timeout-seconds",
-    type=int,
-    default=1800,
-    help="If --wait-for-completion is used, "
-    "this option sets timeout after which the plugin will return non-zero exit code "
-    "if the pipeline does not finish in time",
-)
 @click.pass_context
 def run_once(
     ctx: Context,
@@ -115,7 +106,6 @@ def run_once(
     pipeline: str,
     params: list,
     wait_for_completion: bool,
-    timeout_seconds: int,
 ):
     """Deploy pipeline as a single run within given experiment
     Config can be specified in kubeflow.yml as well."""
@@ -143,29 +133,14 @@ def run_once(
  Consider using '--auto-build' parameter."
         )
 
-    run = client.run_once(
+    job = client.run_once(
         pipeline=pipeline,
         image=image,
-        image_pull_policy=config.image_pull_policy,
         parameters=format_params(params),
     )
 
-    click.echo(
-        f"Intermediate data datasets will be stored in {os.linesep}"
-        f"gs://{config.root.strip('/')}/{KEDRO_VERTEXAI_BLOB_TEMP_DIR_NAME}/{run['displayName']}/*.bin"
-    )
-
     if wait_for_completion:
-        result: PipelineResult = client.wait_for_completion(
-            timeout_seconds
-        )  # blocking call
-        if result.is_success:
-            logger.info("Pipeline finished successfully!")
-            exit_code = 0
-        else:
-            logger.error(f"Pipeline finished with status: {result.state}")
-            exit_code = 1
-        ctx.exit(exit_code)
+        job.wait()
 
 
 @vertexai_group.command()
@@ -199,20 +174,30 @@ def ui(ctx) -> None:
     "-o",
     "--output",
     type=str,
-    default="pipeline.json",
-    help="Pipeline JSON definition file.",
+    default="pipeline.yaml",
+    help="Pipeline YAML definition file.",
+)
+@click.option(
+    "--params",
+    type=str,
+    default="",
+    help="""
+Pipeline parameters to be specified at run time.
+In a format <param name≥:<param type>, for example test_param:int.
+Should be separated by comma.
+""",
 )
 @click.pass_context
-def compile(ctx, image, pipeline, output) -> None:
+def compile(ctx, image, pipeline, output, params) -> None:
     """Translates Kedro pipeline into JSON file with VertexAI pipeline definition"""
     context_helper = ctx.obj["context_helper"]
     config = context_helper.config.run_config
 
     context_helper.vertexai_client.compile(
         pipeline=pipeline,
-        image_pull_policy=config.image_pull_policy,
         image=image if image else config.image,
         output=output,
+        params=params,
     )
 
 
@@ -233,6 +218,43 @@ def compile(ctx, image, pipeline, output) -> None:
     required=False,
 )
 @click.option(
+    "-t",
+    "--timezone",
+    type=str,
+    help="Time zone of the crone expression.",
+    required=False,
+)
+@click.option(
+    "--start-time",
+    type=str,
+    help="Timestamp after which the first run can be scheduled.",
+    required=False,
+)
+@click.option(
+    "--end-time",
+    type=str,
+    help="Timestamp after which no more runs will be scheduled. ",
+    required=False,
+)
+@click.option(
+    "--allow-queueing",
+    type=bool,
+    help="Whether new scheduled runs can be queued when max_concurrent_runs limit is reached.",
+    required=False,
+)
+@click.option(
+    "--max-run-count",
+    type=int,
+    help="Maximum run count of the schedule.",
+    required=False,
+)
+@click.option(
+    "--max-concurrent-run-count",
+    type=int,
+    help="Maximum number of runs that can be started concurrently.",
+    required=False,
+)
+@click.option(
     "--param",
     "params",
     type=str,
@@ -244,12 +266,47 @@ def schedule(
     ctx,
     pipeline: str,
     cron_expression: str,
-    params: list,
+    timezone: str,
+    start_time: str = None,
+    end_time: str = None,
+    allow_queueing: bool = None,
+    max_run_count: int = None,
+    max_concurrent_run_count: int = None,
+    params: list = [],
 ):
     """Schedules recurring execution of latest version of the pipeline"""
-    logger.warning(
-        "Scheduler functionality was temporarily disabled, "
-        "follow https://github.com/getindata/kedro-vertexai/issues/4 for updates"
+    context_helper = ctx.obj["context_helper"]
+    client: VertexAIPipelinesClient = context_helper.vertexai_client
+    config: RunConfig = context_helper.config.run_config
+
+    schedule_config: ScheduleConfig = config.schedules.get(
+        pipeline, config.schedules["default_schedule"]
+    )
+
+    schedule_config.cron_expression = (
+        cron_expression if cron_expression else schedule_config.cron_expression
+    )
+    schedule_config.timezone = timezone if timezone else schedule_config.timezone
+    schedule_config.start_time = (
+        start_time if start_time else schedule_config.start_time
+    )
+    schedule_config.end_time = end_time if end_time else schedule_config.end_time
+    schedule_config.allow_queueing = (
+        allow_queueing if allow_queueing else schedule_config.allow_queueing
+    )
+    schedule_config.max_run_count = (
+        max_run_count if max_run_count else schedule_config.max_run_count
+    )
+    schedule_config.max_concurrent_run_count = (
+        max_concurrent_run_count
+        if max_concurrent_run_count
+        else schedule_config.max_concurrent_run_count
+    )
+
+    client.schedule(
+        pipeline=pipeline,
+        schedule_config=schedule_config,
+        parameter_values=format_params(params),
     )
 
 

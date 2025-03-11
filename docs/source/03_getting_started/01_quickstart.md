@@ -108,17 +108,14 @@ Adjusted `catalog.yml` should look like this (note: remove the rest of the entri
 companies:
   type: pandas.CSVDataSet
   filepath: data/01_raw/companies.csv
-  layer: raw
 
 reviews:
   type: pandas.CSVDataSet
   filepath: data/01_raw/reviews.csv
-  layer: raw
 
 shuttles:
   type: pandas.ExcelDataSet
   filepath: data/01_raw/shuttles.xlsx
-  layer: raw
 ```
 
 All intermediate and output data will be stored in the location with the following pattern:
@@ -180,3 +177,9 @@ As you can see, the pipeline was compiled and started in Vertex AI Pipelines. Wh
 ![Kedro pipeline running in Vertex AI Pipelines](vertexai_running_pipeline.gif)
 
 
+## Log datasets to Vertex AI Metadata
+
+The plugin implements custom `kedro_vertexai.vertex_ai.datasets.KedroVertexAIMetadataDataset` dataset that creates an Vertex AI Artifact.
+It allows to specify any Kedro dataset in the `base_dataset` argument, and it uses its `_save` and `_load` methods for the io.
+The base dataset arguments are passed in `base_dataset_args` argument as dictionary. The created artifact is associated with Vertex AI run id and job name as metadata, and additional metadata can be specified in the `metadata` argument.
+The `dispaly_name` and `schema` arguments are used for the artifact creation, please reference [Vertex AI docs](https://cloud.google.com/vertex-ai/docs/ml-metadata/tracking#create-artifact) to learn more about them.
