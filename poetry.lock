@@ -2914,14 +2914,14 @@ files = [
 
 [[package]]
 name = "mlflow"
-version = "2.20.3"
+version = "2.20.4"
 description = "MLflow is an open source platform for the complete machine learning lifecycle"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "mlflow-2.20.3-py3-none-any.whl", hash = "sha256:efafe5d4d17b53be1ae02c7d8708a5e4bbde4bd3aecd2bd68b64a3c4175e9dc6"},
-    {file = "mlflow-2.20.3.tar.gz", hash = "sha256:a7b1baf53d4f10160864961320df0c4cb74fb4f21c7522ef80a35290d03573bb"},
+    {file = "mlflow-2.20.4-py3-none-any.whl", hash = "sha256:3c37e334ac8f2437a06695f3c2c81788eb69d5d33b66c9692a93726ffb3765ba"},
+    {file = "mlflow-2.20.4.tar.gz", hash = "sha256:400eca8170626770dbfb68e348f3b21a1376e3551346961a73764bce624c5ff8"},
 ]
 
 [package.dependencies]
@@ -2936,7 +2936,7 @@ Jinja2 = [
 ]
 markdown = ">=3.3,<4"
 matplotlib = "<4"
-mlflow-skinny = "2.20.3"
+mlflow-skinny = "2.20.4"
 numpy = "<3"
 pandas = "<3"
 pyarrow = ">=4.0.0,<20"
@@ -2960,14 +2960,14 @@ xethub = ["mlflow-xethub"]
 
 [[package]]
 name = "mlflow-skinny"
-version = "2.20.3"
+version = "2.20.4"
 description = "MLflow is an open source platform for the complete machine learning lifecycle"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "mlflow_skinny-2.20.3-py3-none-any.whl", hash = "sha256:4cf9502bf8b7c4c971c90808560caeb2d57608354927f7b7b3150ca2c580c022"},
-    {file = "mlflow_skinny-2.20.3.tar.gz", hash = "sha256:4151f74500611f4c2ee1caf30b0108817b456654b42edbede2503dd6e845ed91"},
+    {file = "mlflow_skinny-2.20.4-py3-none-any.whl", hash = "sha256:9ec6700dabf9d91f75dd3875c243cad7d4f26dc839f7efd2ef587cabc57b097d"},
+    {file = "mlflow_skinny-2.20.4.tar.gz", hash = "sha256:4cf7a9faeb374a0acab156fe137fde0a926a67cef3ea18b2089344277b2cc7bc"},
 ]
 
 [package.dependencies]
