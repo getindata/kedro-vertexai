@@ -1946,14 +1946,14 @@ files = [
 
 [[package]]
 name = "kedro"
-version = "0.19.11"
+version = "0.19.12"
 description = "Kedro helps you build production-ready data and analytics pipelines"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "kedro-0.19.11-py3-none-any.whl", hash = "sha256:d5f3fe0ba9373ad6e43dd33098454030f0f7e137fc67514521d44a23263a6605"},
-    {file = "kedro-0.19.11.tar.gz", hash = "sha256:43bea91b42fc7d4c228248dd27c03335bbd6ce0924bda02ea593866109c2044c"},
+    {file = "kedro-0.19.12-py3-none-any.whl", hash = "sha256:a46249bc7fe43be7ea58ae6aa69624f2b31cfc19c21e89ef55628c78bb153dd1"},
+    {file = "kedro-0.19.12.tar.gz", hash = "sha256:3d46a8c132e842b1b637d95099758074f7fa94f54843432bcc81c1140d22ce66"},
 ]
 
 [package.dependencies]
@@ -1984,7 +1984,7 @@ all = ["kedro[benchmark,docs,jupyter,test]"]
 benchmark = ["asv"]
 docs = ["Jinja2 (<3.2.0)", "ipykernel (>=5.3,<7.0)", "kedro-sphinx-theme (==2024.10.3)", "sphinx-notfound-page (!=1.0.3)"]
 jupyter = ["ipylab (>=1.0.0)", "notebook (>=7.0.0)"]
-test = ["behave (==1.2.6)", "coverage[toml]", "detect-secrets (>=1.5.0,<1.6.0)", "import-linter (==2.1)", "ipylab (>=1.0.0)", "ipython (>=8.10,<9.0)", "jupyter (>=1.0,<2.0)", "jupyterlab (>=3,<5)", "jupyterlab_server (>=2.11.1)", "kedro-datasets", "mypy (>=1.0,<2.0)", "pandas (>=2.0,<3.0)", "pandas-stubs", "pluggy (>=1.0)", "pre-commit (>=2.9.2,<5.0)", "pytest (>=7.2,<9.0)", "pytest-cov (>=3,<7)", "pytest-mock (>=1.7.1,<4.0)", "pytest-xdist[psutil] (>=2.2.1,<2.3.0)", "requests_mock", "s3fs (>=2021.4,<2025.1)", "types-PyYAML", "types-cachetools", "types-requests", "types-toml"]
+test = ["behave (==1.2.6)", "coverage[toml]", "detect-secrets (>=1.5.0,<1.6.0)", "import-linter (==2.2)", "ipylab (>=1.0.0)", "ipython (>=8.10,<9.0)", "jupyter (>=1.0,<2.0)", "jupyterlab (>=3,<5)", "jupyterlab_server (>=2.11.1)", "kedro-datasets", "mypy (>=1.0,<2.0)", "pandas (>=2.0,<3.0)", "pandas-stubs", "pluggy (>=1.0)", "pre-commit (>=2.9.2,<5.0)", "pytest (>=7.2,<9.0)", "pytest-cov (>=3,<7)", "pytest-mock (>=1.7.1,<4.0)", "pytest-xdist[psutil] (>=2.2.1,<2.3.0)", "requests_mock", "s3fs (>=2021.4,<2025.4)", "types-PyYAML", "types-cachetools", "types-requests", "types-toml"]
 
 [[package]]
 name = "kedro-datasets"
