@@ -42,3 +42,8 @@ output "workload_identity_provider_id" {
   description = "The ID of the Workload Identity Provider"
   value       = google_iam_workload_identity_pool_provider.github_provider.id
 }
+
+output "vertexai_service_account_email" {
+  description = "The email of the Vertex AI service account"
+  value = google_project_service_identity.vertex_ai_sa.email
+}
