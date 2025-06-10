@@ -134,7 +134,7 @@ jobs:
       - name: Initialize starter project
         run: |
           pip install $(find "./dist" -name "*.tar.gz")
-          kedro new --starter spaceflights-pandas --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose
+          kedro new --starter spaceflights-pandas --config tests/e2e/${{ matrix.e2e_case }}/starter-config.yml --verbose --checkout=0.19.11
 
       - name: Install starter requirements
         working-directory: ./spaceflights

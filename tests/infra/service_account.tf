@@ -84,3 +84,14 @@ resource "google_project_iam_binding" "vertexai_editor" {
     "serviceAccount:${google_service_account.kedro_e2e.email}"
   ]
 }
+
+# Grant the kedro-e2e service account permission to push to the artifact registry
+resource "google_artifact_registry_repository_iam_binding" "artifact_registry_writer" {
+  repository = google_artifact_registry_repository.kedro_e2e.name
+  location   = google_artifact_registry_repository.kedro_e2e.location
+  role       = "roles/artifactregistry.writer"
+
+  members = [
+    "serviceAccount:${google_service_account.kedro_e2e.email}"
+  ]
+}
