@@ -1,5 +1,5 @@
-project_id: gid-ml-ops-sandbox
-region: europe-west4
+project_id: gid-labs-mlops-sandbox
+region: europe-west1
 run_config:
   # Name of the image to run as the pipeline steps
   image: europe-west1-docker.pkg.dev/gid-labs-mlops-sandbox/kedro-e2e/kedro-vertexai-e2e:standard
