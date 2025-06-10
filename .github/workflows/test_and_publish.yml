@@ -112,6 +112,8 @@ jobs:
       matrix:
         e2e_case: ["standard", "grouping"]
         python-version: ['3.10']
+    env:
+      PROJECT_NAME: kedro-vertexai
     steps:
       - uses: actions/checkout@v4
 
