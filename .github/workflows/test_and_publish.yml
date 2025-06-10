@@ -168,9 +168,9 @@ jobs:
         id: auth
         with:
           token_format: 'access_token'
-          project_id: 'gid-labs-mlops-sandbox'
-          service_account: kedro-e2e@gid-labs-mlops-sandbox.iam.gserviceaccount.com
-          workload_identity_provider: 'projects/396660299156/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          project_id: '${{ secrets.GCP_PROJECT_ID }}'
+          service_account: '${{ secrets.GCP_SA_EMAIL }}'
+          workload_identity_provider: '${{ secrets.GCP_WIF_PROVIDER_ID }}'
 
 
       - name: Docker Auth
@@ -184,7 +184,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./spaceflights
           push: true
           tags: 'europe-west1-docker.pkg.dev/gid-labs-mlops-sandbox/kedro-e2e/kedro-vertexai-e2e:${{ matrix.e2e_case }}'
 
