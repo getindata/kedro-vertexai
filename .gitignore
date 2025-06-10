@@ -179,3 +179,8 @@ dictionary.dic
 
 # vs code
 .vscode
+
+/tests/infra/backend.tf
+/tests/infra/infra.env
+/tests/infra/.terraform
+/tests/infra/.terraform.lock.hcl

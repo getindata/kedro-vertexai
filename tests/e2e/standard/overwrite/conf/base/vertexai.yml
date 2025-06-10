@@ -1,11 +1,11 @@
-project_id: gid-ml-ops-sandbox
-region: europe-west4
+project_id: gid-labs-mlops-sandbox
+region: europe-west1
 run_config:
   # Name of the image to run as the pipeline steps
-  image: gcr.io/gid-ml-ops-sandbox/kedro-vertexai-e2e:standard
+  image: europe-west1-docker.pkg.dev/gid-labs-mlops-sandbox/kedro-e2e/kedro-vertexai-e2e:standard
 
   # Location of Vertex AI GCS root
-  root: gid-ml-ops-sandbox-plugin-tests/staging
+  root: gid-labs-mlops-sandbox-kedro-data/staging
 
   # Name of the kubeflow experiment to be created
   experiment_name: kedro-vertex-e2e-${oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}
@@ -14,7 +14,7 @@ run_config:
   scheduled_run_name: kedro-vertex-e2e-${oc.env:KEDRO_CONFIG_COMMIT_ID, unknown-commit}
 
   # Optional service account to run vertex AI Pipeline with
-  service_account: vertex-ai-pipelines@gid-ml-ops-sandbox.iam.gserviceaccount.com
+  service_account: kedro-e2e@gid-labs-mlops-sandbox.iam.gserviceaccount.com
 
   # Optional pipeline description
   # description: "Very Important Pipeline"
