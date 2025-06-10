@@ -77,10 +77,11 @@ resource "google_service_account_iam_binding" "workload_identity_binding" {
 # Grant the kedro-e2e service account write access to the data bucket
 resource "google_storage_bucket_iam_binding" "data_bucket_writer" {
   bucket = google_storage_bucket.data_bucket.name
-  role   = "roles/storage.objectAdmin"
+  role   = "roles/storage.admin"
 
   members = [
     "serviceAccount:${google_service_account.kedro_e2e.email}",
+    "serviceAccount:${google_service_account.github_actions.email}",
     "serviceAccount:${google_project_service_identity.vertex_ai_sa.email}"
   ]
 }
