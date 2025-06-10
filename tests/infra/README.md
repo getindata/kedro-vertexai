@@ -68,9 +68,12 @@ The Terraform configuration creates the following resources:
   - GCS bucket for data storage with lifecycle rules (objects older than 30 days are deleted)
   - Artifact Registry repository for Docker images with cleanup policies
 - **IAM and Security**:
-  - Service account for E2E testing
+  - Service account for Vertex AI execution (kedro-e2e)
+  - Service account for GitHub Actions (github-actions)
   - Workload Identity Pool and Provider for GitHub Actions integration
-  - IAM bindings for necessary permissions
+  - IAM bindings for necessary permissions, including:
+    - GitHub Actions service account can impersonate the Vertex AI service account
+    - Vertex AI service account has permissions to run as a Vertex AI worker
 
 ## Cleanup
 

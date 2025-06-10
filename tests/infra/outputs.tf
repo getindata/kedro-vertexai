@@ -23,9 +23,14 @@ output "artifact_registry_location" {
   value       = google_artifact_registry_repository.kedro_e2e.location
 }
 
-output "service_account_email" {
+output "kedro_e2e_service_account_email" {
   description = "The email of the Kedro E2E service account"
   value       = google_service_account.kedro_e2e.email
+}
+
+output "github_actions_service_account_email" {
+  description = "The email of the GitHub Actions service account"
+  value       = google_service_account.github_actions.email
 }
 
 output "workload_identity_pool_id" {

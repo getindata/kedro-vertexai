@@ -17,11 +17,20 @@ resource "google_project_service" "vertex_ai" {
   disable_on_destroy = false
 }
 
-# Create service account for GitHub Actions
+# Create service account for Kedro E2E
 resource "google_service_account" "kedro_e2e" {
   account_id   = "kedro-e2e"
   display_name = "Kedro E2E Service Account"
-  description  = "Service account for Kedro E2E testing with GitHub Actions"
+  description  = "Service account for Kedro E2E testing on Vertex AI"
+
+  depends_on = [google_project_service.iam]
+}
+
+# Create service account for GitHub Actions
+resource "google_service_account" "github_actions" {
+  account_id   = "github-actions"
+  display_name = "GitHub Actions Service Account"
+  description  = "Service account for GitHub Actions to impersonate Kedro E2E"
 
   depends_on = [google_project_service.iam]
 }
@@ -55,9 +64,9 @@ resource "google_iam_workload_identity_pool_provider" "github_provider" {
   }
 }
 
-# Allow GitHub Actions to impersonate the service account
+# Allow GitHub Actions to impersonate the github-actions service account
 resource "google_service_account_iam_binding" "workload_identity_binding" {
-  service_account_id = google_service_account.kedro_e2e.name
+  service_account_id = google_service_account.github_actions.name
   role               = "roles/iam.workloadIdentityUser"
 
   members = [
@@ -75,10 +84,30 @@ resource "google_storage_bucket_iam_binding" "data_bucket_writer" {
   ]
 }
 
-# Grant the kedro-e2e service account vertexai editor role on the project level
-resource "google_project_iam_binding" "vertexai_editor" {
+# Grant the kedro-e2e service account vertexai roles on the project level
+resource "google_project_iam_binding" "vertexai_user" {
   project = var.project_id
   role    = "roles/aiplatform.user"
+
+  members = [
+    "serviceAccount:${google_service_account.github_actions.email}"
+  ]
+}
+
+# Grant the kedro-e2e service account Vertex AI custom code service agent role
+resource "google_project_iam_binding" "vertexai_custom_code_service_agent" {
+  project = var.project_id
+  role    = "roles/aiplatform.customCodeServiceAgent"
+
+  members = [
+    "serviceAccount:${google_service_account.kedro_e2e.email}"
+  ]
+}
+
+# Grant the kedro-e2e service account Vertex AI service agent role
+resource "google_project_iam_binding" "vertexai_service_agent" {
+  project = var.project_id
+  role    = "roles/aiplatform.serviceAgent"
 
   members = [
     "serviceAccount:${google_service_account.kedro_e2e.email}"
@@ -92,6 +121,17 @@ resource "google_artifact_registry_repository_iam_binding" "artifact_registry_wr
   role       = "roles/artifactregistry.writer"
 
   members = [
-    "serviceAccount:${google_service_account.kedro_e2e.email}"
+    "serviceAccount:${google_service_account.kedro_e2e.email}",
+    "serviceAccount:${google_service_account.github_actions.email}"
+  ]
+}
+
+# Allow github-actions service account to act as kedro-e2e service account
+resource "google_service_account_iam_binding" "github_actions_impersonate_kedro_e2e" {
+  service_account_id = google_service_account.kedro_e2e.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+
+  members = [
+    "serviceAccount:${google_service_account.github_actions.email}"
   ]
 }
