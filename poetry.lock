@@ -1337,14 +1337,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.97.0"
+version = "1.98.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.97.0-py2.py3-none-any.whl", hash = "sha256:4db9455308110b1e8c1b587bd3ff34449fa459fda45c4466b9b2d9ae259a7af6"},
-    {file = "google_cloud_aiplatform-1.97.0.tar.gz", hash = "sha256:01277ac5648abe7d2af688b123d7d050c1a34922e9f4297e51e44d165cb79b45"},
+    {file = "google_cloud_aiplatform-1.98.0-py2.py3-none-any.whl", hash = "sha256:583f3da3ea9cea984ec98c670b425b8c7ce250f106593de414c1b954df57ebf0"},
+    {file = "google_cloud_aiplatform-1.98.0.tar.gz", hash = "sha256:d57ba65f95f03f7c3fe26cc3e870e6ce7f396c7bfed3c401a4672b8a8b53119b"},
 ]
 
 [package.dependencies]
