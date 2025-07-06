@@ -123,6 +123,35 @@ run_config:
     #   allow_queueing: false
     #   max_run_count: none
     #   max_concurrent_run_count: 1
+
+  # Optional distributed training configuration
+  # distributed_training:
+  #   # Enable distributed training for specific node names
+  #   enabled_for_node_names:
+  #     - "training_node"
+  #     - "model_training"
+  #   
+  #   # Enable distributed training for nodes with specific tags
+  #   enabled_for_tags:
+  #     - "distributed"
+  #     - "gpu-intensive"
+  #   
+  #   # Primary replica configuration (must have replica_count = 1)
+  #   primary_pool:
+  #     machine_type: "n1-standard-4"
+  #     replica_count: 1
+  #     accelerator_type: "NVIDIA_TESLA_T4"
+  #     accelerator_count: 1
+  #   
+  #   # Worker pool configuration (can have replica_count > 1)
+  #   worker_pool:
+  #     machine_type: "n1-standard-4"
+  #     replica_count: 2
+  #     accelerator_type: "NVIDIA_TESLA_T4"
+  #     accelerator_count: 1
+  #   
+  #   # Base output directory for distributed training jobs
+  #   base_output_directory: "gs://your-bucket/distributed-training-output/"
 """
 
 
@@ -170,6 +199,8 @@ class GroupingConfig(BaseModel):
     def class_valid(cls, v, values, **kwargs):
         try:
             grouper_class = dynamic_load_class(v)
+            if grouper_class is None:
+                raise ValueError(f"Could not load grouping class {v}")
             class_sig = signature(grouper_class)
             if "params" in values.data:
                 class_sig.bind(None, **values.data["params"])
@@ -225,6 +256,21 @@ class ScheduleConfig(BaseModel):
     max_concurrent_run_count: Optional[int] = 1
 
 
+class WorkerPoolConfig(BaseModel):
+    machine_type: str = "n1-standard-4"
+    replica_count: int = 1
+    accelerator_type: Optional[str] = None
+    accelerator_count: Optional[int] = None
+
+
+class DistributedTrainingConfig(BaseModel):
+    enabled_for_node_names: Optional[List[str]] = []
+    enabled_for_tags: Optional[List[str]] = []
+    primary_pool: Optional[WorkerPoolConfig] = WorkerPoolConfig()
+    worker_pool: Optional[WorkerPoolConfig] = WorkerPoolConfig(replica_count=2)
+    base_output_directory: Optional[str] = None
+
+
 class RunConfig(BaseModel):
     image: str
     root: Optional[str] = None
@@ -243,13 +289,35 @@ class RunConfig(BaseModel):
     dynamic_config_providers: Optional[List[DynamicConfigProviderConfig]] = []
     mlflow: Optional[MLFlowVertexAIConfig] = None
     schedules: Optional[Dict[str, ScheduleConfig]] = None
+    distributed_training: Optional[DistributedTrainingConfig] = None
 
     def resources_for(self, node: str, tags: Optional[set] = None):
+        if self.resources is None:
+            return {}
         default_config = self.resources["__default__"].dict()
-        return self._config_for(node, tags, self.resources, default_config)
+        return self._config_for(node, tags or set(), self.resources, default_config)
 
     def node_selectors_for(self, node: str, tags: Optional[set] = None):
-        return self._config_for(node, tags, self.node_selectors)
+        if self.node_selectors is None:
+            return {}
+        return self._config_for(node, tags or set(), self.node_selectors)
+
+    def should_use_distributed_training(self, node: str, tags: Optional[set] = None) -> bool:
+        """Check if a node should use distributed training based on configuration."""
+        if not self.distributed_training:
+            return False
+        
+        tags = tags or set()
+        
+        # Check node names
+        if node in (self.distributed_training.enabled_for_node_names or []):
+            return True
+            
+        # Check tags
+        if any(tag in (self.distributed_training.enabled_for_tags or []) for tag in tags):
+            return True
+            
+        return False
 
     @staticmethod
     def _config_for(
