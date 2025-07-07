@@ -284,6 +284,12 @@ class PipelineGenerator:
             
         dt_config = self.run_config.distributed_training
         
+        # Ensure primary_pool and worker_pool are not None
+        if not dt_config.primary_pool:
+            raise ValueError("Primary pool configuration is required for distributed training")
+        if not dt_config.worker_pool:
+            raise ValueError("Worker pool configuration is required for distributed training")
+        
         # Build the full command with all necessary setup
         full_command = " ".join([
             h + " " if (h := self._generate_hosts_file()) else "",
@@ -346,23 +352,27 @@ class PipelineGenerator:
                 
             worker_pool_specs.append(worker_spec)
 
-        # Create the CustomTrainingJobOp task
-        @with_signature(f"{name.replace('-', '_')}({params_signature})")
-        def custom_training_job_component(*args, **kwargs):
-            # Use service account from distributed training config, fallback to global service account
-            service_account = dt_config.service_account or self.run_config.service_account or ""
-            
-            return (
-                CustomTrainingJobOp(
-                    display_name=f"distributed-{name}",
-                    worker_pool_specs=worker_pool_specs,
-                    base_output_directory=dt_config.base_output_directory or f"gs://{self.run_config.root}/distributed-training-output/",
-                    service_account=service_account,
-                )
-            .set_display_name(name)
-            )
-
-        return custom_training_job_component(**component_params)
+        # Create CustomTrainingJobOp task
+        # Note: While KFP compiler generates names like "comp-custom-training-job", 
+        # "comp-custom-training-job-2", etc., creating unique function instances
+        # ensures each distributed training node gets processed separately.
+        
+        # Use service account from distributed training config, fallback to global service account
+        service_account = dt_config.service_account or self.run_config.service_account or ""
+        
+        # Create the task directly using CustomTrainingJobOp
+        task = CustomTrainingJobOp(
+            display_name=f"distributed-{name}",
+            worker_pool_specs=worker_pool_specs,
+            base_output_directory=dt_config.base_output_directory or f"gs://{self.run_config.root}/distributed-training-output/",
+            service_account=service_account,
+            **component_params
+        )
+        
+        # Set display name to the node name for better identification on UI
+        task.set_display_name(name)
+        
+        return task
 
     def _configure_resources(self, name: str, tags: set, task: PipelineTask):
         resources = self.run_config.resources_for(name, tags)

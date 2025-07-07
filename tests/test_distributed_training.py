@@ -576,6 +576,74 @@ class TestDistributedTrainingGenerator(unittest.TestCase):
             call_args = mock_custom_training_job.call_args
             self.assertEqual(call_args[1]["service_account"], "")
 
+    def test_should_generate_unique_component_names_for_multiple_distributed_nodes(self):
+        """Test that multiple distributed training nodes get unique component names"""
+        config = {
+            "distributed_training": {
+                "enabled_for_node_names": ["train_model", "train_embedding"],
+                "primary_pool": {
+                    "machine_type": "n1-standard-4",
+                    "replica_count": 1,
+                },
+                "worker_pool": {
+                    "machine_type": "n1-standard-4",
+                    "replica_count": 2,
+                },
+                "base_output_directory": "gs://test-bucket/output/",
+            }
+        }
+        
+        self.create_generator(config=config)
+        
+        with patch("kedro.framework.project.pipelines", new=self.pipelines_under_test):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "test-image", "test-token"
+            )
+            
+            with NamedTemporaryFile(mode="rt", prefix="pipeline", suffix=".yaml") as spec_output:
+                Compiler().compile(pipeline, spec_output.name)
+                with open(spec_output.name) as f:
+                    pipeline_spec = yaml.safe_load(f)
+                
+                # Check that both distributed training nodes have unique component names
+                components = pipeline_spec["components"]
+                component_names = list(components.keys())
+                
+                # Check that the executors also have unique names
+                executors = pipeline_spec["deploymentSpec"]["executors"]
+                executor_names = list(executors.keys())
+                
+                # Should have multiple custom training job components (one for each distributed node)
+                custom_training_components = [name for name in component_names if "custom-training-job" in name]
+                custom_training_executors = [name for name in executor_names if "custom-training-job" in name]
+                
+                # Should have exactly 2 custom training job components (train_model and train_embedding)
+                self.assertEqual(len(custom_training_components), 2, 
+                               f"Expected 2 custom training components, got {len(custom_training_components)}: {custom_training_components}")
+                
+                # Should have exactly 2 custom training job executors
+                self.assertEqual(len(custom_training_executors), 2,
+                               f"Expected 2 custom training executors, got {len(custom_training_executors)}: {custom_training_executors}")
+                
+                # Component names should be unique
+                self.assertEqual(len(set(custom_training_components)), len(custom_training_components),
+                               f"Component names should be unique: {custom_training_components}")
+                
+                # Executor names should be unique  
+                self.assertEqual(len(set(custom_training_executors)), len(custom_training_executors),
+                               f"Executor names should be unique: {custom_training_executors}")
+                
+                # Should also have one standard container component (preprocess)
+                standard_components = [name for name in component_names if "preprocess" in name]
+                self.assertEqual(len(standard_components), 1, 
+                               f"Expected 1 standard component for preprocess, got {len(standard_components)}: {standard_components}")
+                
+                # Verify the names are actually different
+                self.assertNotEqual(custom_training_components[0], custom_training_components[1],
+                                  "Custom training components should have different names")
+                self.assertNotEqual(custom_training_executors[0], custom_training_executors[1],
+                                  "Custom training executors should have different names")
+
 
 if __name__ == "__main__":
     unittest.main() 
