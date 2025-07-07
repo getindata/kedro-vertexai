@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   [Feature] Added distributed training support using CustomTrainingJobOp for scalable model training with worker replicas. Nodes can be configured for distributed training via node names or tags, supporting primary + worker pool architecture with configurable machine types and accelerators.
+
 ## [0.12.0] - 2025-03-11
 
 -   Support for python 3.11 & 3.12 added, dropped support for python 3.8
