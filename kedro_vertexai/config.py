@@ -152,6 +152,9 @@ run_config:
   #   
   #   # Base output directory for distributed training jobs
   #   base_output_directory: "gs://your-bucket/distributed-training-output/"
+  #   
+  #   # Service account for distributed training (optional, defaults to global service_account)
+  #   service_account: "distributed-training@my-project.iam.gserviceaccount.com"
 """
 
 
@@ -269,6 +272,7 @@ class DistributedTrainingConfig(BaseModel):
     primary_pool: Optional[WorkerPoolConfig] = WorkerPoolConfig()
     worker_pool: Optional[WorkerPoolConfig] = WorkerPoolConfig(replica_count=2)
     base_output_directory: Optional[str] = None
+    service_account: Optional[str] = None
 
 
 class RunConfig(BaseModel):

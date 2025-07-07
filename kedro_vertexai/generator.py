@@ -349,11 +349,15 @@ class PipelineGenerator:
         # Create the CustomTrainingJobOp task
         @with_signature(f"{name.replace('-', '_')}({params_signature})")
         def custom_training_job_component(*args, **kwargs):
+            # Use service account from distributed training config, fallback to global service account
+            service_account = dt_config.service_account or self.run_config.service_account or ""
+            
             return (
                 CustomTrainingJobOp(
                     display_name=f"distributed-{name}",
                     worker_pool_specs=worker_pool_specs,
                     base_output_directory=dt_config.base_output_directory or f"gs://{self.run_config.root}/distributed-training-output/",
+                    service_account=service_account,
                 )
             .set_display_name(name)
             )

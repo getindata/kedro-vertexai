@@ -70,6 +70,7 @@ class TestDistributedTrainingConfig(unittest.TestCase):
             self.assertEqual(worker_pool.replica_count, 2)
             
         self.assertIsNone(config.base_output_directory)
+        self.assertIsNone(config.service_account)
 
     def test_distributed_training_config_custom_values(self):
         """Test DistributedTrainingConfig with custom values"""
@@ -83,6 +84,7 @@ class TestDistributedTrainingConfig(unittest.TestCase):
                 machine_type="n1-standard-8", replica_count=4
             ),
             base_output_directory="gs://my-bucket/output/",
+            service_account="distributed-training@my-project.iam.gserviceaccount.com",
         )
         self.assertEqual(config.enabled_for_node_names, ["train_model", "train_embedding"])
         self.assertEqual(config.enabled_for_tags, ["distributed", "gpu"])
@@ -98,6 +100,7 @@ class TestDistributedTrainingConfig(unittest.TestCase):
             self.assertEqual(worker_pool.replica_count, 4)
             
         self.assertEqual(config.base_output_directory, "gs://my-bucket/output/")
+        self.assertEqual(config.service_account, "distributed-training@my-project.iam.gserviceaccount.com")
 
     def test_should_use_distributed_training_node_names(self):
         """Test should_use_distributed_training with node names"""
@@ -506,6 +509,72 @@ class TestDistributedTrainingGenerator(unittest.TestCase):
                 worker_pool_specs = call_args[1]["worker_pool_specs"]
                 self.assertEqual(len(worker_pool_specs), 1)  # Only primary pool
                 self.assertEqual(worker_pool_specs[0]["replica_count"], 1)
+
+    @patch("kedro_vertexai.generator.CustomTrainingJobOp")
+    def test_should_use_service_account_from_distributed_training_config(self, mock_custom_training_job):
+        """Test that service account is passed from distributed training config"""
+        config = {
+            "service_account": "global@my-project.iam.gserviceaccount.com",
+            "distributed_training": {
+                "enabled_for_node_names": ["train_model"],
+                "service_account": "distributed@my-project.iam.gserviceaccount.com",
+            }
+        }
+        
+        self.create_generator(config=config)
+        
+        with patch("kedro.framework.project.pipelines", new=self.pipelines_under_test):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "test-image", "test-token"
+            )
+            
+            # Verify CustomTrainingJobOp was called with distributed training service account
+            mock_custom_training_job.assert_called_once()
+            call_args = mock_custom_training_job.call_args
+            self.assertEqual(call_args[1]["service_account"], "distributed@my-project.iam.gserviceaccount.com")
+
+    @patch("kedro_vertexai.generator.CustomTrainingJobOp")
+    def test_should_fallback_to_global_service_account_when_not_specified(self, mock_custom_training_job):
+        """Test that service account falls back to global when not specified in distributed training config"""
+        config = {
+            "service_account": "global@my-project.iam.gserviceaccount.com",
+            "distributed_training": {
+                "enabled_for_node_names": ["train_model"],
+            }
+        }
+        
+        self.create_generator(config=config)
+        
+        with patch("kedro.framework.project.pipelines", new=self.pipelines_under_test):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "test-image", "test-token"
+            )
+            
+            # Verify CustomTrainingJobOp was called with global service account
+            mock_custom_training_job.assert_called_once()
+            call_args = mock_custom_training_job.call_args
+            self.assertEqual(call_args[1]["service_account"], "global@my-project.iam.gserviceaccount.com")
+
+    @patch("kedro_vertexai.generator.CustomTrainingJobOp")
+    def test_should_use_empty_string_when_no_service_account_specified(self, mock_custom_training_job):
+        """Test that empty string is used when no service account is specified"""
+        config = {
+            "distributed_training": {
+                "enabled_for_node_names": ["train_model"],
+            }
+        }
+        
+        self.create_generator(config=config)
+        
+        with patch("kedro.framework.project.pipelines", new=self.pipelines_under_test):
+            pipeline = self.generator_under_test.generate_pipeline(
+                "pipeline", "test-image", "test-token"
+            )
+            
+            # Verify CustomTrainingJobOp was called with empty string
+            mock_custom_training_job.assert_called_once()
+            call_args = mock_custom_training_job.call_args
+            self.assertEqual(call_args[1]["service_account"], "")
 
 
 if __name__ == "__main__":
