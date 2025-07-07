@@ -10,6 +10,7 @@ from kedro.framework.context import KedroContext
 from kfp import dsl
 from kfp.dsl import PipelineTask
 from makefun import with_signature
+from google_cloud_pipeline_components.v1.custom_job import CustomTrainingJobOp
 
 from kedro_vertexai.config import (
     KedroVertexAIRunnerConfig,
@@ -201,25 +202,41 @@ class PipelineGenerator:
                 ]
             ).strip()
 
-            @dsl.container_component
-            @with_signature(f"{name.replace('-', '_')}({params_signature})")
-            def component(*args, **kwargs):
-                dynamic_parameters = ",".join(
-                    [f"{k}={kwargs[k]}" for k in params.keys()]
-                )
-
-                return dsl.ContainerSpec(
+            # Check if this node should use distributed training
+            if self.run_config.should_use_distributed_training(group_name, tags):
+                # Create CustomTrainingJobOp for distributed training
+                task = self._create_custom_training_job_task(
+                    name=name,
                     image=image,
-                    command=["/bin/bash", "-c"],
-                    args=[
-                        node_command,
-                        " --params",  # TODO what if there is no dynamic params?
-                        f" {dynamic_parameters}",
-                    ],
+                    kedro_command=kedro_command,
+                    nodes_group=nodes_group,
+                    tags=tags,
+                    params_signature=params_signature,
+                    component_params=component_params,
+                    should_add_params=should_add_params,
                 )
+            else:
+                # Create standard container component
+                @dsl.container_component
+                @with_signature(f"{name.replace('-', '_')}({params_signature})")
+                def component(*args, **kwargs):
+                    dynamic_parameters = ",".join(
+                        [f"{k}={kwargs[k]}" for k in params.keys()]
+                    )
 
-            task = component(**component_params)
-            self._configure_resources(name, tags, task)
+                    return dsl.ContainerSpec(
+                        image=image,
+                        command=["/bin/bash", "-c"],
+                        args=[
+                            node_command,
+                            " --params",  # TODO what if there is no dynamic params?
+                            f" {dynamic_parameters}",
+                        ],
+                    )
+
+                task = component(**component_params)
+                self._configure_resources(name, tags, task)
+                
             kfp_tasks[name] = task
 
         return kfp_tasks
@@ -248,6 +265,114 @@ class PipelineGenerator:
         project_id = vertex_conf.get("project_id")
         region = vertex_conf.get("region")
         return f"GCP_PROJECT_ID={project_id} GCP_REGION={region}"
+
+    def _create_custom_training_job_task(
+        self,
+        name: str,
+        image: str,
+        kedro_command: str,
+        nodes_group: List,
+        tags: set,
+        params_signature: str,
+        component_params: Dict,
+        should_add_params: bool,
+    ) -> PipelineTask:
+        """Create a CustomTrainingJobOp task for distributed training."""
+        
+        if not self.run_config.distributed_training:
+            raise ValueError("Distributed training config is required for CustomTrainingJobOp")
+            
+        dt_config = self.run_config.distributed_training
+        
+        # Ensure primary_pool and worker_pool are not None
+        if not dt_config.primary_pool:
+            raise ValueError("Primary pool configuration is required for distributed training")
+        if not dt_config.worker_pool:
+            raise ValueError("Worker pool configuration is required for distributed training")
+        
+        # Build the full command with all necessary setup
+        full_command = " ".join([
+            h + " " if (h := self._generate_hosts_file()) else "",
+            self._generate_params_command(should_add_params),
+            "MLFLOW_RUN_ID=\"{{$.inputs.parameters['mlflow_run_id']}}\" "
+            if is_mlflow_enabled()
+            else "",
+            self._generate_gcp_env_vars_command(),
+            kedro_command,
+        ]).strip()
+
+        # Build worker pool specs based on configuration
+        worker_pool_specs = []
+        
+        # Get resource configuration from existing resources config
+        resources = self.run_config.resources_for(name, tags)
+        
+        # Build primary spec with machine type from config or default
+        primary_machine_type = dt_config.primary_pool.machine_type
+        primary_spec = {
+            "machine_spec": {
+                "machine_type": primary_machine_type,
+            },
+            "replica_count": 1,  # Primary must always be 1
+            "container_spec": {
+                "image_uri": image,
+                "command": ["/bin/bash", "-c"],
+                "args": [full_command],
+            },
+        }
+        
+        # Add accelerator config from distributed training config
+        if dt_config.primary_pool.accelerator_type:
+            primary_spec["machine_spec"]["accelerator_type"] = dt_config.primary_pool.accelerator_type
+        if dt_config.primary_pool.accelerator_count:
+            primary_spec["machine_spec"]["accelerator_count"] = dt_config.primary_pool.accelerator_count
+            
+        worker_pool_specs.append(primary_spec)
+        
+        # Worker pool (can have replica_count > 1)
+        if dt_config.worker_pool.replica_count > 0:
+            worker_machine_type = dt_config.worker_pool.machine_type
+            worker_spec = {
+                "machine_spec": {
+                    "machine_type": worker_machine_type,
+                },
+                "replica_count": dt_config.worker_pool.replica_count,
+                "container_spec": {
+                    "image_uri": image,
+                    "command": ["/bin/bash", "-c"],
+                    "args": [full_command],
+                },
+            }
+            
+            # Add accelerator config from distributed training config
+            if dt_config.worker_pool.accelerator_type:
+                worker_spec["machine_spec"]["accelerator_type"] = dt_config.worker_pool.accelerator_type
+            if dt_config.worker_pool.accelerator_count:
+                worker_spec["machine_spec"]["accelerator_count"] = dt_config.worker_pool.accelerator_count
+                
+            worker_pool_specs.append(worker_spec)
+
+        # Create CustomTrainingJobOp task
+        # Note: While KFP compiler generates names like "comp-custom-training-job", 
+        # "comp-custom-training-job-2", etc., creating unique function instances
+        # ensures each distributed training node gets processed separately.
+        
+        # Use service account from distributed training config, fallback to global service account
+        service_account = dt_config.service_account or self.run_config.service_account or ""
+        
+        # Create the task directly using CustomTrainingJobOp
+        task = CustomTrainingJobOp(
+            display_name=f"distributed-{name}",
+            worker_pool_specs=worker_pool_specs,
+            base_output_directory=dt_config.base_output_directory or f"gs://{self.run_config.root}/distributed-training-output/",
+            service_account=service_account,
+            **component_params
+        )
+        
+        # Set display name to the node name for better identification on UI
+        task.set_display_name(name)
+        
+        return task
 
     def _configure_resources(self, name: str, tags: set, task: PipelineTask):
         resources = self.run_config.resources_for(name, tags)
