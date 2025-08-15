@@ -245,7 +245,7 @@ class RunConfig(BaseModel):
     schedules: Optional[Dict[str, ScheduleConfig]] = None
 
     def resources_for(self, node: str, tags: Optional[set] = None):
-        default_config = self.resources["__default__"].dict()
+        default_config = self.resources["__default__"].model_dump()
         return self._config_for(node, tags, self.resources, default_config)
 
     def node_selectors_for(self, node: str, tags: Optional[set] = None):
@@ -261,7 +261,9 @@ class RunConfig(BaseModel):
         results = default_config or {}
         for name in filled_names:
             configs = (
-                params[name] if isinstance(params[name], dict) else params[name].dict()
+                params[name]
+                if isinstance(params[name], dict)
+                else params[name].model_dump()
             )
             results.update({k: v for k, v in configs.items() if v is not None})
         return results

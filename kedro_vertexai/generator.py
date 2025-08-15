@@ -179,7 +179,7 @@ class PipelineGenerator:
                 [
                     f"{KEDRO_CONFIG_RUN_ID}={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
                     f"{KEDRO_CONFIG_JOB_NAME}={dsl.PIPELINE_JOB_NAME_PLACEHOLDER}",
-                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.json()}'",
+                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.model_dump_json()}'",
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",

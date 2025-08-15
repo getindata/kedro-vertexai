@@ -39,7 +39,7 @@ class TestContextHelper(unittest.TestCase):
         metadata = Mock()
         metadata.package_name = "test_package"
         session = MagicMock()
-        session.load_context().config_loader.get.return_value = cfg.dict()
+        session.load_context().config_loader.get.return_value = cfg.model_dump()
         with patch.object(KedroSession, "create", return_value=session):
             helper = ContextHelper.init(metadata, "test")
             assert helper.config == cfg
@@ -58,7 +58,7 @@ class TestContextHelper(unittest.TestCase):
                     image="test-image", experiment_name="test-experiment"
                 ),
             )
-            (conf_dir / "vertexai.yml").write_text(yaml.dump(cfg.dict()))
+            (conf_dir / "vertexai.yml").write_text(yaml.dump(cfg.model_dump()))
 
             metadata = Mock()
             metadata.package_name = "test_package"
