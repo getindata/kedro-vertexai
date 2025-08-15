@@ -89,7 +89,7 @@ class VertexAIPipelinesClient:
 
     def _generate_run_name(self, config: PluginConfig):  # noqa
         return config.run_config.experiment_name.rstrip("-") + "-{}".format(
-            dt.datetime.now(dt.UTC).strftime("%Y%m%d%H%M%S")
+            dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
         )
 
     def compile(self, pipeline, image, output, params: List[str] = []):
