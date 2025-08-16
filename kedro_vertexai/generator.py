@@ -162,7 +162,7 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
-        params_signature = self._add_mlflow_param_to_signature(params_signature)
+            params_signature = self._add_mlflow_param_to_signature(params_signature)
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
@@ -179,7 +179,7 @@ class PipelineGenerator:
                 [
                     f"{KEDRO_CONFIG_RUN_ID}={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
                     f"{KEDRO_CONFIG_JOB_NAME}={dsl.PIPELINE_JOB_NAME_PLACEHOLDER}",
-                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.json()}'",
+                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.model_dump_json()}'",
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",

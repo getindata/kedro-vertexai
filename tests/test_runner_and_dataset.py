@@ -47,7 +47,7 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
             {
                 KEDRO_VERTEXAI_RUNNER_CONFIG: KedroVertexAIRunnerConfig(
                     storage_root="unit_tests"
-                ).json()
+                ).model_dump_json()
             },
             clear=False,
         ):
@@ -117,21 +117,21 @@ class TestVertexAIRunnerAndDataset(unittest.TestCase):
         with self.patched_runner() as runner:
             catalog = DataCatalog()
             input_data = ["yolo :)"]
-            catalog.add("input_data", MemoryDataset(data=input_data))
+            catalog["input_data"] = MemoryDataset(data=input_data)
             results = runner.run(
                 self.dummy_pipeline(),
                 catalog,
             )
-            assert results["output_data"] == input_data, "No output data found"
+            assert results["output_data"].load() == input_data, "No output data found"
 
     def test_runner_fills_missing_datasets(self):
         with self.patched_runner() as runner:
             input_data = ["yolo :)"]
             catalog = DataCatalog()
-            catalog.add("input_data", MemoryDataset(data=input_data))
+            catalog["input_data"] = MemoryDataset(data=input_data)
             for node_no in range(3):
                 results = runner.run(
                     self.dummy_pipeline().filter(node_names=[f"node{node_no + 1}"]),
                     catalog,
                 )
-            assert results["output_data"] == input_data, "Invalid output data"
+            assert results["output_data"].load() == input_data, "Invalid output data"

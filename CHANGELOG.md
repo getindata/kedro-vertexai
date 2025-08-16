@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+-   Add support for Kedro 1.0.x (#243)
+-   Fix Pydantic v2 deprecation warnings
+
 ## [0.12.0] - 2025-03-11
 
 -   Support for python 3.11 & 3.12 added, dropped support for python 3.8

@@ -1,4 +1,4 @@
-from kedro.pipeline import Pipeline, node, pipeline
+from kedro.pipeline import Node, Pipeline
 
 from .nodes import (
     create_model_input_table,
@@ -8,23 +8,23 @@ from .nodes import (
 
 
 def create_pipeline(**kwargs) -> Pipeline:
-    return pipeline(
+    return Pipeline(
         [
-            node(
+            Node(
                 func=preprocess_companies,
                 inputs="companies",
                 outputs="preprocessed_companies",
                 name="preprocess_companies_node",
                 tags=["grp.preprocessing"],
             ),
-            node(
+            Node(
                 func=preprocess_shuttles,
                 inputs="shuttles",
                 outputs="preprocessed_shuttles",
                 name="preprocess_shuttles_node",
                 tags=["grp.preprocessing"],
             ),
-            node(
+            Node(
                 func=create_model_input_table,
                 inputs=["preprocessed_shuttles", "preprocessed_companies", "reviews"],
                 outputs="model_input_table",

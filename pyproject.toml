@@ -32,8 +32,8 @@ exclude_lines = [
 known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "pydantic","semver","setuptools"]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-kedro = ">=0.19.0,<0.20"
+python = ">=3.10,<3.13"
+kedro = "^1.0.0"
 click = ">=8.0.4"
 kfp = ">=2.0.0,<2.9.0"
 tabulate = ">=0.8.7"
@@ -50,7 +50,7 @@ google-cloud-storage = "<3.0.0"
 grpcio = ">=1.4.0,<2.0.0"
 grpcio-status = ">=1.4.0,<2.0.0"
 protobuf = ">=3.18.0,<21.0"
-kedro-mlflow = {version = ">=0.12.1,<0.15", optional = true}
+kedro-mlflow = {version = "^1.0.0", optional = true}
 cachetools = ">=3.0,<6.0"
 # pyaml in version 5 does problems with installing binaries/wheel in cicd env with python 3.10. The following fixes that:
 # pyyaml = ">=6.0,<7"
@@ -62,7 +62,7 @@ makefun = "^1.15.6"
 [tool.poetry.extras]
 mlflow = ["kedro-mlflow"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "<=8.3.5"
 pytest-cov = ">=2.8.0,<7.0.0"
 tox = ">=3.25.1,<5.0.0"
