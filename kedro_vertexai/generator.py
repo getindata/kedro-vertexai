@@ -162,7 +162,7 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
-        params_signature = self._add_mlflow_param_to_signature(params_signature)
+            params_signature = self._add_mlflow_param_to_signature(params_signature)
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)

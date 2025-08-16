@@ -8,6 +8,11 @@ set -e  # Exit on any error
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Clean up any existing e2e test directory
+if [[ -d "$SCRIPT_DIR/../e2e-testing/spaceflights" ]]; then
+    rm -rf "$SCRIPT_DIR/../e2e-testing/spaceflights"
+fi
+
 # Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

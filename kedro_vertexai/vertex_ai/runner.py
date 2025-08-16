@@ -31,12 +31,13 @@ class VertexAIPipelinesRunner(SequentialRunner):
         pipeline: Pipeline,
         catalog: DataCatalog,
         hook_manager: PluginManager = None,
-        session_id: str = None,
+        run_id: str = None,
+        **kwargs,
     ) -> Dict[str, Any]:
         unsatisfied = (pipeline.inputs() | pipeline.outputs()) - set(catalog.filter())
         for ds_name in unsatisfied:
             catalog[ds_name] = self.create_default_data_set(ds_name)
-        return super().run(pipeline, catalog, hook_manager, session_id)
+        return super().run(pipeline, catalog, hook_manager, run_id, **kwargs)
 
     def create_default_data_set(self, ds_name: str) -> AbstractDataset:
         return KedroVertexAIRunnerDataset(
