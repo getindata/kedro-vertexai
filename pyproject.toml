@@ -63,7 +63,7 @@ makefun = "^1.15.6"
 mlflow = ["kedro-mlflow"]
 
 [tool.poetry.group.dev.dependencies]
-pytest = "<=8.3.5"
+pytest = "<=8.4.1"
 pytest-cov = ">=2.8.0,<7.0.0"
 tox = ">=3.25.1,<5.0.0"
 pre-commit = "4.2.0"
