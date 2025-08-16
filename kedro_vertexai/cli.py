@@ -21,7 +21,26 @@ logger = logging.getLogger(__name__)
 
 
 def format_params(params: list):
-    return dict((p[: p.find(":")], p[p.find(":") + 1 :]) for p in params)
+    """
+    Format parameter list into dictionary.
+    Supports both colon format (compile-time: 'key:type') and equals format (runtime: 'key=value').
+    """
+    result = {}
+    for p in params:
+        if "=" in p:
+            # Runtime format: key=value
+            key, value = p.split("=", 1)
+            result[key] = value
+        elif ":" in p:
+            # Compile-time format: key:type
+            key, type_def = p.split(":", 1)
+            result[key] = type_def
+        else:
+            # Invalid format
+            raise ValueError(
+                f"Invalid parameter format: '{p}'. Expected 'key=value' or 'key:type'"
+            )
+    return result
 
 
 @click.group("VertexAI")
