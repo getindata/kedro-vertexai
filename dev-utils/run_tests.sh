@@ -232,7 +232,7 @@ run_single_e2e_test() {
     # Build and push Docker image
     local full_image_name="$VERTEX_AI_DOCKER_REGISTRY/$DOCKER_IMAGE_TAG-$case"
     log_info "Building and pushing Docker image: $full_image_name"
-    docker build --platform linux/amd64 -t "$full_image_name" .
+    docker build --no-cache --platform linux/amd64 -t "$full_image_name" .
     docker push "$full_image_name"
     
     # Update vertexai.yml with the built image
