@@ -241,14 +241,15 @@ class PipelineGenerator:
                 )
 
                 # Only add --params if there are dynamic parameters
-                params_args = []
+                # Fix: Concatenate parameters into single command instead of separate args
+                full_command = node_command
                 if dynamic_parameters:
-                    params_args = [" --params", f" {dynamic_parameters}"]
+                    full_command += f" --params {dynamic_parameters}"
 
                 return dsl.ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
-                    args=[node_command] + params_args,
+                    args=[full_command],
                 )
 
             task = component(**component_params)
