@@ -34,6 +34,7 @@ class VertexAIPipelinesRunner(SequentialRunner):
         run_id: str = None,
         **kwargs,
     ) -> Dict[str, Any]:
+
         unsatisfied = (pipeline.inputs() | pipeline.outputs()) - set(catalog.filter())
         for ds_name in unsatisfied:
             catalog[ds_name] = self.create_default_data_set(ds_name)

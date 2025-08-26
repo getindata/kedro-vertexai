@@ -1,7 +1,7 @@
 # Changelog
 
 ## [Unreleased]
-
+-   Attempt to fix parameters handling (#174)
 -   Add support for Kedro 1.0.x (#243)
 -   Fix Pydantic v2 deprecation warnings
 

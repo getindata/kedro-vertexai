@@ -199,6 +199,9 @@ jobs:
           kedro vertexai run-once --wait-for-completion
 
   publish:
+    permissions:
+      pull-requests: write
+      contents: write
     # only run on push to master
     if: github.event.pull_request == null && github.ref == 'refs/heads/master'
     needs: [e2e_tests, codeql]

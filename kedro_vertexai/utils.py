@@ -92,6 +92,8 @@ def docker_build(path: str, image: str) -> int:
         [
             "docker",
             "build",
+            "--platform",
+            "linux/amd64",
             path,
             "-t",
             image,

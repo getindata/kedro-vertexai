@@ -64,10 +64,20 @@ class VertexAIPipelinesClient:
         with NamedTemporaryFile(
             mode="rt", prefix="kedro-vertexai", suffix=".yaml"
         ) as spec_output:
+            # Auto-detect parameter types from provided parameter values
+            param_types = ""
+            if parameters:
+                param_type_list = []
+                for param_name in parameters.keys():
+                    # Default to string type for runtime parameters
+                    param_type_list.append(f"{param_name}:str")
+                param_types = ",".join(param_type_list)
+
             self.compile(
                 pipeline,
                 image,
                 output=spec_output.name,
+                params=param_types,
             )
 
             job = aip.PipelineJob(
