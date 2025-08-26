@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+
+## [1.0.0] - 2025-08-26
+
 -   Attempt to fix parameters handling (#174)
 -   Add support for Kedro 1.0.x (#243)
 -   Fix Pydantic v2 deprecation warnings
@@ -101,7 +104,9 @@
 
 -   Initial version of **kedro-vertexai** plugin extracted from [kedro-kubeflow v0.6.0](https://github.com/getindata/kedro-kubeflow/tree/0.6.0)
 
-[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/0.12.0...HEAD
+[Unreleased]: https://github.com/getindata/kedro-vertexai/compare/1.0.0...HEAD
+
+[1.0.0]: https://github.com/getindata/kedro-vertexai/compare/0.12.0...1.0.0
 
 [0.12.0]: https://github.com/getindata/kedro-vertexai/compare/0.11.1...0.12.0
 
