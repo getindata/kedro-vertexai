@@ -458,16 +458,16 @@ class TestGenerator(unittest.TestCase):
                     )
 
                     assert (
-                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        "--params test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
                         in pipeline_spec["deploymentSpec"]["executors"]["exec-node1"][
                             "container"
-                        ]["args"]
+                        ]["args"][0]
                     )
                     assert (
-                        " test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
+                        "--params test_param={{$.inputs.parameters['test_param']}},param2={{$.inputs.parameters['param2']}}"  # noqa
                         in pipeline_spec["deploymentSpec"]["executors"]["exec-node2"][
                             "container"
-                        ]["args"]
+                        ]["args"][0]
                     )
 
     def mock_mlflow(self, enabled=False):
