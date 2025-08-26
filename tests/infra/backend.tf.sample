@@ -1,0 +1,6 @@
+terraform {
+  backend "gcs" {
+    bucket = "sample-state-bucket"
+    prefix = "terraform/kedro-e2e"
+  }
+}

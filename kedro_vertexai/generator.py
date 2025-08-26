@@ -57,10 +57,37 @@ class PipelineGenerator:
     def _generate_params_signature(self, params: str) -> str:
         params = params.split(",") if len(params) > 0 else []
 
-        params_signature = ", ".join(
-            [f"{param.split(':')[0]}: {param.split(':')[1]}" for param in params]
-        )
-        return params_signature
+        signature_parts = []
+        for param in params:
+            param = param.strip()
+            if ":" not in param:
+                raise ValueError(
+                    f"Invalid parameter format: '{param}'. "
+                    f"Expected format: 'param_name:param_type' (e.g., 'test_param:str'). "
+                    f"Use --params for parameter type definitions during compilation, "
+                    f"not parameter values."
+                )
+
+            param_parts = param.split(":")
+            if len(param_parts) != 2:
+                raise ValueError(
+                    f"Invalid parameter format: '{param}'. "
+                    f"Expected exactly one colon separating name and type."
+                )
+
+            param_name = param_parts[0].strip()
+            param_type = param_parts[1].strip()
+
+            if not param_name:
+                raise ValueError("Parameter name cannot be empty.")
+            if not param_type:
+                raise ValueError(
+                    f"Parameter type cannot be empty for parameter '{param_name}'."
+                )
+
+            signature_parts.append(f"{param_name}: {param_type}")
+
+        return ", ".join(signature_parts)
 
     def generate_pipeline(self, pipeline, image, token, params: str = ""):
         """
@@ -162,7 +189,7 @@ class PipelineGenerator:
                 image, should_add_params
             )
 
-        params_signature = self._add_mlflow_param_to_signature(params_signature)
+            params_signature = self._add_mlflow_param_to_signature(params_signature)
 
         for group_name, nodes_group in node_grouping.nodes_mapping.items():
             name = clean_name(group_name)
@@ -179,7 +206,7 @@ class PipelineGenerator:
                 [
                     f"{KEDRO_CONFIG_RUN_ID}={dsl.PIPELINE_JOB_ID_PLACEHOLDER}",
                     f"{KEDRO_CONFIG_JOB_NAME}={dsl.PIPELINE_JOB_NAME_PLACEHOLDER}",
-                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.json()}'",
+                    f"{KEDRO_VERTEXAI_RUNNER_CONFIG}='{runner_config.model_dump_json()}'",
                     self._globals_env(),
                     f"kedro run -e {self.context.env}",
                     f"--pipeline {pipeline}",
@@ -204,18 +231,25 @@ class PipelineGenerator:
             @dsl.container_component
             @with_signature(f"{name.replace('-', '_')}({params_signature})")
             def component(*args, **kwargs):
+                # Build dynamic parameters from kwargs, filtering out mlflow parameters
                 dynamic_parameters = ",".join(
-                    [f"{k}={kwargs[k]}" for k in params.keys()]
+                    [
+                        f"{k}={kwargs[k]}"
+                        for k in kwargs.keys()
+                        if k != "mlflow_run_id"
+                    ]  # Exclude mlflow parameter
                 )
+
+                # Only add --params if there are dynamic parameters
+                # Fix: Concatenate parameters into single command instead of separate args
+                full_command = node_command
+                if dynamic_parameters:
+                    full_command += f" --params {dynamic_parameters}"
 
                 return dsl.ContainerSpec(
                     image=image,
                     command=["/bin/bash", "-c"],
-                    args=[
-                        node_command,
-                        " --params",  # TODO what if there is no dynamic params?
-                        f" {dynamic_parameters}",
-                    ],
+                    args=[full_command],
                 )
 
             task = component(**component_params)

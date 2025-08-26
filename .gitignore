@@ -179,3 +179,14 @@ dictionary.dic
 
 # vs code
 .vscode
+
+/tests/infra/backend.tf
+/tests/infra/infra.env
+/tests/infra/.terraform
+/tests/infra/.terraform.lock.hcl
+
+# Development utilities with sensitive configuration
+dev-utils/local.env
+
+# E2E testing artifacts
+e2e-testing/
