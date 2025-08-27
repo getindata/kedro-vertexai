@@ -5,7 +5,7 @@ Vertex AI Pipelines specific client, based on AIPlatformClient.
 import datetime as dt
 import logging
 import os
-from datetime import UTC
+from datetime import timezone
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List, Optional
 
@@ -100,7 +100,7 @@ class VertexAIPipelinesClient:
 
     def _generate_run_name(self, config: PluginConfig):  # noqa
         return config.run_config.experiment_name.rstrip("-") + "-{}".format(
-            dt.datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+            dt.datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
         )
 
     def compile(self, pipeline, image, output, params: List[str] = []):
