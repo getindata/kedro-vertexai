@@ -35,7 +35,7 @@ known_third_party = ["click","google","kedro","kfp","kubernetes","tabulate", "py
 python = ">=3.10,<3.13"
 kedro = "^1.0.0"
 click = ">=8.0.4"
-kfp = ">=2.0.0,<2.9.0"
+kfp = ">=2.0.0,<2.16.0"  # Note: KFP 2.14+ adds additional resource fields to pipeline spec
 tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 toposort = ">1.0,<2.0"

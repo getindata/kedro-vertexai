@@ -290,10 +290,9 @@ class PipelineGenerator:
             task.set_cpu_limit(resources["cpu"])
             task.set_cpu_request(resources["cpu"])
         if "gpu" in resources and resources["gpu"]:
-            task.set_gpu_limit(resources["gpu"])
+            task.set_accelerator_limit(resources["gpu"])
         if "memory" in resources and resources["memory"]:
             task.set_memory_limit(resources["memory"])
             task.set_memory_request(resources["memory"])
         for constraint, value in node_selectors.items():
-            task.set_accelerator_type(constraint)
-            task.add_node_selector_constraint(value)
+            task.set_accelerator_type(value)
