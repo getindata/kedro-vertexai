@@ -35,12 +35,21 @@ class TestGenerator(unittest.TestCase):
 
     def test_should_group_when_enabled(self):
         # given
-        expected1 = {"cpuLimit": 0.1, "cpuRequest": 0.1}
+        expected1 = {
+            "cpuLimit": 0.1,
+            "cpuRequest": 0.1,
+            "resourceCpuLimit": "100m",
+            "resourceCpuRequest": "100m",
+        }
         expected2 = {
             "cpuLimit": 0.4,
             "cpuRequest": 0.4,
             "memoryLimit": 68.719476736,
             "memoryRequest": 68.719476736,
+            "resourceCpuLimit": "400m",
+            "resourceCpuRequest": "400m",
+            "resourceMemoryLimit": "64Gi",
+            "resourceMemoryRequest": "64Gi",
         }
         base = {
             "grouping": {"cls": "kedro_vertexai.grouping.TagNodeGrouper"},
@@ -159,6 +168,10 @@ class TestGenerator(unittest.TestCase):
                     assert component1_resources["memoryLimit"] == 68.719476736
                     assert component1_resources["cpuRequest"] == 0.4
                     assert component1_resources["memoryRequest"] == 68.719476736
+                    assert component1_resources["resourceCpuLimit"] == "400m"
+                    assert component1_resources["resourceCpuRequest"] == "400m"
+                    assert component1_resources["resourceMemoryLimit"] == "64Gi"
+                    assert component1_resources["resourceMemoryRequest"] == "64Gi"
                     assert component1_resources["accelerator"]["count"] == "1"
                     assert (
                         component1_resources["accelerator"]["type"]
@@ -170,6 +183,8 @@ class TestGenerator(unittest.TestCase):
                     ]["container"]["resources"]
                     assert component2_resources["cpuLimit"] == 0.1
                     assert component2_resources["cpuRequest"] == 0.1
+                    assert component2_resources["resourceCpuLimit"] == "100m"
+                    assert component2_resources["resourceCpuRequest"] == "100m"
 
     def test_should_set_description(self):
         # given
