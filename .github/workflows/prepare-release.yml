@@ -17,44 +17,13 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10']
-    env:
-      PYTHON_PACKAGE: kedro_vertexai
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4.7.1
+
+      - name: Prepare release
+        uses: ./.github/actions/prepare_release
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Validate inputs
-        run: |
-          echo "INPUT_VERSION_PART: ${{ github.event.inputs.version_part }}"
-          python -c "if '${{ github.event.inputs.version_part }}' not in ['patch', 'minor', 'major']:   raise ValueError(\"'${{ github.event.inputs.version_part }}' must be one of ['patch', 'minor', 'major'])\")"
-      - name: Bump the version number
-        id: bump_version
-        run: |
-          pip install bump2version
-          bumpversion ${{ github.event.inputs.version_part }}
-          echo "::set-output name=package_version::$(cat $PYTHON_PACKAGE/__init__.py | grep -Po  '\d+\.\d+\.\d+')"
-      - name: Update the CHANGELOG according to 'Keep a Changelog' guidelines
-        uses: thomaseizinger/keep-a-changelog-new-release@v1
-        with:
-          version: ${{ steps.bump_version.outputs.package_version }}
-      - name: Create a new release branch
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git checkout -b release-${{ steps.bump_version.outputs.package_version }}
-          git push -u origin release-${{ steps.bump_version.outputs.package_version }}
-      - name: Open a PR to merge the release to master
-        id: open_pr
-        uses: vsoch/pull-request-action@1.1.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PULL_REQUEST_BRANCH: master
-          PULL_REQUEST_FROM_BRANCH: release-${{ steps.bump_version.outputs.package_version }}
-          PULL_REQUEST_TITLE: "Release ${{ steps.bump_version.outputs.package_version }}"
-          PULL_REQUEST_BODY: "Bump version and CHANGELOG for next release."
-      - name: Commit the changes
-        run: |
-          git commit -am "FIX #${{ steps.open_pr.outputs.pull_request_number }}  - Bump version and CHANGELOG for release ${{ steps.bump_version.outputs.package_version }}"
-          git push
+          version_part: ${{ github.event.inputs.version_part }}
+          python_version: ${{ matrix.python-version }}
+          python_package: kedro_vertexai
+          github_token: ${{ secrets.GITHUB_TOKEN }}
