@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Improved GitHub workflows with modular reusable actions and secure fork PR testing
+
 ## [1.0.0] - 2025-08-26
 
 -   Attempt to fix parameters handling (#174)

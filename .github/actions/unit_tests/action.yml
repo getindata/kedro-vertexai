@@ -1,0 +1,40 @@
+name: "Unit Tests"
+description: "Run unit tests with pre-commit checks and tox"
+
+inputs:
+  python_version:
+    description: "Python version to use"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup python ${{ inputs.python_version }}
+      uses: actions/setup-python@v4.7.1
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Setup poetry
+      shell: bash
+      run: |
+        python -V
+        python -m pip install poetry --no-cache-dir
+
+    - name: Check pre-commit status
+      shell: bash
+      run: |
+        poetry install -v
+        poetry run pre-commit run --all-files
+
+    - name: Test with tox
+      shell: bash
+      run: |
+        pip install tox-pip-version tox-gh-actions "tox<4.0.0"
+        tox -v
+
+    - name: Store coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-${{ inputs.python_version }}
+        path: coverage.xml
+        if-no-files-found: error
