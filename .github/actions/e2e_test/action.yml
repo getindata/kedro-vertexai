@@ -1,0 +1,111 @@
+name: "E2E Test"
+description: "Run end-to-end tests against GCP Vertex AI infrastructure"
+
+inputs:
+  e2e_config:
+    description: "E2E test configuration (standard/grouping)"
+    required: true
+  python_version:
+    description: "Python version to use"
+    required: true
+    default: "3.10"
+  gcp_project_id:
+    description: "GCP Project ID"
+    required: true
+  gcp_sa_email:
+    description: "GCP Service Account Email"
+    required: true
+  gcp_wif_provider_id:
+    description: "GCP Workload Identity Provider ID"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup python
+      uses: actions/setup-python@v4.7.1
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Setup poetry
+      shell: bash
+      run: |
+        python -V
+        python -m pip install poetry
+
+    - name: Build the package
+      shell: bash
+      run: |
+        poetry build -f sdist
+
+    - name: Initialize starter project
+      shell: bash
+      run: |
+        pip install $(find "./dist" -name "*.tar.gz")
+        kedro new --starter spaceflights-pandas --config tests/e2e/${{ inputs.e2e_config }}/starter-config.yml --verbose --checkout=1.0.0
+
+    - name: Install starter requirements
+      shell: bash
+      working-directory: ./spaceflights
+      env:
+        PROJECT_NAME: kedro-vertexai
+      run: |
+        find "../dist" -name "*.tar.gz" | xargs -I@ cp @ $PROJECT_NAME.tar.gz
+        echo -e "\n./$PROJECT_NAME.tar.gz\n" >> requirements.txt
+        echo -e "kedro-docker\n" >> requirements.txt
+        sed -i '/kedro-telemetry/d' requirements.txt
+        echo $(cat requirements.txt)
+        pip install -r requirements.txt
+
+    - name: Init and update starter configuration
+      shell: bash
+      working-directory: ./spaceflights
+      env:
+        PROJECT_NAME: kedro-vertexai
+      run: |
+        kedro docker init
+        sed -i "s/\(COPY requirements.txt.*\)$/\1\nCOPY $PROJECT_NAME.tar.gz ./g" Dockerfile
+        cat Dockerfile
+        echo '!data/01_raw' >> .dockerignore
+        kedro vertexai init gid-ml-ops-sandbox europe-west4
+        cp -r ../tests/e2e/${{ inputs.e2e_config }}/overwrite/* .
+        sed -i "s/\(CONFIG_LOADER_ARGS.*\)$/from omegaconf.resolvers import oc\n\1\n      \"custom_resolvers\": { \"oc.env\": oc.env },/g" src/spaceflights/settings.py
+
+    - name: Prepare docker env
+      uses: docker/setup-buildx-action@v3
+      id: buildx
+      with:
+        install: true
+
+    - name: Authenticate to GCP via Workload Identity
+      uses: google-github-actions/auth@v2
+      id: auth
+      with:
+        token_format: 'access_token'
+        project_id: ${{ inputs.gcp_project_id }}
+        service_account: ${{ inputs.gcp_sa_email }}
+        workload_identity_provider: ${{ inputs.gcp_wif_provider_id }}
+
+    - name: Docker Auth
+      id: docker-auth
+      uses: docker/login-action@v1
+      with:
+        username: 'oauth2accesstoken'
+        password: ${{ steps.auth.outputs.access_token }}
+        registry: 'europe-west1-docker.pkg.dev'
+
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: ./spaceflights
+        push: true
+        tags: 'europe-west1-docker.pkg.dev/gid-labs-mlops-sandbox/kedro-e2e/kedro-vertexai-e2e:${{ inputs.e2e_config }}'
+        build-args: |
+          BASE_IMAGE=python:3.10-slim
+
+    - name: Run project on vertex pipeline
+      shell: bash
+      working-directory: ./spaceflights
+      run: |
+        export KEDRO_CONFIG_COMMIT_ID=$GITHUB_SHA
+        kedro vertexai run-once --wait-for-completion

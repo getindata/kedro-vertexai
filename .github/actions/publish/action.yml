@@ -1,0 +1,79 @@
+name: "Publish Package"
+description: "Build and publish package to PyPI with GitHub release"
+
+inputs:
+  python_version:
+    description: "Python version to use"
+    required: true
+    default: "3.10"
+  python_package:
+    description: "Python package name"
+    required: true
+    default: "kedro_vertexai"
+  github_token:
+    description: "GitHub token for authentication"
+    required: true
+  pypi_password:
+    description: "PyPI password/token for publishing"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python_version }}
+      uses: actions/setup-python@v4.7.1
+      with:
+        python-version: ${{ inputs.python_version }}
+
+    - name: Build package dist from source
+      shell: bash
+      run: |
+        pip install poetry
+        poetry build
+
+    - name: Merge back to develop
+      shell: bash
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git checkout -B develop --track origin/develop
+        git merge master
+        git push
+
+    - name: Set dynamically package version as output variable
+      id: set_package_version
+      shell: bash
+      run: |
+        echo "::set-output name=PACKAGE_VERSION::$(cat ${{ inputs.python_package }}/__init__.py | grep -Po  '\d+\.\d+\.\d+')"
+
+    - name: Create temporary file with the body content for the release
+      shell: bash
+      run: |
+        grep -Poz "## \[${{steps.set_package_version.outputs.PACKAGE_VERSION}}] - \d{4}-\d{2}-\d{2}[\S\s]+?(?=## \[\d+\.\d+\.\d+\]|\[.+\]:)" CHANGELOG.md > release_body.md
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1.1.4
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      with:
+        tag_name: ${{ steps.set_package_version.outputs.PACKAGE_VERSION }}
+        release_name: Release ${{ steps.set_package_version.outputs.PACKAGE_VERSION }}
+        body_path: ./release_body.md
+        draft: false
+        prerelease: false
+
+    - name: Rollback Release in case of run failure
+      if: failure() && steps.create_release.outputs.id != ''
+      uses: author/action-rollback@stable
+      with:
+        release_id: ${{ steps.create_release.outputs.id }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        user: __token__
+        password: ${{ inputs.pypi_password }}
+        verbose: true
