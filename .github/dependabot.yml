@@ -62,7 +62,7 @@ updates:
 
     ignore:
       - dependency-name: protobuf
-        versions: ["3.x", "4.x"]
+        versions: [">= 3.0, < 5.0"]
 
   # GitHub Actions ecosystem
   - package-ecosystem: "github-actions"
