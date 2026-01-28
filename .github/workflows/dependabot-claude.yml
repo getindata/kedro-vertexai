@@ -13,7 +13,6 @@ permissions:
   pull-requests: write
   id-token: write
   actions: read
-  security-events: read
 
 jobs:
   # Main review job - runs on new/updated Dependabot PRs
@@ -36,19 +35,11 @@ jobs:
             Title: ${{ github.event.pull_request.title }}
 
             Instructions:
-            1. Check if this is a SECURITY update:
-               - Run: gh pr view ${{ github.event.pull_request.number }} --json labels,body
-               - Look for "security" label or "vulnerabilit" in body
-               - Run: gh api repos/${{ github.repository }}/dependabot/alerts --jq '.[] | select(.state=="open")'
-                 to see if this PR addresses any open security alerts
-            2. Read the PR diff to understand what's being updated
-            3. Fetch the changelog/release notes for the updated package(s)
-            4. Analyze if there are breaking changes
+            1. Read the PR diff to understand what's being updated
+            2. Fetch the changelog/release notes for the updated package(s)
+            3. Analyze if there are breaking changes
 
-            Decision rules - SECURITY UPDATES GET PRIORITY:
-            - For SECURITY fixes (any dependency with vulnerability):
-              Approve and enable auto-merge IMMEDIATELY, regardless of dependency category
-              Include CVE/advisory details in the approval message
+            Decision rules: 
             - For dev/test dependencies (pytest, tox, pre-commit, responses):
               Approve and enable auto-merge
             - For minor utilities (click, tabulate, semver, pydantic, etc.):
@@ -64,7 +55,9 @@ jobs:
             - To approve + auto-merge: gh pr review --approve -b "message" && gh pr merge --auto --squash
             - To approve only (core deps): gh pr review --approve -b "message - @em-pe please merge when ready"
 
-          claude_args: "--max-turns 10 --allowedTools Read,Glob,Grep,Bash(gh:*),WebFetch"
+          claude_args: |
+            --max-turns 10
+            --allowedTools "Read,Glob,Grep,Bash,WebFetch"
 
   # Fix CI failures on Dependabot PRs
   fix-failures:
@@ -129,8 +122,11 @@ jobs:
                - Type errors, import changes, API deprecations
                - Test failures due to changed behavior
                - Any other compatibility issues
-            4. Commit and push the fix
-            5. Leave a comment on the PR explaining what was fixed
+            4. Run tests locally to verify the fix:
+               - poetry install --all-extras (if needed)
+               - poetry run pytest tests/ -x (stop on first failure)
+            5. Commit and push the fix
+            6. Leave a comment on the PR explaining what was fixed
 
             If the fix requires significant architectural changes or you're unsure:
             - Don't make changes
