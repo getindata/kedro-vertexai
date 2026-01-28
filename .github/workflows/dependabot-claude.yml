@@ -13,6 +13,7 @@ permissions:
   pull-requests: write
   id-token: write
   actions: read
+  security-events: read
 
 jobs:
   # Main review job - runs on new/updated Dependabot PRs
@@ -27,6 +28,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "dependabot[bot]"
           prompt: |
             Review this Dependabot dependency update PR.
 
@@ -34,11 +36,19 @@ jobs:
             Title: ${{ github.event.pull_request.title }}
 
             Instructions:
-            1. Read the PR diff to understand what's being updated
-            2. Fetch the changelog/release notes for the updated package(s)
-            3. Analyze if there are breaking changes
+            1. Check if this is a SECURITY update:
+               - Run: gh pr view ${{ github.event.pull_request.number }} --json labels,body
+               - Look for "security" label or "vulnerabilit" in body
+               - Run: gh api repos/${{ github.repository }}/dependabot/alerts --jq '.[] | select(.state=="open")'
+                 to see if this PR addresses any open security alerts
+            2. Read the PR diff to understand what's being updated
+            3. Fetch the changelog/release notes for the updated package(s)
+            4. Analyze if there are breaking changes
 
-            Decision rules - APPROVE ALL updates, but vary the merge strategy:
+            Decision rules - SECURITY UPDATES GET PRIORITY:
+            - For SECURITY fixes (any dependency with vulnerability):
+              Approve and enable auto-merge IMMEDIATELY, regardless of dependency category
+              Include CVE/advisory details in the approval message
             - For dev/test dependencies (pytest, tox, pre-commit, responses):
               Approve and enable auto-merge
             - For minor utilities (click, tabulate, semver, pydantic, etc.):
@@ -106,6 +116,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_bots: "dependabot[bot]"
           prompt: |
             CI tests failed on Dependabot PR #${{ fromJSON(steps.check-dependabot.outputs.result).prNumber }}.
             Title: ${{ fromJSON(steps.check-dependabot.outputs.result).prTitle }}
