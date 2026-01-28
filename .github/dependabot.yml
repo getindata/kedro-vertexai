@@ -1,15 +1,75 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+# Dependabot configuration for kedro-vertexai
+# Documentation: https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+
+    # Keep impactful dependencies separate for careful review
+    # kedro, kfp, google-cloud-aiplatform, mlflow will get individual PRs
+
+    groups:
+      # Development/testing tools - low risk, batch together
+      dev-dependencies:
+        patterns:
+          - "pytest*"
+          - "tox"
+          - "pre-commit"
+          - "responses"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Google Cloud SDK packages - often updated together
+      google-cloud:
+        patterns:
+          - "google-auth"
+          - "google-cloud-*"
+          - "gcsfs"
+          - "fsspec"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # gRPC and serialization - compatibility-sensitive group
+      grpc-serialization:
+        patterns:
+          - "grpcio*"
+          - "protobuf"
+        update-types:
+          - "minor"
+          - "patch"
+
+      # Minor utilities - low impact, safe to batch
+      minor-utilities:
+        patterns:
+          - "click"
+          - "tabulate"
+          - "semver"
+          - "toposort"
+          - "cachetools"
+          - "cloudpickle"
+          - "makefun"
+          - "pydantic"
+          - "pyarrow"
+        update-types:
+          - "minor"
+          - "patch"
+
     ignore:
       - dependency-name: protobuf
-        versions: ["3.x", "4.x"]
+        versions: [">= 3.0, < 5.0"]
+
+  # GitHub Actions ecosystem
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns:
+          - "*"

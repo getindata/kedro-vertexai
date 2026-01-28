@@ -1,0 +1,131 @@
+name: Dependabot Claude Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  # Also trigger when CI completes to handle failures
+  workflow_run:
+    workflows: ["Test & Publish"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+  actions: read
+
+jobs:
+  # Main review job - runs on new/updated Dependabot PRs
+  review:
+    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Claude reviews and handles Dependabot PR
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this Dependabot dependency update PR.
+
+            PR: #${{ github.event.pull_request.number }}
+            Title: ${{ github.event.pull_request.title }}
+
+            Instructions:
+            1. Read the PR diff to understand what's being updated
+            2. Fetch the changelog/release notes for the updated package(s)
+            3. Analyze if there are breaking changes
+
+            Decision rules - APPROVE ALL updates, but vary the merge strategy:
+            - For dev/test dependencies (pytest, tox, pre-commit, responses):
+              Approve and enable auto-merge
+            - For minor utilities (click, tabulate, semver, pydantic, etc.):
+              Approve and enable auto-merge
+            - For Google Cloud packages (google-cloud-*, google-auth, gcsfs, fsspec):
+              Approve and enable auto-merge
+            - For gRPC packages (grpcio, grpcio-status, protobuf):
+              Approve and enable auto-merge
+            - For core dependencies (kedro, kfp, google-cloud-aiplatform, mlflow):
+              Approve with detailed review comment, tag @em-pe for manual merge
+
+            Commands:
+            - To approve + auto-merge: gh pr review --approve -b "message" && gh pr merge --auto --squash
+            - To approve only (core deps): gh pr review --approve -b "message - @em-pe please merge when ready"
+
+          claude_args: "--max-turns 10 --allowedTools Read,Glob,Grep,Bash(gh:*),WebFetch"
+
+  # Fix CI failures on Dependabot PRs
+  fix-failures:
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_branch != 'master' &&
+      github.event.workflow_run.head_branch != 'develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if this is a Dependabot PR
+        id: check-dependabot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${context.payload.workflow_run.head_branch}`,
+              state: 'open'
+            });
+
+            if (prs.data.length === 0) {
+              return { isDependabot: false };
+            }
+
+            const pr = prs.data[0];
+            return {
+              isDependabot: pr.user.login === 'dependabot[bot]',
+              prNumber: pr.number,
+              prTitle: pr.title
+            };
+
+      - name: Checkout repository
+        if: fromJSON(steps.check-dependabot.outputs.result).isDependabot
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+
+      - name: Setup git identity
+        if: fromJSON(steps.check-dependabot.outputs.result).isDependabot
+        run: |
+          git config --global user.email "claude[bot]@users.noreply.github.com"
+          git config --global user.name "claude[bot]"
+
+      - name: Claude fixes CI failures
+        if: fromJSON(steps.check-dependabot.outputs.result).isDependabot
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            CI tests failed on Dependabot PR #${{ fromJSON(steps.check-dependabot.outputs.result).prNumber }}.
+            Title: ${{ fromJSON(steps.check-dependabot.outputs.result).prTitle }}
+            Failed workflow run: ${{ github.event.workflow_run.html_url }}
+
+            Instructions:
+            1. Get the CI failure logs: gh run view ${{ github.event.workflow_run.id }} --log-failed
+            2. Analyze what broke due to the dependency update
+            3. Fix the issues:
+               - Type errors, import changes, API deprecations
+               - Test failures due to changed behavior
+               - Any other compatibility issues
+            4. Commit and push the fix
+            5. Leave a comment on the PR explaining what was fixed
+
+            If the fix requires significant architectural changes or you're unsure:
+            - Don't make changes
+            - Leave a detailed comment explaining the issue
+            - Tag @em-pe for manual attention
+
+          claude_args: |
+            --max-turns 15
+            --allowedTools Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(gh:*),Bash(poetry:*),Bash(pytest:*)
