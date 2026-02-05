@@ -17,9 +17,19 @@ permissions:
 jobs:
   # Main review job - runs on new/updated Dependabot PRs
   review:
-    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    # TODO: Restore dependabot check after debugging: github.actor == 'dependabot[bot]'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Debug - Print event info
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "PR Title: ${{ github.event.pull_request.title }}"
+          echo "Head Ref: ${{ github.head_ref }}"
+          echo "Base Ref: ${{ github.base_ref }}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -27,7 +37,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # TODO: Restore after debugging
           allowed_bots: "dependabot[bot]"
+          show_full_output: true
           prompt: |
             Review this Dependabot dependency update PR.
 
