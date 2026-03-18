@@ -4,6 +4,20 @@ on:
   workflow_run:
     workflows: ["Test & Publish"]
     types: [completed]
+  # TODO: Remove workflow_dispatch before merging to develop (testing only)
+  workflow_dispatch:
+    inputs:
+      head_branch:
+        description: "Dependabot branch name (e.g. dependabot/pip/foo-1.0.0)"
+        required: true
+        type: string
+      conclusion:
+        description: "Simulated CI conclusion"
+        required: true
+        type: choice
+        options:
+          - success
+          - failure
 
 permissions:
   contents: write
@@ -13,14 +27,18 @@ permissions:
 jobs:
   manage-dependabot-pr:
     runs-on: ubuntu-latest
-    if: startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    if: >
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/') ||
+      startsWith(github.event.inputs.head_branch, 'dependabot/')
+    env:
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.inputs.head_branch }}
+      CONCLUSION: ${{ github.event.workflow_run.conclusion || github.event.inputs.conclusion }}
     steps:
       - name: Get PR info
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
           PR_DATA=$(gh pr list --repo "${{ github.repository }}" \
             --head "$HEAD_BRANCH" --state open --json number,title --jq '.[0]')
 
@@ -38,7 +56,7 @@ jobs:
           echo "found=true" >> "$GITHUB_OUTPUT"
 
           # Core dependencies that require manual review
-          CORE_DEPS="^Bump (kedro|kfp|google-cloud-aiplatform) "
+          CORE_DEPS="(kedro|kfp|google-cloud-aiplatform)[ -]"
           if echo "$PR_TITLE" | grep -qiE "$CORE_DEPS"; then
             echo "is_core=true" >> "$GITHUB_OUTPUT"
           else
@@ -48,7 +66,7 @@ jobs:
       - name: Auto-merge non-core dependency (CI passed)
         if: >
           steps.pr.outputs.found == 'true' &&
-          github.event.workflow_run.conclusion == 'success' &&
+          env.CONCLUSION == 'success' &&
           steps.pr.outputs.is_core == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,7 +82,7 @@ jobs:
         id: changelog
         if: >
           steps.pr.outputs.found == 'true' &&
-          github.event.workflow_run.conclusion == 'success' &&
+          env.CONCLUSION == 'success' &&
           steps.pr.outputs.is_core == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -127,7 +145,7 @@ jobs:
       - name: Request review for core dependency (CI passed)
         if: >
           steps.pr.outputs.found == 'true' &&
-          github.event.workflow_run.conclusion == 'success' &&
+          env.CONCLUSION == 'success' &&
           steps.pr.outputs.is_core == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -154,7 +172,7 @@ jobs:
       - name: Handle CI failure
         if: >
           steps.pr.outputs.found == 'true' &&
-          github.event.workflow_run.conclusion == 'failure'
+          env.CONCLUSION == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
