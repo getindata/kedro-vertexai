@@ -2367,15 +2367,15 @@ test = ["behave (==1.2.6)", "coverage[toml]", "detect-secrets (>=1.5.0,<1.6.0)",
 
 [[package]]
 name = "kedro-mlflow"
-version = "1.0.1"
+version = "1.0.2"
 description = "A kedro-plugin to use mlflow in your kedro projects"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
 markers = "extra == \"mlflow\""
 files = [
-    {file = "kedro_mlflow-1.0.1-py3-none-any.whl", hash = "sha256:1e9a2c2624ace3bdfa3c7cc28337b2e058bbf0f2b973197347b0320d210d784f"},
-    {file = "kedro_mlflow-1.0.1.tar.gz", hash = "sha256:174d4bf45cf29cb2c53a54f5ff5203d5f8bd130cb07364ae1e99aceeb9262270"},
+    {file = "kedro_mlflow-1.0.2-py3-none-any.whl", hash = "sha256:16777a8a9da39d1426b5cbb2f893c75ce1e48d5c89f89583bc4b52393e767381"},
+    {file = "kedro_mlflow-1.0.2.tar.gz", hash = "sha256:8dbc549befc48708903671706784991d3d7fb6dc5e78add35e5116f52da3f188"},
 ]
 
 [package.dependencies]
