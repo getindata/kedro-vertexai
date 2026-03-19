@@ -40,7 +40,7 @@ jobs:
         python_version: ${{ matrix.python-version }}
 
   sonarcloud_trusted_branch:
-    if: (github.event_name != 'repository_dispatch' && (github.event.pull_request.head.repo.full_name == github.repository || github.event.pull_request == null))  &&  (github.actor != 'dependabot[bot]')
+    if: (github.event_name != 'repository_dispatch' && (github.event.pull_request.head.repo.full_name == github.repository || github.event.pull_request == null))
     runs-on: ubuntu-latest
     needs: unit_tests
     steps:
