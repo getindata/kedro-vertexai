@@ -30,7 +30,7 @@ jobs:
         python-version: ['3.10', '3.11', '3.12']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit_tests
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit_tests
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
         ref: ${{ github.event.client_payload.pull_request.head.sha || github.event.pull_request.head.sha }}
@@ -89,19 +89,19 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: python
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   ### PROJECT SPECIFIC CONFIGURATION HERE
   e2e_tests_trusted_branch:
@@ -115,7 +115,7 @@ jobs:
         e2e_case: ["standard", "grouping"]
         python-version: ['3.10']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -145,7 +145,7 @@ jobs:
         e2e_case: ["standard", "grouping"]
         python-version: ['3.10']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.client_payload.pull_request.head.sha }}
 
@@ -171,7 +171,7 @@ jobs:
         python-version: ['3.10']
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # necessary to enable merging, all the history is needed
 
