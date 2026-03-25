@@ -63,8 +63,7 @@ jobs:
       contains(
         github.event.client_payload.pull_request.head.sha,
         github.event.client_payload.slash_command.args.named.sha
-      ) &&
-      (github.actor != 'dependabot[bot]')
+      )
     runs-on: ubuntu-latest
     needs: unit_tests
     steps:

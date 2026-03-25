@@ -4,20 +4,6 @@ on:
   workflow_run:
     workflows: ["Test & Publish"]
     types: [completed]
-  # TODO: Remove workflow_dispatch before merging to develop (testing only)
-  workflow_dispatch:
-    inputs:
-      head_branch:
-        description: "Dependabot branch name (e.g. dependabot/pip/foo-1.0.0)"
-        required: true
-        type: string
-      conclusion:
-        description: "Simulated CI conclusion"
-        required: true
-        type: choice
-        options:
-          - success
-          - failure
 
 permissions:
   contents: write
@@ -27,12 +13,10 @@ permissions:
 jobs:
   manage-dependabot-pr:
     runs-on: ubuntu-latest
-    if: >
-      startsWith(github.event.workflow_run.head_branch, 'dependabot/') ||
-      startsWith(github.event.inputs.head_branch, 'dependabot/')
+    if: startsWith(github.event.workflow_run.head_branch, 'dependabot/')
     env:
-      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || github.event.inputs.head_branch }}
-      CONCLUSION: ${{ github.event.workflow_run.conclusion || github.event.inputs.conclusion }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      CONCLUSION: ${{ github.event.workflow_run.conclusion }}
     steps:
       - name: Get PR info
         id: pr
@@ -70,77 +54,14 @@ jobs:
           steps.pr.outputs.is_core == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ steps.pr.outputs.number }}
         run: |
-          gh pr review "${{ steps.pr.outputs.number }}" \
+          gh pr review "$PR_NUM" \
             --repo "${{ github.repository }}" --approve \
             --body "CI passed. Auto-approving non-core dependency update."
-          gh pr merge "${{ steps.pr.outputs.number }}" \
+          gh pr merge "$PR_NUM" \
             --repo "${{ github.repository }}" --squash \
             --body "Auto-merged by Dependabot Auto-Manager"
-
-      - name: Fetch changelog for core dependency
-        id: changelog
-        if: >
-          steps.pr.outputs.found == 'true' &&
-          env.CONCLUSION == 'success' &&
-          steps.pr.outputs.is_core == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          PR_TITLE="${{ steps.pr.outputs.title }}"
-
-          # Extract package name and versions from Dependabot PR title
-          # Format: "Bump <package> from <old> to <new>"
-          PKG=$(echo "$PR_TITLE" | sed -n 's/^Bump \([^ ]*\) from .*/\1/ip')
-          OLD_VER=$(echo "$PR_TITLE" | sed -n 's/.*from \([^ ]*\) to .*/\1/ip')
-          NEW_VER=$(echo "$PR_TITLE" | sed -n 's/.*to \([^ ]*\)$/\1/ip')
-
-          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
-          echo "old_ver=$OLD_VER" >> "$GITHUB_OUTPUT"
-          echo "new_ver=$NEW_VER" >> "$GITHUB_OUTPUT"
-
-          # Try to get GitHub releases between old and new version
-          # Map PyPI package names to GitHub repos
-          declare -A REPO_MAP=(
-            ["kedro"]="kedro-org/kedro"
-            ["kfp"]="kubeflow/pipelines"
-            ["google-cloud-aiplatform"]="googleapis/python-aiplatform"
-          )
-
-          GH_REPO="${REPO_MAP[$PKG]}"
-          CHANGES=""
-
-          if [ -n "$GH_REPO" ]; then
-            # Fetch releases between old and new version
-            CHANGES=$(gh api "repos/$GH_REPO/releases" --paginate --jq \
-              ".[] | select(.tag_name | test(\"v?${NEW_VER}\")) | .body" \
-              2>/dev/null | head -200)
-
-            # Fallback: fetch the latest release if exact match fails
-            if [ -z "$CHANGES" ]; then
-              CHANGES=$(gh api "repos/$GH_REPO/releases" --jq \
-                "[.[] | select(.tag_name | test(\"v?[0-9]\")) | {tag: .tag_name, body: .body}] |
-                 [.[] | select(
-                   (.tag | ltrimstr(\"v\")) as \$v |
-                   (\$v >= \"$OLD_VER\" and \$v <= \"$NEW_VER\")
-                 )] | .[].body" 2>/dev/null | head -200)
-            fi
-
-            # Last fallback: just get the latest release body
-            if [ -z "$CHANGES" ]; then
-              CHANGES=$(gh api "repos/$GH_REPO/releases/latest" --jq '.body' 2>/dev/null | head -100)
-              CHANGES="(Could not match exact versions — showing latest release notes)
-
-          $CHANGES"
-            fi
-          fi
-
-          if [ -z "$CHANGES" ]; then
-            CHANGES="Could not automatically fetch changelog. Please check the release notes manually."
-          fi
-
-          # Write to file to avoid shell escaping issues
-          echo "$CHANGES" > /tmp/changelog.txt
 
       - name: Request review for core dependency (CI passed)
         if: >
@@ -149,25 +70,12 @@ jobs:
           steps.pr.outputs.is_core == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ steps.pr.outputs.number }}
         run: |
-          CHANGELOG=$(cat /tmp/changelog.txt 2>/dev/null || echo "Changelog not available.")
-
-          gh pr comment "${{ steps.pr.outputs.number }}" \
-            --repo "${{ github.repository }}" --body "$(cat <<EOF
-          All CI checks passed for this core dependency update: **${{ steps.pr.outputs.title }}**
-
-          @em-pe Please review and merge manually — this is a core dependency.
-
-          ### Changelog: \`${{ steps.changelog.outputs.pkg }}\` ${{ steps.changelog.outputs.old_ver }} → ${{ steps.changelog.outputs.new_ver }}
-
-          <details>
-          <summary>Key changes</summary>
-
-          $CHANGELOG
-
-          </details>
-          EOF
-          )"
+          # Dispatch the review agent to fetch changelog and comment
+          gh workflow run dependabot-review.lock.yml \
+            --repo "${{ github.repository }}" \
+            -f pr_number="$PR_NUM"
 
       - name: Handle CI failure
         if: >
@@ -175,6 +83,7 @@ jobs:
           env.CONCLUSION == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
         run: |
           PR_NUM="${{ steps.pr.outputs.number }}"
           REPO="${{ github.repository }}"
@@ -184,16 +93,21 @@ jobs:
             --json labels --jq '[.labels[].name | select(startswith("fix-attempt-"))] | length')
 
           if [ "$ATTEMPT_COUNT" -ge 3 ]; then
-            gh pr comment "$PR_NUM" --repo "$REPO" --body "$(cat <<'EOF'
-          Auto-fix failed after 3 attempts for: **${{ steps.pr.outputs.title }}**
+            # Ensure label exists before applying
+            gh label create "manual-review-needed" --repo "$REPO" \
+              --color "d93f0b" --description "Requires manual intervention" 2>/dev/null || true
+            gh pr comment "$PR_NUM" --repo "$REPO" --body \
+              "Auto-fix failed after 3 attempts for: **${PR_TITLE}**
 
-          @em-pe Manual intervention required. The automated agent was unable to resolve the CI failures.
-          EOF
-            )"
+          @em-pe Manual intervention required. The automated agent was unable to resolve the CI failures."
             gh pr edit "$PR_NUM" --repo "$REPO" --add-label "manual-review-needed"
           else
             NEXT_ATTEMPT=$((ATTEMPT_COUNT + 1))
-            gh pr edit "$PR_NUM" --repo "$REPO" --add-label "fix-attempt-${NEXT_ATTEMPT}"
+            LABEL="fix-attempt-${NEXT_ATTEMPT}"
+            # Ensure label exists before applying
+            gh label create "$LABEL" --repo "$REPO" \
+              --color "fbca04" --description "Automated fix attempt $NEXT_ATTEMPT" 2>/dev/null || true
+            gh pr edit "$PR_NUM" --repo "$REPO" --add-label "$LABEL"
 
             # Trigger the agentic fix workflow
             gh workflow run dependabot-fix.lock.yml \
