@@ -2430,60 +2430,61 @@ test = ["PyYAML (==5.3.1)", "pytest", "pytest-cov", "pytest-mock", "pytest-xdist
 
 [[package]]
 name = "kfp"
-version = "2.14.2"
+version = "2.16.0"
 description = "Kubeflow Pipelines SDK"
 optional = false
 python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "kfp-2.14.2-py3-none-any.whl", hash = "sha256:cd3a2ec3f62e288bb8fb6b5d85fafcd2f9b9f19b1fa8df909c44b2b31f61f992"},
-    {file = "kfp-2.14.2.tar.gz", hash = "sha256:dd219dda447fb33f163ef779e612d4e03b9ae50ca3ea1dd458ac47dd002ecf80"},
+    {file = "kfp-2.16.0-py3-none-any.whl", hash = "sha256:c06e5b24c5d4ddc9a65eb1f4ab120437d97a10c483d87fb41ce2f91a30f5aedb"},
+    {file = "kfp-2.16.0.tar.gz", hash = "sha256:08b0cdf3c34ac89e73995ba647d1815d09dfe527c59092ff44e136e18213270e"},
 ]
 
 [package.dependencies]
-click = "8.1.8"
+click = ">=8.1.8"
 click-option-group = "0.5.7"
 docstring-parser = ">=0.7.3,<1"
 google-api-core = ">=1.31.5,<2.0.dev0 || >2.3.0,<3.0.0dev"
 google-auth = ">=1.6.1,<3"
 google-cloud-storage = ">=2.2.1,<4"
-kfp-pipeline-spec = "2.14.0"
-kfp-server-api = ">=2.14.0,<3"
+kfp-pipeline-spec = ">=2.16.0,<3"
+kfp-server-api = ">=2.16.0,<3"
 kubernetes = ">=8.0.0,<31"
-protobuf = "6.31.1"
+protobuf = ">=6.31.1,<7.0"
 PyYAML = ">=5.3,<7"
 requests-toolbelt = ">=0.8.0,<2"
 tabulate = ">=0.8.6,<1"
 urllib3 = "<3.0.0"
 
 [package.extras]
-all = ["docker", "kfp-kubernetes (<2)"]
-kubernetes = ["kfp-kubernetes (<2)"]
+all = ["docker", "ipykernel (>=6,<7)", "jupyter_client (>=7,<9)", "kfp-kubernetes (==2.16.0)", "nbclient (>=0.10,<1)"]
+kubernetes = ["kfp-kubernetes (==2.16.0)"]
+notebooks = ["ipykernel (>=6,<7)", "jupyter_client (>=7,<9)", "nbclient (>=0.10,<1)"]
 
 [[package]]
 name = "kfp-pipeline-spec"
-version = "2.14.0"
+version = "2.16.0"
 description = "Kubeflow Pipelines pipeline spec"
 optional = false
 python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "kfp_pipeline_spec-2.14.0-py3-none-any.whl", hash = "sha256:569cee7743e7d99dc94fd4a8f33f292ef2e49bfd9a28d11833f2c6af3135f389"},
-    {file = "kfp_pipeline_spec-2.14.0.tar.gz", hash = "sha256:8fb59236cf6d8ea715d2aa6caa2242554eeeed7f196d4e226b99d9700e0e7a7b"},
+    {file = "kfp_pipeline_spec-2.16.0-py3-none-any.whl", hash = "sha256:02dc0feff42b1bca14f798fbd2264a537e697411527c6ee6343ed5546f1ea172"},
+    {file = "kfp_pipeline_spec-2.16.0.tar.gz", hash = "sha256:96b6fe189978aac8e3c928611d467788914c7e5ff2c6ca313279116734e2e26c"},
 ]
 
 [package.dependencies]
-protobuf = "6.31.1"
+protobuf = ">=6.31.1,<7.0"
 
 [[package]]
 name = "kfp-server-api"
-version = "2.14.0"
+version = "2.16.0"
 description = "Kubeflow Pipelines API"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "kfp_server_api-2.14.0.tar.gz", hash = "sha256:7470bb084b057c367f176b82a2837cae8a34b0b73fff06722a010fcea6edf418"},
+    {file = "kfp_server_api-2.16.0.tar.gz", hash = "sha256:32243e9eed9a386110e0363cbdc88b026f177bd5a1a53b63684bc0a47eb665a3"},
 ]
 
 [package.dependencies]
@@ -5316,4 +5317,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "77507ce17a1d875959d7d2ce8f1b5d900bbb34ee90aa844878f70c80d052e117"
+content-hash = "3cc9aecea730994e8fcc2a007bd85972940c1cac078878c6709890b67a29764f"
