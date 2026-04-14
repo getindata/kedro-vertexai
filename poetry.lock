@@ -1540,14 +1540,14 @@ grpc = ["grpcio (>=1.33.2,<2.0.0)", "grpcio (>=1.49.1,<2.0.0) ; python_version >
 
 [[package]]
 name = "google-auth"
-version = "2.49.1"
+version = "2.49.2"
 description = "Google Authentication Library"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "google_auth-2.49.1-py3-none-any.whl", hash = "sha256:195ebe3dca18eddd1b3db5edc5189b76c13e96f29e73043b923ebcf3f1a860f7"},
-    {file = "google_auth-2.49.1.tar.gz", hash = "sha256:16d40da1c3c5a0533f57d268fe72e0ebb0ae1cc3b567024122651c045d879b64"},
+    {file = "google_auth-2.49.2-py3-none-any.whl", hash = "sha256:c2720924dfc82dedb962c9f52cabb2ab16714fd0a6a707e40561d217574ed6d5"},
+    {file = "google_auth-2.49.2.tar.gz", hash = "sha256:c1ae38500e73065dcae57355adb6278cf8b5c8e391994ae9cbadbcb9631ab409"},
 ]
 
 [package.dependencies]
@@ -1588,14 +1588,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.143.0"
+version = "1.147.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.143.0-py2.py3-none-any.whl", hash = "sha256:78df97d044859f743a9cc48b89a260d33579b0d548b1589bb3ae9f4c2afc0c5a"},
-    {file = "google_cloud_aiplatform-1.143.0.tar.gz", hash = "sha256:1f0124a89795a6b473deb28724dd37d95334205df3a9c9c48d0b8d7a3d5d5cc4"},
+    {file = "google_cloud_aiplatform-1.147.0-py2.py3-none-any.whl", hash = "sha256:29f7ae020718d3c45094f0475464e06a97f81b1572bea150ae6a1b22c5f45997"},
+    {file = "google_cloud_aiplatform-1.147.0.tar.gz", hash = "sha256:b2e1b669ba37f02426e03eb13187eebf4cbfeaa0a3bfed37b5578abb375ab689"},
 ]
 
 [package.dependencies]
@@ -1605,7 +1605,7 @@ google-auth = ">=2.47.0,<3.0.0"
 google-cloud-bigquery = ">=1.15.0,<3.20.0 || >3.20.0,<4.0.0"
 google-cloud-resource-manager = ">=1.3.3,<3.0.0"
 google-cloud-storage = {version = ">=1.32.0,<4.0.0", markers = "python_version < \"3.13\""}
-google-genai = {version = ">=1.59.0,<2.0.0", markers = "python_version >= \"3.10\""}
+google-genai = {version = ">=1.66.0,<2.0.0", markers = "python_version >= \"3.10\""}
 numpy = {version = ">=1.15.0", optional = true, markers = "extra == \"metadata\""}
 packaging = ">=14.3"
 pandas = {version = ">=1.0.0", optional = true, markers = "extra == \"metadata\""}
@@ -1828,31 +1828,32 @@ testing = ["pytest"]
 
 [[package]]
 name = "google-genai"
-version = "1.60.0"
+version = "1.73.0"
 description = "GenAI Python SDK"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_genai-1.60.0-py3-none-any.whl", hash = "sha256:967338378ffecebec19a8ed90cf8797b26818bacbefd7846a9280beb1099f7f3"},
-    {file = "google_genai-1.60.0.tar.gz", hash = "sha256:9768061775fddfaecfefb0d6d7a6cabefb3952ebd246cd5f65247151c07d33d1"},
+    {file = "google_genai-1.73.0-py3-none-any.whl", hash = "sha256:dfb0214b834bf977e3841de512cfb651d2fe76309f85064b80c2bc11da99d76b"},
+    {file = "google_genai-1.73.0.tar.gz", hash = "sha256:569395b2c225e12bcd8758b8affe1af480e0a1b1c71d652d38c705677057e05f"},
 ]
 
 [package.dependencies]
 anyio = ">=4.8.0,<5.0.0"
 distro = ">=1.7.0,<2"
-google-auth = {version = ">=2.47.0,<3.0.0", extras = ["requests"]}
+google-auth = {version = ">=2.48.1,<3.0.0", extras = ["requests"]}
 httpx = ">=0.28.1,<1.0.0"
 pydantic = ">=2.9.0,<3.0.0"
 requests = ">=2.28.1,<3.0.0"
 sniffio = "*"
 tenacity = ">=8.2.3,<9.2.0"
-typing-extensions = ">=4.11.0,<5.0.0"
-websockets = ">=13.0.0,<15.1.0"
+typing-extensions = ">=4.14.0,<5.0.0"
+websockets = ">=13.0.0,<17.0"
 
 [package.extras]
-aiohttp = ["aiohttp (<3.13.3)"]
+aiohttp = ["aiohttp (>=3.10.11,<4.0.0)"]
 local-tokenizer = ["protobuf", "sentencepiece (>=0.2.0)"]
+pyopenssl = ["pyopenssl"]
 
 [[package]]
 name = "google-resumable-media"
@@ -5302,4 +5303,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "2b4a705c03d49ecc2240d0e251d6e294ef240c637499106a7939d92e0952f5af"
+content-hash = "29f3ec19faf9cf53e6d49a147bd8bc63dc85ad9d270de1357fd4effabfe261af"
