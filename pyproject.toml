@@ -54,7 +54,7 @@ kedro-mlflow = {version = "^1.0.0", optional = true}
 cachetools = ">=3.0,<6.0"
 # pyaml in version 5 does problems with installing binaries/wheel in cicd env with python 3.10. The following fixes that:
 # pyyaml = ">=6.0,<7"
-google-cloud-aiplatform = {extras = ["metadata"], version = "^1.155.0"}
+google-cloud-aiplatform = {extras = ["metadata"], version = "^1.156.0"}
 cloudpickle = "^3.0.0"
 mlflow = ">=2.22.5,<3.0"
 makefun = "^1.15.6"

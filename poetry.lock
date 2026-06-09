@@ -1588,14 +1588,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.155.0"
+version = "1.156.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.155.0-py2.py3-none-any.whl", hash = "sha256:f6416b90c7f2178886fccdae0d2e449a9d8379a025b08afee15e614f9c510574"},
-    {file = "google_cloud_aiplatform-1.155.0.tar.gz", hash = "sha256:1835500ddc73351f5ba2166b356fac4e691afb3a28d3be664fad42c680b4bb62"},
+    {file = "google_cloud_aiplatform-1.156.0-py2.py3-none-any.whl", hash = "sha256:ae78ee795b571d3801ac472e155ba66e7de9e7243ffe3092382329f230df5533"},
+    {file = "google_cloud_aiplatform-1.156.0.tar.gz", hash = "sha256:b2f8c92d7e3fd50a1570e433d596fb863f8ced528ede657e85d46e25b8445a25"},
 ]
 
 [package.dependencies]
@@ -5304,4 +5304,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "651446759ca7193b8ab26babd943e7d97ac54335d43d988137ad910e8e0335b3"
+content-hash = "22327effb8b880f71795a82e195b685cc8e3bf4a288d8d6ceb6003b0313fb19b"
