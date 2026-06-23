@@ -55,7 +55,7 @@ jobs:
       secret_verification_result: ${{ steps.validate-secret.outputs.verification_result }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@c106acf3789e3bb0c846e86f50c3f743396dbc21 # v0.80.0
+        uses: github/gh-aw-actions/setup@3c7f3b6f423dd721e2f115b7c8fda65287e1f137 # v0.81.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Generate agentic run info
@@ -90,7 +90,7 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Checkout .github and .agents folders
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
           sparse-checkout: |
@@ -258,7 +258,7 @@ jobs:
       output_types: ${{ steps.collect_output.outputs.output_types }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@c106acf3789e3bb0c846e86f50c3f743396dbc21 # v0.80.0
+        uses: github/gh-aw-actions/setup@3c7f3b6f423dd721e2f115b7c8fda65287e1f137 # v0.81.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Set runtime paths
@@ -267,7 +267,7 @@ jobs:
           echo "GH_AW_SAFE_OUTPUTS_CONFIG_PATH=${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" >> "$GITHUB_ENV"
           echo "GH_AW_SAFE_OUTPUTS_TOOLS_PATH=${RUNNER_TEMP}/gh-aw/safeoutputs/tools.json" >> "$GITHUB_ENV"
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
       - name: Create gh-aw temp directory
@@ -902,7 +902,7 @@ jobs:
       total_count: ${{ steps.missing_tool.outputs.total_count }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@c106acf3789e3bb0c846e86f50c3f743396dbc21 # v0.80.0
+        uses: github/gh-aw-actions/setup@3c7f3b6f423dd721e2f115b7c8fda65287e1f137 # v0.81.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Download agent output artifact
@@ -1012,7 +1012,7 @@ jobs:
       process_safe_outputs_temporary_id_map: ${{ steps.process_safe_outputs.outputs.temporary_id_map }}
     steps:
       - name: Setup Scripts
-        uses: github/gh-aw-actions/setup@c106acf3789e3bb0c846e86f50c3f743396dbc21 # v0.80.0
+        uses: github/gh-aw-actions/setup@3c7f3b6f423dd721e2f115b7c8fda65287e1f137 # v0.81.0
         with:
           destination: ${{ runner.temp }}/gh-aw/actions
       - name: Download agent output artifact
