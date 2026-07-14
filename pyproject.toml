@@ -47,7 +47,7 @@ google-cloud-iam = "<3"
 gcsfs = ">=2022.1"
 fsspec = ">=2022.1"
 google-cloud-storage = "<4.0.0"
-grpcio = ">=1.81.1,<2.0.0"
+grpcio = ">=1.82.1,<2.0.0"
 grpcio-status = ">=1.81.1,<2.0.0"
 protobuf = ">=3.18.0,<21.0"
 kedro-mlflow = {version = "^1.0.0", optional = true}
