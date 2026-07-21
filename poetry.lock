@@ -1540,14 +1540,14 @@ grpc = ["grpcio (>=1.33.2,<2.0.0)", "grpcio (>=1.49.1,<2.0.0) ; python_version >
 
 [[package]]
 name = "google-auth"
-version = "2.56.0"
+version = "2.56.1"
 description = "Google Authentication Library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_auth-2.56.0-py3-none-any.whl", hash = "sha256:6e88c10217e07a92bfd01cac8ee99e32ccfb08414c3102e6c5b8d58f37a0d1e0"},
-    {file = "google_auth-2.56.0.tar.gz", hash = "sha256:f90fa030b569a92654b9d690665a073841df33d57487be53db583a9a0867a553"},
+    {file = "google_auth-2.56.1-py3-none-any.whl", hash = "sha256:dd8a555988ca88c7158927fe22883ec065ca0f0f27d0077b419365a004df77d3"},
+    {file = "google_auth-2.56.1.tar.gz", hash = "sha256:9fd80dc51a58f44407d11f8e8e3ed3e26b407606e0ca181be728ad4dd77d1cdf"},
 ]
 
 [package.dependencies]
@@ -1589,14 +1589,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.160.0"
+version = "1.161.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.160.0-py2.py3-none-any.whl", hash = "sha256:4886e035b5baad3fe52adcec1c9a9f8312b5c42d7dfed8e13b420d59e6f3b82a"},
-    {file = "google_cloud_aiplatform-1.160.0.tar.gz", hash = "sha256:186a8db5099eda0e3cd3ecc73a4716d48c82fa1f00501582eacd541a6aa60534"},
+    {file = "google_cloud_aiplatform-1.161.0-py2.py3-none-any.whl", hash = "sha256:e24c77461f046cdf846520ab943b7deccdbcbac98a143f24cd4dbab23a68950b"},
+    {file = "google_cloud_aiplatform-1.161.0.tar.gz", hash = "sha256:e520fb9c4b703dd5b44563b7c6d56724402eb6d4089918fdd6aef4184a4c38f9"},
 ]
 
 [package.dependencies]
@@ -5296,4 +5296,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "45007d70efc797b514e0042b7fee466c57209b988b311beb8225dcacf6daf44a"
+content-hash = "28e9b52edf9ddd8d17d4a967894661b246309071793b39ab1aa2a25d3b95dfea"
