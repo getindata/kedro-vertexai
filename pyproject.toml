@@ -40,7 +40,7 @@ tabulate = ">=0.8.7"
 semver = ">=2.10,<4.0.0"
 toposort = ">1.0,<2.0"
 pyarrow = ">=14.0.1" # Stating explicitly for sub-dependency due to critical vulnerability
-pydantic = ">=2.13.4,<3"
+pydantic = ">=2.13.5,<3"
 google-auth = "<3"
 google-cloud-scheduler = ">=2.20.0"
 google-cloud-iam = "<3"
