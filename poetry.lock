@@ -1540,14 +1540,14 @@ grpc = ["grpcio (>=1.33.2,<2.0.0)", "grpcio (>=1.49.1,<2.0.0) ; python_version >
 
 [[package]]
 name = "google-auth"
-version = "2.58.1"
+version = "2.59.1"
 description = "Google Authentication Library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_auth-2.58.1-py3-none-any.whl", hash = "sha256:66a63572d0ab629554768544df04018d79178c0bd7439ba31683ac576b79024d"},
-    {file = "google_auth-2.58.1.tar.gz", hash = "sha256:1480461d8b2347e679af758f4003700ea79a59b603c9134e18bfa95e8004ee70"},
+    {file = "google_auth-2.59.1-py3-none-any.whl", hash = "sha256:89c3f931683a482ac97e61df7eb9da5e08a91703f3c752b2377d72cfb7d69e6a"},
+    {file = "google_auth-2.59.1.tar.gz", hash = "sha256:ce50fc533ac02f489a2b183a0c156672c376ecb2091b1127bc7efba2975fff27"},
 ]
 
 [package.dependencies]
@@ -1700,18 +1700,18 @@ grpc = ["grpcio (>=1.38.0,<2.0)", "grpcio-status (>=1.38.0,<2.0)"]
 
 [[package]]
 name = "google-cloud-iam"
-version = "2.25.0"
+version = "2.26.0"
 description = "Google Cloud Iam API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_iam-2.25.0-py3-none-any.whl", hash = "sha256:adaa7e9a44d48f521e5be7bce7d52f74f9f097885f641865d50caaacc79abf86"},
-    {file = "google_cloud_iam-2.25.0.tar.gz", hash = "sha256:af311f839cb7791e582093940ec114323fc6a92110e9807844026eb09704c479"},
+    {file = "google_cloud_iam-2.26.0-py3-none-any.whl", hash = "sha256:77bb8d9d8a9c94b1632196fd4d88c52c0f2ceb35075514eb91af25ed6857b300"},
+    {file = "google_cloud_iam-2.26.0.tar.gz", hash = "sha256:d44a86e5cb0bbc904c459b1367bd0124eef802fe0af72ac378f87f7f8e5b2d42"},
 ]
 
 [package.dependencies]
-google-api-core = {version = ">=2.25.0,<3.0.0", extras = ["grpc"]}
+google-api-core = {version = ">=2.28.0,<3.0.0", extras = ["grpc"]}
 google-auth = ">=2.14.1,!=2.24.0,!=2.25.0,<3.0.0"
 grpc-google-iam-v1 = ">=0.14.2,<1.0.0"
 grpcio = ">=1.59.0,<2.0.0"
@@ -1739,33 +1739,33 @@ protobuf = ">=3.20.2,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.
 
 [[package]]
 name = "google-cloud-scheduler"
-version = "2.20.0"
+version = "2.21.0"
 description = "Google Cloud Scheduler API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_scheduler-2.20.0-py3-none-any.whl", hash = "sha256:7e227cb2438c168ca214dc852eaa96f7066a8f206faec3a88c810a25fb5da6d8"},
-    {file = "google_cloud_scheduler-2.20.0.tar.gz", hash = "sha256:17fee4b894e588587f76518185f20b6f7ddbce04ca91bbbb325ea995222d2b87"},
+    {file = "google_cloud_scheduler-2.21.0-py3-none-any.whl", hash = "sha256:9cdd142aee035282a5779e9bd897a50571c4a6c00e5bd964b4fafa94e4c2e4dc"},
+    {file = "google_cloud_scheduler-2.21.0.tar.gz", hash = "sha256:0c5f0d98b0aeede68072fc49c58b491db05ead8d498e53dcdd33eb8185c1979f"},
 ]
 
 [package.dependencies]
-google-api-core = {version = ">=2.17.1,<3.0.0", extras = ["grpc"]}
+google-api-core = {version = ">=2.28.0,<3.0.0", extras = ["grpc"]}
 google-auth = ">=2.14.1,!=2.24.0,!=2.25.0,<3.0.0"
 grpcio = ">=1.59.0,<2.0.0"
-proto-plus = ">=1.22.3,<2.0.0"
-protobuf = ">=4.25.8,<8.0.0"
+proto-plus = ">=1.26.1,<2.0.0"
+protobuf = ">=6.33.5,<8.0.0"
 
 [[package]]
 name = "google-cloud-storage"
-version = "3.15.0"
+version = "3.16.0"
 description = "Google Cloud Storage API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_storage-3.15.0-py3-none-any.whl", hash = "sha256:248905def997a300ad456c0696cf7fad04b8c38412c1103ebb2a60cc6341579f"},
-    {file = "google_cloud_storage-3.15.0.tar.gz", hash = "sha256:110041ee1cb566114015aa7c2492f1ff18c92af528588386663f4b41b6279989"},
+    {file = "google_cloud_storage-3.16.0-py3-none-any.whl", hash = "sha256:59e54ff1f7f8a7253c01f593f79d253728c122a8901b83f68fe7464a4131539f"},
+    {file = "google_cloud_storage-3.16.0.tar.gz", hash = "sha256:3f75cf8ad345d68ef33f0c69db8a8b3f34f160b1524e75d73890602b7b8a4d6e"},
 ]
 
 [package.dependencies]
@@ -5306,4 +5306,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "496aa62e98a215b5e2152cf707a519437c5ec8aa9d714df0bae958c923d8c975"
+content-hash = "07fcd5aee899273c004ad63e203095871761502a8095e45ac9c5a6943fa23a45"
