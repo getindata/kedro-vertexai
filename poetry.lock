@@ -331,14 +331,14 @@ files = [
 
 [[package]]
 name = "certifi"
-version = "2025.8.3"
+version = "2026.10.23"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
 python-versions = ">=3.7"
 groups = ["main", "dev"]
 files = [
-    {file = "certifi-2025.8.3-py3-none-any.whl", hash = "sha256:f6c12493cfb1b06ba2ff328595af9350c65d6644968e5d3a2ffd78699af217a5"},
-    {file = "certifi-2025.8.3.tar.gz", hash = "sha256:e564105f78ded564e3ae7c923924435e1daa7463faeab5bb932bc53ffae63407"},
+    {file = "certifi-2026.10.23-py3-none-any.whl", hash = "sha256:e9b54de76e530bb6cf0ccd036787103acb58fd42ba930ea8bf948ddbaa2f61d1"},
+    {file = "certifi-2026.10.23.tar.gz", hash = "sha256:a9895e6e2758b371e0545e321a3a8fd1fcfd9829ada8824a936dfb16aaaf36cd"},
 ]
 
 [[package]]
@@ -2433,47 +2433,50 @@ test = ["PyYAML (==5.3.1)", "pytest", "pytest-cov", "pytest-mock", "pytest-xdist
 
 [[package]]
 name = "kfp"
-version = "2.16.0"
+version = "2.18.0"
 description = "Kubeflow Pipelines SDK"
 optional = false
 python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "kfp-2.16.0-py3-none-any.whl", hash = "sha256:c06e5b24c5d4ddc9a65eb1f4ab120437d97a10c483d87fb41ce2f91a30f5aedb"},
-    {file = "kfp-2.16.0.tar.gz", hash = "sha256:08b0cdf3c34ac89e73995ba647d1815d09dfe527c59092ff44e136e18213270e"},
+    {file = "kfp-2.18.0-py3-none-any.whl", hash = "sha256:4afaeb45fd923c27a5958eac59c3a06f844441533e1c38c69214209392f7cbca"},
+    {file = "kfp-2.18.0.tar.gz", hash = "sha256:8331041be2a8cca9188e5a4c716844afbb163cd0f34983654f40fee50b7dd451"},
 ]
 
 [package.dependencies]
+certifi = ">=2026.10.19"
 click = ">=8.1.8"
 click-option-group = "0.5.7"
 docstring-parser = ">=0.7.3,<1"
 google-api-core = ">=1.31.5,<2.0 || >=2.3.dev0,!=2.3.0,<3.0.0"
 google-auth = ">=1.6.1,<3"
 google-cloud-storage = ">=2.2.1,<4"
-kfp-pipeline-spec = ">=2.16.0,<3"
-kfp-server-api = ">=2.16.0,<3"
+kfp-pipeline-spec = ">=2.18.0,<3"
+kfp-server-api = ">=2.18.0,<3"
 kubernetes = ">=8.0.0,<31"
+oauthlib = ">=4.0.0,<5"
 protobuf = ">=6.31.1,<7.0"
 PyYAML = ">=5.3,<7"
+requests = {version = "2.33.0", markers = "python_version >= \"3.10\""}
 requests-toolbelt = ">=0.8.0,<2"
 tabulate = ">=0.8.6,<1"
-urllib3 = "<3.0.0"
+urllib3 = {version = "2.8.0", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-all = ["docker", "ipykernel (>=6,<7)", "jupyter_client (>=7,<9)", "kfp-kubernetes (==2.16.0)", "nbclient (>=0.10,<1)"]
-kubernetes = ["kfp-kubernetes (==2.16.0)"]
+all = ["docker", "ipykernel (>=6,<7)", "jupyter_client (>=7,<9)", "kfp-kubernetes (==2.18.0)", "nbclient (>=0.10,<1)"]
+kubernetes = ["kfp-kubernetes (==2.18.0)"]
 notebooks = ["ipykernel (>=6,<7)", "jupyter_client (>=7,<9)", "nbclient (>=0.10,<1)"]
 
 [[package]]
 name = "kfp-pipeline-spec"
-version = "2.16.0"
+version = "2.18.0"
 description = "Kubeflow Pipelines pipeline spec"
 optional = false
 python-versions = ">=3.9.0"
 groups = ["main"]
 files = [
-    {file = "kfp_pipeline_spec-2.16.0-py3-none-any.whl", hash = "sha256:02dc0feff42b1bca14f798fbd2264a537e697411527c6ee6343ed5546f1ea172"},
-    {file = "kfp_pipeline_spec-2.16.0.tar.gz", hash = "sha256:96b6fe189978aac8e3c928611d467788914c7e5ff2c6ca313279116734e2e26c"},
+    {file = "kfp_pipeline_spec-2.18.0-py3-none-any.whl", hash = "sha256:ce6f8900ab2213102b5aadb9a39f1f3ab79d5d666d4ce2636eec025b9d109742"},
+    {file = "kfp_pipeline_spec-2.18.0.tar.gz", hash = "sha256:7cd354b2ec2217de49e226dd3a70a244270f4ff73d2d5ecce1dc5c7aa5ea37ff"},
 ]
 
 [package.dependencies]
@@ -2481,20 +2484,20 @@ protobuf = ">=6.31.1,<7.0"
 
 [[package]]
 name = "kfp-server-api"
-version = "2.16.0"
+version = "2.18.0"
 description = "Kubeflow Pipelines API"
 optional = false
-python-versions = "*"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "kfp_server_api-2.16.0.tar.gz", hash = "sha256:32243e9eed9a386110e0363cbdc88b026f177bd5a1a53b63684bc0a47eb665a3"},
+    {file = "kfp_server_api-2.18.0.tar.gz", hash = "sha256:3e81460a2e7bb66fa260825b0b1f87e7f0bff6d8e0da2015a4e8fbc7b4ec28c9"},
 ]
 
 [package.dependencies]
 certifi = "*"
 python-dateutil = "*"
 six = ">=1.10"
-urllib3 = ">=1.15"
+urllib3 = {version = ">=2.8.0", markers = "python_version >= \"3.10\""}
 
 [[package]]
 name = "kiwisolver"
@@ -3258,14 +3261,14 @@ files = [
 
 [[package]]
 name = "oauthlib"
-version = "3.3.1"
+version = "4.0.1"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1"},
-    {file = "oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9"},
+    {file = "oauthlib-4.0.1-py3-none-any.whl", hash = "sha256:498a298876e996301950a5b053d12c31628bb7b895db03666430c69ce182eb61"},
+    {file = "oauthlib-4.0.1.tar.gz", hash = "sha256:3d73febdb6faa00f277c81fb04be7b7586fb96fc3b7f0b9c772dada69a25ede7"},
 ]
 
 [package.extras]
@@ -4285,25 +4288,26 @@ files = [
 
 [[package]]
 name = "requests"
-version = "2.32.4"
+version = "2.33.0"
 description = "Python HTTP for Humans."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "requests-2.32.4-py3-none-any.whl", hash = "sha256:27babd3cda2a6d50b30443204ee89830707d396671944c998b5975b031ac2b2c"},
-    {file = "requests-2.32.4.tar.gz", hash = "sha256:27d0316682c8a29834d3264820024b62a36942083d52caf2f14c0591336d3422"},
+    {file = "requests-2.33.0-py3-none-any.whl", hash = "sha256:3324635456fa185245e24865e810cecec7b4caf933d7eb133dcde67d48cee69b"},
+    {file = "requests-2.33.0.tar.gz", hash = "sha256:c7ebc5e8b0f21837386ad0e1c8fe8b829fa5f544d8df3b2253bff14ef29d7652"},
 ]
 
 [package.dependencies]
-certifi = ">=2017.4.17"
+certifi = ">=2023.5.7"
 charset_normalizer = ">=2,<4"
 idna = ">=2.5,<4"
-urllib3 = ">=1.21.1,<3"
+urllib3 = ">=1.26,<3"
 
 [package.extras]
 socks = ["PySocks (>=1.5.6,!=1.5.7)"]
-use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
+test = ["PySocks (>=1.5.6,!=1.5.7)", "pytest (>=3)", "pytest-cov", "pytest-httpbin (==2.1.0)", "pytest-mock", "pytest-xdist"]
+use-chardet-on-py3 = ["chardet (>=3.0.2,<8)"]
 
 [[package]]
 name = "requests-oauthlib"
@@ -4972,20 +4976,21 @@ files = [
 
 [[package]]
 name = "urllib3"
-version = "1.26.20"
+version = "2.8.0"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
+python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "urllib3-1.26.20-py2.py3-none-any.whl", hash = "sha256:0ed14ccfbf1c30a9072c7ca157e4319b70d65f623e91e7b32fadb2853431016e"},
-    {file = "urllib3-1.26.20.tar.gz", hash = "sha256:40c2dc0c681e47eb8f90e7e27bf6ff7df2e677421fd46756da1161c39ca70d32"},
+    {file = "urllib3-2.8.0-py3-none-any.whl", hash = "sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3"},
+    {file = "urllib3-2.8.0.tar.gz", hash = "sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63"},
 ]
 
 [package.extras]
-brotli = ["brotli (==1.0.9) ; os_name != \"nt\" and python_version < \"3\" and platform_python_implementation == \"CPython\"", "brotli (>=1.0.9) ; python_version >= \"3\" and platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; (os_name != \"nt\" or python_version >= \"3\") and platform_python_implementation != \"CPython\"", "brotlipy (>=0.6.0) ; os_name == \"nt\" and python_version < \"3\""]
-secure = ["certifi", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "ipaddress ; python_version == \"2.7\"", "pyOpenSSL (>=0.14)", "urllib3-secure-extra"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+brotli = ["brotli (>=1.2.0) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=1.2.0.0) ; platform_python_implementation != \"CPython\""]
+h2 = ["h2 (>=4,<5)"]
+socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
+zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
 [[package]]
 name = "uvicorn"
@@ -5305,4 +5310,4 @@ mlflow = ["kedro-mlflow"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "c1d8a1894f83d1e784e1e26543e41bb0902078c1fbdf3fe4da240b1e596c6a34"
+content-hash = "b87e18ed28fdc50634ff743320d815f2f4ecf640373c4c679b646faa35a574e8"
