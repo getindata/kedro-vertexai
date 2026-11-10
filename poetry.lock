@@ -1540,14 +1540,14 @@ grpc = ["grpcio (>=1.33.2,<2.0.0)", "grpcio (>=1.49.1,<2.0.0) ; python_version >
 
 [[package]]
 name = "google-auth"
-version = "2.62.0"
+version = "2.62.1"
 description = "Google Authentication Library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_auth-2.62.0-py3-none-any.whl", hash = "sha256:4ff4319aeb4ad128409759d397a9fcafad126d0031d241cc0dd6b9a00b43e3f3"},
-    {file = "google_auth-2.62.0.tar.gz", hash = "sha256:0bef0ce54bdf9ce226c5d66e4264413bd918141c31bbe49fb52eac882f513d69"},
+    {file = "google_auth-2.62.1-py3-none-any.whl", hash = "sha256:015399a5abde39033c69404cc1c079e6d4c2de2993e164c9f4eac6e5376ad72b"},
+    {file = "google_auth-2.62.1.tar.gz", hash = "sha256:3c8e1ce2553784ae17fd220e6f88df3281d86ab98019278f436d06dffab17a9e"},
 ]
 
 [package.dependencies]
@@ -1699,14 +1699,14 @@ grpc = ["grpcio (>=1.38.0,<2.0)", "grpcio-status (>=1.38.0,<2.0)"]
 
 [[package]]
 name = "google-cloud-iam"
-version = "2.26.0"
+version = "2.27.0"
 description = "Google Cloud Iam API client library"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "google_cloud_iam-2.26.0-py3-none-any.whl", hash = "sha256:77bb8d9d8a9c94b1632196fd4d88c52c0f2ceb35075514eb91af25ed6857b300"},
-    {file = "google_cloud_iam-2.26.0.tar.gz", hash = "sha256:d44a86e5cb0bbc904c459b1367bd0124eef802fe0af72ac378f87f7f8e5b2d42"},
+    {file = "google_cloud_iam-2.27.0-py3-none-any.whl", hash = "sha256:e6b4d4f798347f9cecf6c0aa370f32e874d071c54ecda2d708af2b1c36947e13"},
+    {file = "google_cloud_iam-2.27.0.tar.gz", hash = "sha256:8d2c88901bcbf66e2e52fbc9a0136a5ff2018a8ea02b0085930b0c4bf8921ecd"},
 ]
 
 [package.dependencies]
